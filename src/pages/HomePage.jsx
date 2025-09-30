@@ -9,8 +9,10 @@ import { TagFilter } from '../components/TagFilter.jsx';
 import { getPoints } from '../lib/supabase.js';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { EnhancedReservationForm } from '../components/EnhancedReservationForm.jsx';
-import { useUser } from '../contexts/UserContext.jsx'; // Importa o hook useUser
-import { ClientOrdersSummary } from '../components/ClientOrdersSummary.jsx'; // Importa o novo componente
+import { useUser } from '../contexts/UserContext.jsx';
+import { ClientOrdersSummary } from '../components/ClientOrdersSummary.jsx';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'; // Importação adicionada
+import { Loader2 } from 'lucide-react'; // Importação adicionada para o Loader2
 
 const mapContainerStyle = {
   width: '100%',
@@ -33,7 +35,7 @@ const ICONS = {
 };
 
 function HomePage() {
-  const { profile, loading: userLoading } = useUser(); // Obtém o perfil do usuário
+  const { profile, loading: userLoading } = useUser();
   const [points, setPoints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedPoint, setSelectedPoint] = useState(null);
