@@ -3,12 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import { Button } from '@/components/ui/button';
 import { LogIn, LogOut } from 'lucide-react';
+import { supabase } from '../lib/supabase'; // Importa o cliente Supabase
 
 function Header() {
   const { profile, loading } = useUser();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
+    await supabase.auth.signOut(); // Adiciona a chamada para encerrar a sessão
     navigate('/login');
   };
 
