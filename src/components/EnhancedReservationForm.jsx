@@ -31,6 +31,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
 
   const handleLoginInputChange = (e) => {
     const { id, value } = e.target;
+    console.log(`Input de Login: id=${id}, valor=${value}`); // Log para depuração
     setLoginData((prev) => ({ ...prev, [id]: value }));
   };
 
@@ -174,7 +175,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
                   required 
                   value={loginData.email} 
                   onChange={handleLoginInputChange} 
-                  // Removido disabled={loading} para permitir digitação
+                  // A propriedade 'disabled' foi removida para permitir a digitação.
                 />
               </div>
               <div className="space-y-2">
@@ -185,7 +186,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
                   required 
                   value={loginData.password} 
                   onChange={handleLoginInputChange} 
-                  // Removido disabled={loading} para permitir digitação
+                  // A propriedade 'disabled' foi removida para permitir a digitação.
                 />
               </div>
 
