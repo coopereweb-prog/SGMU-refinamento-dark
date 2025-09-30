@@ -21,10 +21,9 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
   const [showLoginOption, setShowLoginOption] = useState(true);
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
-  const [key, setKey] = useState(0); // Key para forçar re-renderização
+  const [key, setKey] = useState(0);
   const navigate = useNavigate();
 
-  // Força re-renderização quando showLoginOption muda
   useEffect(() => {
     setKey(prev => prev + 1);
   }, [showLoginOption]);
@@ -35,8 +34,8 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
   };
 
   const handleLoginInputChange = (e) => {
-    const { id, value } = e.target;
-    setLoginData((prev) => ({ ...prev, [id]: value }));
+    const { name, value } = e.target;
+    setLoginData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleLogin = async (e) => {
@@ -162,10 +161,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
     );
   }
 
-  // Estilos para os inputs padrão
   const inputClasses = "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
-  
-  // Estilos para os inputs de erro
   const inputErrorClasses = `${inputClasses} border-destructive`;
 
   return (
@@ -178,6 +174,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
               <Label htmlFor="login-email">E-mail</Label>
               <input 
                 id="login-email" 
+                name="email"
                 type="email" 
                 placeholder="seu@email.com" 
                 required 
@@ -191,6 +188,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
               <Label htmlFor="login-password">Senha</Label>
               <input 
                 id="login-password" 
+                name="password"
                 type="password" 
                 required 
                 value={loginData.password} 
