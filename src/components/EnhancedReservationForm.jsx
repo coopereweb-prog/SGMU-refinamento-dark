@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'; // Importado useEffect
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createOrder } from '../lib/supabase.js';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input'; // Revertido para Input do shadcn/ui
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertCircle, CheckCircle, User } from 'lucide-react';
@@ -24,11 +24,6 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
   const navigate = useNavigate();
 
-  // NOVO: Monitora o estado loginData
-  useEffect(() => {
-    console.log("loginData state after update:", loginData);
-  }, [loginData]);
-
   const handleInputChange = (e) => {
     const { id, value } = e.target;
     setCustomerData((prev) => ({ ...prev, [id]: value }));
@@ -36,7 +31,6 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
 
   const handleLoginInputChange = (e) => {
     const { id, value } = e.target;
-    console.log(`Input de Login: id=${id}, valor=${value}`); // Log para depuração
     setLoginData((prev) => ({ ...prev, [id]: value }));
   };
 
@@ -53,22 +47,33 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
 
       if (loginError) throw loginError;
 
-      // After login, create the order with the customer's data
-      const userData = {
-        name: data.user.user_metadata?.name || data.user.email,
-        email: data.user.email,
-        phone: '' // We don't have phone in auth metadata, will need to get from profile or ask
-      };
+      // If login is successful, fetch profile to determine redirection
+      if (data.user) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
 
-      const orderData = await createOrder(userData, cartItems);
-      console.log('Pedido criado com sucesso! ID:', orderData.orderId);
-      setSuccess(true);
-      onReservationSuccess();
-      
-      // Show success message and redirect to client dashboard
-      setTimeout(() => {
-        navigate('/my-account'); // Redirecionamento atualizado
-      }, 3000);
+        if (profileError) throw profileError;
+
+        // Redirect based on user role
+        switch (profile.role) {
+          case 'admin':
+          case 'operations_manager':
+            navigate('/admin');
+            break;
+          case 'field_technician':
+            navigate('/technician-panel');
+            break;
+          case 'client':
+            navigate('/my-account');
+            break;
+          default:
+            navigate('/');
+        }
+      }
+
     } catch (err) {
       const friendlyMessage =
         err?.message ??
@@ -114,7 +119,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
       
       // Show success message and redirect to client dashboard
       setTimeout(() => {
-        navigate('/my-account'); // Redirecionamento atualizado
+        navigate('/my-account');
       }, 3000);
     } catch (err) {
       const friendlyMessage =
@@ -173,7 +178,6 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="login-email">E-mail</Label>
-                {console.log("Rendering login-email input. Current loginData.email:", loginData.email)}
                 <Input 
                   id="login-email" 
                   type="email" 
@@ -185,7 +189,6 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
               </div>
               <div className="space-y-2">
                 <Label htmlFor="login-password">Senha</Label>
-                {console.log("Rendering login-password input. Current loginData.password:", loginData.password)}
                 <Input 
                   id="login-password" 
                   type="password" 
