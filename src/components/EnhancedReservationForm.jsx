@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createOrder } from '../lib/supabase.js';
 import { Button } from '@/components/ui/button';
-// import { Input } from '@/components/ui/input'; // Comentado para usar input nativo
+import { Input } from '@/components/ui/input'; // Re-importado o componente Input
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertCircle, CheckCircle, User } from 'lucide-react';
@@ -180,27 +180,25 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="login-email">E-mail</Label>
-                <input // Usando input nativo
+                <Input 
                   id="login-email" 
                   type="email" 
                   placeholder="seu@email.com" 
                   required 
                   value={loginData.email} 
                   onChange={handleLoginInputChange} 
-                  disabled={loading}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" // Adicionando classes Tailwind para manter o estilo
+                  // disabled={loading} // Removido temporariamente
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="login-password">Senha</Label>
-                <input // Usando input nativo
+                <Input 
                   id="login-password" 
                   type="password" 
                   required 
                   value={loginData.password} 
                   onChange={handleLoginInputChange} 
-                  disabled={loading}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" // Adicionando classes Tailwind para manter o estilo
+                  // disabled={loading} // Removido temporariamente
                 />
               </div>
 
