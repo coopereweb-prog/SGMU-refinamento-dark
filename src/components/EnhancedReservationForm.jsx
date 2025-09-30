@@ -31,6 +31,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
 
   const handleLoginInputChange = (e) => {
     const { id, value } = e.target;
+    console.log(`Input de Login alterado: id=${id}, valor=${value}`); // Adicionado para depuração
     setLoginData((prev) => ({ ...prev, [id]: value }));
   };
 
@@ -186,8 +187,6 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
                   value={loginData.email} 
                   onChange={handleLoginInputChange} 
                   disabled={loading}
-                  className="border-2 border-red-500" // TEMPORARY DEBUG CLASS
-                  onClick={() => console.log('Email input clicked!')} // TEMPORARY DEBUG LOG
                 />
               </div>
               <div className="space-y-2">
@@ -199,8 +198,6 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
                   value={loginData.password} 
                   onChange={handleLoginInputChange} 
                   disabled={loading}
-                  className="border-2 border-red-500" // TEMPORARY DEBUG CLASS
-                  onClick={() => console.log('Password input clicked!')} // TEMPORARY DEBUG LOG
                 />
               </div>
 
@@ -374,7 +371,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
               {error && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Ocorreu um Erro</AlertTitle>
+                  <AlertTitle>Ocorreu um Erhro</AlertTitle>
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
