@@ -16,9 +16,10 @@ import {
 } from "@/components/ui/select";
 import { toast } from 'sonner';
 import { useUser } from '../contexts/UserContext'; // Importa o useUser
+import { ClientProfileForm } from '../components/ClientProfileForm'; // Importa o novo formulário
 
 function ClientDashboardPage() {
-  const { profile, loading: userProfileLoading } = useUser(); // Obtém o perfil e o estado de carregamento do contexto
+  const { profile, loading: userProfileLoading, session } = useUser(); // Obtém o perfil e o estado de carregamento do contexto
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true); // Renomeado para evitar conflito
   const [isEditModalOpen, setIsEditModal] = useState(false);
@@ -95,6 +96,15 @@ function ClientDashboardPage() {
     } finally {
       setUpdatingItemId(null);
     }
+  };
+
+  // Função para recarregar o perfil após a atualização no formulário
+  const handleProfileSave = async () => {
+    // O UserContext já tem um listener para `onAuthStateChange` que recarrega o perfil.
+    // Se o perfil não for atualizado automaticamente, podemos forçar um refresh aqui.
+    // Por enquanto, vamos confiar no UserContext.
+    // Se necessário, poderíamos adicionar uma função `refreshProfile` ao UserContext.
+    console.log("Perfil salvo, UserContext deve recarregar.");
   };
 
   // Condição de carregamento combinada
@@ -210,26 +220,15 @@ function ClientDashboardPage() {
             <Card className="mt-6">
               <CardHeader>
                 <CardTitle>Informações do Perfil</CardTitle>
-                <CardDescription>Gerencie suas informações pessoais</CardDescription>
+                <CardDescription>Gerencie suas informações pessoais e de contato</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {profile && ( // Usa profile aqui
-                  <>
-                    <div className="flex items-center space-x-4">
-                      <div className="h-16 w-16 rounded-full bg-gray-200 flex items-center justify-center">
-                        <User className="h-8 w-8 text-gray-500" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-medium">{profile.name || 'Nome não informado'}</h3> {/* Usa profile.name */}
-                        <p className="text-gray-500">{profile.email}</p> {/* Usa profile.email */}
-                      </div>
-                    </div>
-                    <div className="pt-4">
-                      <Button variant="outline" onClick={() => navigate('/update-password')}>
-                        Alterar Senha
-                      </Button>
-                    </div>
-                  </>
+                {profile ? (
+                  <ClientProfileForm profile={profile} onSave={handleProfileSave} />
+                ) : (
+                  <div className="flex items-center justify-center h-40">
+                    <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+                  </div>
                 )}
               </CardContent>
             </Card>

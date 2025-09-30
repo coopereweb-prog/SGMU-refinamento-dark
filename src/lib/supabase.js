@@ -221,3 +221,16 @@ export const deleteUser = async (userIdToDelete) => {
   if (error) throw error;
   return data;
 };
+
+// Nova função para atualizar o perfil do cliente
+export const updateClientProfile = async (userId, profileData) => {
+  const { error } = await supabase
+    .from('profiles')
+    .update(profileData)
+    .eq('id', userId);
+
+  if (error) {
+    console.error('Erro ao atualizar perfil do cliente:', error);
+    throw error;
+  }
+};
