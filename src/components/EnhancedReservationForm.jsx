@@ -2,14 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createOrder } from '../lib/supabase.js';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input'; // Re-importado o componente Input
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, AlertCircle, CheckCircle, User } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export function EnhancedReservationForm({ cartItems, onClose, onReservationSuccess }) {
-  console.log('EnhancedReservationForm rendered'); // Log de renderização
   const [customerData, setCustomerData] = useState({ 
     name: '', 
     email: '', 
@@ -23,7 +22,13 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
   const [showLoginOption, setShowLoginOption] = useState(true);
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
+  const [key, setKey] = useState(0); // Key para forçar re-renderização
   const navigate = useNavigate();
+
+  // Força re-renderização quando showLoginOption muda
+  useEffect(() => {
+    setKey(prev => prev + 1);
+  }, [showLoginOption]);
 
   const handleInputChange = (e) => {
     const { id, value } = e.target;
@@ -32,7 +37,6 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
 
   const handleLoginInputChange = (e) => {
     const { id, value } = e.target;
-    console.log(`handleLoginInputChange: id=${id}, value=${value}`); // Re-adicionado para depuração
     setLoginData((prev) => ({ ...prev, [id]: value }));
   };
 
@@ -49,7 +53,6 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
 
       if (loginError) throw loginError;
 
-      // If login is successful, fetch profile to determine redirection
       if (data.user) {
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
@@ -59,7 +62,6 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
 
         if (profileError) throw profileError;
 
-        // Redireciona com base no papel do usuário
         switch (profile.role) {
           case 'admin':
           case 'operations_manager':
@@ -81,7 +83,6 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
         err?.message ??
         'Não foi possível realizar o login. Por favor, verifique suas credenciais.';
       setError(friendlyMessage);
-      console.error('Erro ao fazer login:', err);
     } finally {
       setLoading(false);
     }
@@ -92,7 +93,6 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
     setLoading(true);
     setError(null);
 
-    // Validate password match
     if (customerData.password !== customerData.confirmPassword) {
       setError('As senhas não coincidem.');
       setLoading(false);
@@ -100,7 +100,6 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
     }
 
     try {
-      // Create account first
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: customerData.email,
         password: customerData.password,
@@ -113,13 +112,10 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
 
       if (signUpError) throw signUpError;
 
-      // If account created successfully, create the order
       const orderData = await createOrder(customerData, cartItems);
-      console.log('Pedido criado com sucesso! ID:', orderData.orderId);
       setSuccess(true);
       onReservationSuccess();
       
-      // Show success message and redirect to client dashboard
       setTimeout(() => {
         navigate('/my-account');
       }, 3000);
@@ -128,7 +124,6 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
         err?.message ??
         'Não foi possível completar sua reserva. Por favor, tente novamente.';
       setError(friendlyMessage);
-      console.error('Erro ao criar conta e reserva:', err);
     } finally {
       setLoading(false);
     }
@@ -141,7 +136,6 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
 
     try {
       const data = await createOrder(customerData, cartItems);
-      console.log('Pedido criado com sucesso! ID:', data.orderId);
       setSuccess(true);
       onReservationSuccess();
     } catch (err) {
@@ -151,13 +145,11 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
         err?.error ??
         'Não foi possível completar sua reserva. Por favor, tente novamente.';
       setError(friendlyMessage);
-      console.error('Erro ao criar reserva:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  // If reservation was successful, show success message
   if (success) {
     return (
       <Alert>
@@ -174,58 +166,56 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
   return (
     <div className="space-y-4">
       {showLoginOption ? (
-        <>
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Já tem uma conta?</h3>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="login-email">E-mail</Label>
-                <Input 
-                  id="login-email" 
-                  type="email" 
-                  placeholder="seu@email.com" 
-                  required 
-                  value={loginData.email} 
-                  onChange={handleLoginInputChange} 
-                  // disabled={loading} // Removido temporariamente
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="login-password">Senha</Label>
-                <Input 
-                  id="login-password" 
-                  type="password" 
-                  required 
-                  value={loginData.password} 
-                  onChange={handleLoginInputChange} 
-                  // disabled={loading} // Removido temporariamente
-                />
-              </div>
+        <div key={key} className="space-y-4"> {/* Adicionando key aqui */}
+          <h3 className="text-lg font-semibold">Já tem uma conta?</h3>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="login-email">E-mail</Label>
+              <Input 
+                id="login-email" 
+                type="email" 
+                placeholder="seu@email.com" 
+                required 
+                value={loginData.email} 
+                onChange={handleLoginInputChange} 
+                disabled={loading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="login-password">Senha</Label>
+              <Input 
+                id="login-password" 
+                type="password" 
+                required 
+                value={loginData.password} 
+                onChange={handleLoginInputChange} 
+                disabled={loading}
+              />
+            </div>
 
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Ocorreu um Erro</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Ocorreu um Erro</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-              <div className="flex flex-col space-y-3">
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? <Loader2 className="animate-spin" /> : 'Entrar e Reservar'}
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setShowLoginOption(false)}
-                  disabled={loading}
-                >
-                  Criar Conta ou Continuar como Convidado
-                </Button>
-              </div>
-            </form>
-          </div>
-        </>
+            <div className="flex flex-col space-y-3">
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? <Loader2 className="animate-spin" /> : 'Entrar e Reservar'}
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowLoginOption(false)}
+                disabled={loading}
+              >
+                Criar Conta ou Continuar como Convidado
+              </Button>
+            </div>
+          </form>
+        </div>
       ) : (
         <>
           <div className="flex space-x-2 mb-4">
@@ -372,7 +362,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
               {error && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Ocorreu um Erhro</AlertTitle>
+                  <AlertTitle>Ocorreu um Erro</AlertTitle>
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
