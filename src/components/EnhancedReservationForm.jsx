@@ -57,7 +57,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
 
         if (profileError) throw profileError;
 
-        // Redirect based on user role
+        // Redireciona com base no papel do usuário
         switch (profile.role) {
           case 'admin':
           case 'operations_manager':
@@ -185,6 +185,9 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
                   required 
                   value={loginData.email} 
                   onChange={handleLoginInputChange} 
+                  disabled={loading}
+                  className="border-2 border-red-500" // TEMPORARY DEBUG CLASS
+                  onClick={() => console.log('Email input clicked!')} // TEMPORARY DEBUG LOG
                 />
               </div>
               <div className="space-y-2">
@@ -195,6 +198,9 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
                   required 
                   value={loginData.password} 
                   onChange={handleLoginInputChange} 
+                  disabled={loading}
+                  className="border-2 border-red-500" // TEMPORARY DEBUG CLASS
+                  onClick={() => console.log('Password input clicked!')} // TEMPORARY DEBUG LOG
                 />
               </div>
 
