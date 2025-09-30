@@ -15,35 +15,25 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from 'sonner';
+import { useUser } from '../contexts/UserContext'; // Importa o useUser
 
 function ClientDashboardPage() {
-  console.log("ClientDashboardPage rendered."); // NOVO LOG AQUI
+  const { profile, loading: userProfileLoading } = useUser(); // Obtém o perfil e o estado de carregamento do contexto
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
+  const [loadingOrders, setLoadingOrders] = useState(true); // Renomeado para evitar conflito
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedOrderForEdit, setSelectedOrderForEdit] = useState(null);
-  const [updatingItemId, setUpdatingItemId] = useState(null); // Para feedback de loading
+  const [updatingItemId, setUpdatingItemId] = useState(null);
   const navigate = useNavigate();
 
   const fetchOrders = async () => {
-    setLoading(true);
-    const { data: { user }, error: userError } = await supabase.auth.getUser(); // Adicionado error para depuração
+    setLoadingOrders(true); // Usa o novo estado de carregamento
     
-    if (userError) {
-      console.error("Error getting user session:", userError); // Log de erro
-      navigate('/login');
+    if (!profile?.email) { // Usa profile.email diretamente
+      setOrders([]);
+      setLoadingOrders(false);
       return;
     }
-
-    if (!user) {
-      console.log("No user found, redirecting to login."); // Log de depuração
-      navigate('/login');
-      return;
-    }
-    
-    setUser(user);
-    console.log("Logged in user email:", user.email); // Log de depuração
     
     const { data, error } = await supabase
       .from('orders')
@@ -54,22 +44,23 @@ function ClientDashboardPage() {
           points (id, name, installation_photo_url, price_1y, price_2y, price_3y, price_4y, price_5y) 
         )
       `)
-      .eq('customer_email', user.email)
+      .eq('customer_email', profile.email) // Usa profile.email
       .order('created_at', { ascending: false });
 
     if (error) {
       console.error("Error fetching orders:", error);
       toast.error("Erro ao carregar pedidos.");
     } else {
-      console.log("Fetched orders:", data); // Log de depuração
       setOrders(data);
     }
-    setLoading(false);
+    setLoadingOrders(false); // Usa o novo estado de carregamento
   };
 
   useEffect(() => {
-    fetchOrders();
-  }, [navigate]);
+    if (!userProfileLoading) { // Espera o perfil do usuário carregar
+      fetchOrders();
+    }
+  }, [userProfileLoading, profile]); // Adiciona profile como dependência
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -97,7 +88,7 @@ function ClientDashboardPage() {
     try {
       await updateOrderItemPeriod(orderId, itemId, newPeriod);
       toast.success('Período do item atualizado com sucesso!');
-      await fetchOrders(); // Recarrega os dados para mostrar o novo total
+      await fetchOrders();
     } catch (error) {
       console.error("Error updating item period:", error);
       toast.error('Falha ao atualizar o item', { description: error.message });
@@ -106,7 +97,8 @@ function ClientDashboardPage() {
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
+  // Condição de carregamento combinada
+  if (userProfileLoading || loadingOrders) return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
@@ -219,15 +211,15 @@ function ClientDashboardPage() {
                 <CardDescription>Gerencie suas informações pessoais</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {user && (
+                {profile && ( // Usa profile aqui
                   <>
                     <div className="flex items-center space-x-4">
                       <div className="h-16 w-16 rounded-full bg-gray-200 flex items-center justify-center">
                         <User className="h-8 w-8 text-gray-500" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-medium">{user.user_metadata?.name || 'Nome não informado'}</h3>
-                        <p className="text-gray-500">{user.email}</p>
+                        <h3 className="text-lg font-medium">{profile.name || 'Nome não informado'}</h3> {/* Usa profile.name */}
+                        <p className="text-gray-500">{profile.email}</p> {/* Usa profile.email */}
                       </div>
                     </div>
                     <div className="pt-4">
