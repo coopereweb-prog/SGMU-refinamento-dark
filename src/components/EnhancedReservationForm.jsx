@@ -9,6 +9,7 @@ import { Loader2, AlertCircle, CheckCircle, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export function EnhancedReservationForm({ cartItems, onClose, onReservationSuccess }) {
+  console.log('EnhancedReservationForm rendered'); // Log de renderização
   const [customerData, setCustomerData] = useState({ 
     name: '', 
     email: '', 
@@ -31,7 +32,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
 
   const handleLoginInputChange = (e) => {
     const { id, value } = e.target;
-    // console.log(`Input de Login alterado: id=${id}, valor=${value}`); // Removido o log
+    console.log(`handleLoginInputChange: id=${id}, value=${value}`); // Re-adicionado para depuração
     setLoginData((prev) => ({ ...prev, [id]: value }));
   };
 
