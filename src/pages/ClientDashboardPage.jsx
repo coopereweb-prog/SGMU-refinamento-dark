@@ -21,7 +21,7 @@ function ClientDashboardPage() {
   const { profile, loading: userProfileLoading } = useUser(); // Obtém o perfil e o estado de carregamento do contexto
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true); // Renomeado para evitar conflito
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModal] = useState(false);
   const [selectedOrderForEdit, setSelectedOrderForEdit] = useState(null);
   const [updatingItemId, setUpdatingItemId] = useState(null);
   const navigate = useNavigate();
@@ -73,11 +73,11 @@ function ClientDashboardPage() {
       return;
     }
     setSelectedOrderForEdit(order);
-    setIsEditModalOpen(true);
+    setIsEditModal(true);
   };
 
   const handleSaveOrder = () => {
-    setIsEditModalOpen(false);
+    setIsEditModal(false);
     setSelectedOrderForEdit(null);
     fetchOrders();
     toast.success('Pedido modificado com sucesso!');
@@ -104,7 +104,9 @@ function ClientDashboardPage() {
     <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
       <header className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Minha Conta</h1>
+          <h1 className="text-3xl font-bold text-gray-800">
+            {profile?.name ? `Olá, ${profile.name}!` : 'Minha Conta'}
+          </h1>
           <p className="text-gray-600">Gerencie seus pedidos e informações</p>
         </div>
         <Button onClick={handleLogout} variant="outline">
@@ -239,7 +241,7 @@ function ClientDashboardPage() {
         <EditOrderDialog
           order={selectedOrderForEdit}
           isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
+          onClose={() => setIsEditModal(false)}
           onSave={handleSaveOrder}
         />
       )}
