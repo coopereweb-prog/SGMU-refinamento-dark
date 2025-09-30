@@ -174,7 +174,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
                   required 
                   value={loginData.email} 
                   onChange={handleLoginInputChange} 
-                  disabled={loading} 
+                  // Removido disabled={loading} para permitir digitação
                 />
               </div>
               <div className="space-y-2">
@@ -185,7 +185,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
                   required 
                   value={loginData.password} 
                   onChange={handleLoginInputChange} 
-                  disabled={loading} 
+                  // Removido disabled={loading} para permitir digitação
                 />
               </div>
 
