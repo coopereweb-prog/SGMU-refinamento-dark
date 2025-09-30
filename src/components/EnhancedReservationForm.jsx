@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // Importado useEffect
 import { useNavigate } from 'react-router-dom';
 import { createOrder } from '../lib/supabase.js';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/ui/input'; // Revertido para Input do shadcn/ui
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertCircle, CheckCircle, User } from 'lucide-react';
@@ -23,6 +23,11 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
   const navigate = useNavigate();
+
+  // NOVO: Monitora o estado loginData
+  useEffect(() => {
+    console.log("loginData state after update:", loginData);
+  }, [loginData]);
 
   const handleInputChange = (e) => {
     const { id, value } = e.target;
@@ -168,6 +173,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="login-email">E-mail</Label>
+                {console.log("Rendering login-email input. Current loginData.email:", loginData.email)}
                 <Input 
                   id="login-email" 
                   type="email" 
@@ -175,18 +181,17 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
                   required 
                   value={loginData.email} 
                   onChange={handleLoginInputChange} 
-                  // A propriedade 'disabled' foi removida para permitir a digitação.
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="login-password">Senha</Label>
+                {console.log("Rendering login-password input. Current loginData.password:", loginData.password)}
                 <Input 
                   id="login-password" 
                   type="password" 
                   required 
                   value={loginData.password} 
                   onChange={handleLoginInputChange} 
-                  // A propriedade 'disabled' foi removida para permitir a digitação.
                 />
               </div>
 
