@@ -22,7 +22,7 @@ function Header() {
           <div className="flex items-center space-x-4">
             <Link to="/">
               <img 
-                src="/logo.png" // Usando o logo da pasta public
+                src="/logo.png" 
                 alt="Logomarca do SGUM" 
                 className="h-12 w-auto"
               />
@@ -33,15 +33,18 @@ function Header() {
             </div>
           </div>
           
-          {/* Lado direito: Botão de Login/Logout */}
-          <div>
+          {/* Lado direito: Botão de Login/Logout e Saudação */}
+          <div className="flex items-center space-x-4">
             {loading ? (
               <span className="text-sm text-gray-500">Carregando...</span>
             ) : profile ? (
-              <Button onClick={handleLogout} variant="outline" size="sm">
-                <LogOut className="h-4 w-4 mr-2" />
-                Sair
-              </Button>
+              <>
+                <span className="text-gray-700 font-medium">Olá, {profile.name}!</span>
+                <Button onClick={handleLogout} variant="outline" size="sm">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sair
+                </Button>
+              </>
             ) : (
               <Button asChild variant="outline" size="sm">
                 <Link to="/login">

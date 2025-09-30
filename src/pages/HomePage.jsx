@@ -9,6 +9,8 @@ import { TagFilter } from '../components/TagFilter.jsx';
 import { getPoints } from '../lib/supabase.js';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { EnhancedReservationForm } from '../components/EnhancedReservationForm.jsx';
+import { useUser } from '../contexts/UserContext.jsx'; // Importa o hook useUser
+import { ClientOrdersSummary } from '../components/ClientOrdersSummary.jsx'; // Importa o novo componente
 
 const mapContainerStyle = {
   width: '100%',
@@ -31,6 +33,7 @@ const ICONS = {
 };
 
 function HomePage() {
+  const { profile, loading: userLoading } = useUser(); // Obtém o perfil do usuário
   const [points, setPoints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedPoint, setSelectedPoint] = useState(null);
@@ -235,7 +238,15 @@ function HomePage() {
         </div>
 
         <div>
-          {showReservationForm ? (
+          {userLoading ? (
+            <Card className="h-full flex flex-col items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+              <p className="text-gray-500 mt-2">Carregando perfil...</p>
+            </Card>
+          ) : profile ? (
+            // Se o usuário estiver logado, mostra o resumo dos pedidos
+            <ClientOrdersSummary onOrderActionSuccess={loadPoints} />
+          ) : showReservationForm ? (
             <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
                 <div className="p-6">
@@ -257,6 +268,7 @@ function HomePage() {
               </div>
             </div>
           ) : (
+            // Se o usuário não estiver logado, mostra o carrinho de novas reservas
             <Cart
               items={cartItems}
               onRemove={handleRemoveFromCart}
