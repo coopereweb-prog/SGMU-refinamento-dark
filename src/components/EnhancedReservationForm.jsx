@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createOrder } from '../lib/supabase.js';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
@@ -163,15 +162,21 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
     );
   }
 
+  // Estilos para os inputs padrão
+  const inputClasses = "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
+  
+  // Estilos para os inputs de erro
+  const inputErrorClasses = `${inputClasses} border-destructive`;
+
   return (
     <div className="space-y-4">
       {showLoginOption ? (
-        <div key={key} className="space-y-4"> {/* Adicionando key aqui */}
+        <div key={key} className="space-y-4">
           <h3 className="text-lg font-semibold">Já tem uma conta?</h3>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="login-email">E-mail</Label>
-              <Input 
+              <input 
                 id="login-email" 
                 type="email" 
                 placeholder="seu@email.com" 
@@ -179,17 +184,19 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
                 value={loginData.email} 
                 onChange={handleLoginInputChange} 
                 disabled={loading}
+                className={error ? inputErrorClasses : inputClasses}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="login-password">Senha</Label>
-              <Input 
+              <input 
                 id="login-password" 
                 type="password" 
                 required 
                 value={loginData.password} 
                 onChange={handleLoginInputChange} 
                 disabled={loading}
+                className={error ? inputErrorClasses : inputClasses}
               />
             </div>
 
@@ -239,62 +246,67 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
             <form onSubmit={handleCreateAccountAndReserve} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome Completo</Label>
-                <Input 
+                <input 
                   id="name" 
                   type="text" 
                   placeholder="Seu nome" 
                   required 
                   value={customerData.name} 
                   onChange={handleInputChange} 
-                  disabled={loading} 
+                  disabled={loading}
+                  className={inputClasses}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
-                <Input 
+                <input 
                   id="email" 
                   type="email" 
                   placeholder="seu@email.com" 
                   required 
                   value={customerData.email} 
                   onChange={handleInputChange} 
-                  disabled={loading} 
+                  disabled={loading}
+                  className={inputClasses}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Telefone / WhatsApp</Label>
-                <Input 
+                <input 
                   id="phone" 
                   type="tel" 
                   placeholder="(19) 99999-9999" 
                   required 
                   value={customerData.phone} 
                   onChange={handleInputChange} 
-                  disabled={loading} 
+                  disabled={loading}
+                  className={inputClasses}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
-                <Input 
+                <input 
                   id="password" 
                   type="password" 
                   placeholder="Crie uma senha" 
                   required 
                   value={customerData.password} 
                   onChange={handleInputChange} 
-                  disabled={loading} 
+                  disabled={loading}
+                  className={inputClasses}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-                <Input 
+                <input 
                   id="confirmPassword" 
                   type="password" 
                   placeholder="Confirme sua senha" 
                   required 
                   value={customerData.confirmPassword} 
                   onChange={handleInputChange} 
-                  disabled={loading} 
+                  disabled={loading}
+                  className={inputClasses}
                 />
               </div>
 
@@ -324,38 +336,41 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
             <form onSubmit={handleReserveAsGuest} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome Completo</Label>
-                <Input 
+                <input 
                   id="name" 
                   type="text" 
                   placeholder="Seu nome" 
                   required 
                   value={customerData.name} 
                   onChange={handleInputChange} 
-                  disabled={loading} 
+                  disabled={loading}
+                  className={inputClasses}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
-                <Input 
+                <input 
                   id="email" 
                   type="email" 
                   placeholder="seu@email.com" 
                   required 
                   value={customerData.email} 
                   onChange={handleInputChange} 
-                  disabled={loading} 
+                  disabled={loading}
+                  className={inputClasses}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Telefone / WhatsApp</Label>
-                <Input 
+                <input 
                   id="phone" 
                   type="tel" 
                   placeholder="(19) 99999-9999" 
                   required 
                   value={customerData.phone} 
                   onChange={handleInputChange} 
-                  disabled={loading} 
+                  disabled={loading}
+                  className={inputClasses}
                 />
               </div>
 
