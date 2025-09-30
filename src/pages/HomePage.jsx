@@ -11,8 +11,8 @@ import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { EnhancedReservationForm } from '../components/EnhancedReservationForm.jsx';
 import { useUser } from '../contexts/UserContext.jsx';
 import { ClientOrdersSummary } from '../components/ClientOrdersSummary.jsx';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'; // Importação adicionada
-import { Loader2 } from 'lucide-react'; // Importação adicionada para o Loader2
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
 
 const mapContainerStyle = {
   width: '100%',
@@ -174,14 +174,12 @@ function HomePage() {
   };
 
   const handleReservationSuccess = () => {
-    // Show notification
     if (typeof window.showOrderCreatedNotification === 'function') {
-      // In a real implementation, we would pass the actual order ID
       window.showOrderCreatedNotification('ORDER_ID');
     }
     
     setCartItems([]);
-    loadPoints(); // Recarrega os pontos para atualizar o mapa
+    loadPoints();
     setShowReservationForm(false);
   };
 
@@ -246,17 +244,17 @@ function HomePage() {
               <p className="text-gray-500 mt-2">Carregando perfil...</p>
             </Card>
           ) : profile ? (
-            // Se o usuário estiver logado, mostra o resumo dos pedidos
             <ClientOrdersSummary onOrderActionSuccess={loadPoints} />
           ) : showReservationForm ? (
             <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
-                <div className="p-6">
+                {/* Adicionando z-index alto para garantir visibilidade */}
+                <div className="p-6 relative z-60">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-semibold">Finalizar Reserva</h3>
                     <button 
                       onClick={() => setShowReservationForm(false)}
-                      className="text-gray-500 hover:text-gray-700"
+                      className="text-gray-500 hover:text-gray-700 z-60"
                     >
                       ✕
                     </button>
@@ -270,7 +268,6 @@ function HomePage() {
               </div>
             </div>
           ) : (
-            // Se o usuário não estiver logado, mostra o carrinho de novas reservas
             <Cart
               items={cartItems}
               onRemove={handleRemoveFromCart}
