@@ -1,20 +1,15 @@
-import { AlertTriangle } from 'lucide-react';
+// A importação do AlertTriangle não é mais necessária para este teste
+// import { AlertTriangle } from 'lucide-react';
 
 export const WhatsAppButton = () => {
-  const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER;
+  // **TESTE:** A leitura da variável de ambiente foi temporariamente removida.
+  // const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER;
 
-  if (!whatsappNumber) {
-    // Mantém o estado de erro visual para ajudar a diagnosticar problemas de .env
-    return (
-      <div
-        className="fixed bottom-6 right-6 bg-gray-400 text-white p-4 rounded-full shadow-lg flex items-center gap-2 z-[100]"
-        title="O número do WhatsApp não está configurado. Verifique o ficheiro .env e reinicie o servidor."
-      >
-        <AlertTriangle size={28} />
-        <span className="text-sm hidden sm:inline">Número não configurado</span>
-      </div>
-    );
-  }
+  // **TESTE:** O seu número foi colocado diretamente no código.
+  const whatsappNumber = '5519996850973';
+
+  // O bloco de erro 'if' foi removido, pois o número agora está garantido.
+  // if (!whatsappNumber) { ... }
 
   const whatsappUrl = `https://wa.me/${whatsappNumber}`;
 
@@ -26,7 +21,6 @@ export const WhatsAppButton = () => {
       className="fixed bottom-6 right-6 bg-green-500 text-white p-3 rounded-full shadow-lg hover:bg-green-600 transition-transform hover:scale-110 z-[100]"
       aria-label="Contactar no WhatsApp"
     >
-      {/* **ALTERADO:** Substituído o ícone por uma tag de imagem para usar o seu logótipo */}
       <img 
         src="/whatsapp-logo.png" 
         alt="WhatsApp" 
