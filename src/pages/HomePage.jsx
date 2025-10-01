@@ -187,12 +187,12 @@ function HomePage() {
     <div className="flex flex-col h-screen bg-gray-50">
       <Header />
       <main className="flex-grow p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-[350px_1fr_350px] gap-6">
-        <div className="space-y-6">
+        <div className="space-y-6 order-2 lg:order-1">
           {loading ? <Skeleton className="h-48 w-full" /> : <InfoPanel points={points} />}
           <TagFilter onFilterChange={setSelectedTags} />
         </div>
 
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-[60vh] lg:h-full order-1 lg:order-2">
           <div className="mb-4 text-center">
             <h2 className="text-xl font-bold text-gray-700">Mapa Interativo - Pontos de Instalação</h2>
             <p className="text-sm text-gray-500">Clique nos marcadores para ver detalhes e adicionar ao carrinho</p>
@@ -237,7 +237,7 @@ function HomePage() {
           </div>
         </div>
 
-        <div>
+        <div className="order-3 lg:order-3">
           {userLoading ? (
             <Card className="h-full flex flex-col items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
