@@ -184,9 +184,9 @@ function HomePage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
-      <main className="flex-grow p-4 lg:p-6 flex flex-col lg:grid lg:grid-cols-[350px_1fr_350px] gap-6 overflow-y-auto lg:overflow-hidden">
+      <main className="flex-grow p-4 lg:p-6 flex flex-col lg:grid lg:grid-cols-[350px_1fr_350px] gap-6">
         
         <div className="space-y-6 order-2 lg:order-1 lg:overflow-y-auto">
           {loading ? <Skeleton className="h-48 w-full" /> : <InfoPanel points={points} />}
