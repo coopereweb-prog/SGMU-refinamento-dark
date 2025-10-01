@@ -13,9 +13,17 @@ export const UserProvider = ({ children }) => {
     setLoading(true);
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      // Define o estado de recuperação de senha APENAS para esse evento.
-      // Reseta em qualquer outro estado de sessão.
-      setIsPasswordRecovery(_event === 'PASSWORD_RECOVERY');
+
+      // Lógica aprimorada para o estado de recuperação de senha
+      if (_event === 'PASSWORD_RECOVERY') {
+        setIsPasswordRecovery(true);
+      } else if (_event === 'SIGNED_IN' || _event === 'SIGNED_OUT') {
+        // Reseta o estado apenas em eventos explícitos de login ou logout
+        setIsPasswordRecovery(false);
+      }
+      // Para outros eventos como USER_UPDATED, o estado de isPasswordRecovery não é alterado,
+      // mantendo o fluxo de recuperação intacto.
+
       setLoading(false);
     });
 
