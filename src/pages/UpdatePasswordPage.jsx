@@ -7,47 +7,17 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { useUser } from '../contexts/UserContext'; // Importa o hook do contexto
 
 function UpdatePasswordPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isValidSession, setIsValidSession] = useState(null);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        // Verificação direta e imediata da sessão
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        // Verifica se há uma sessão válida
-        if (session) {
-          // Obtém informações detalhadas do usuário
-          const { data: { user }, error: userError } = await supabase.auth.getUser();
-          
-          if (userError) {
-            console.error('Erro ao obter usuário:', userError);
-            setIsValidSession(false);
-            return;
-          }
-          
-          // Verifica se o usuário está autenticado (o que acontece após clicar no link de recuperação)
-          if (user && session.user) {
-            setIsValidSession(true);
-            return;
-          }
-        }
-        setIsValidSession(false);
-      } catch (err) {
-        console.error('Erro ao verificar sessão:', err);
-        setIsValidSession(false);
-      }
-    };
-    
-    checkSession();
-  }, []);
+  
+  // Usa o estado global do UserContext como fonte da verdade
+  const { session, loading: sessionLoading } = useUser();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -68,7 +38,7 @@ function UpdatePasswordPage() {
     setLoading(true);
 
     try {
-      const { data, error: updateError } = await supabase.auth.updateUser({ password });
+      const { error: updateError } = await supabase.auth.updateUser({ password });
       
       if (updateError) throw updateError;
 
@@ -76,10 +46,9 @@ function UpdatePasswordPage() {
         description: 'A sua senha foi alterada com sucesso. Você será redirecionado para fazer login.',
       });
 
-      // Desloga o usuário após atualizar a senha
+      // Desloga o utilizador após atualizar a senha para forçar um novo login
       await supabase.auth.signOut();
       
-      // Aguarda um pouco antes de redirecionar para o login
       setTimeout(() => {
         navigate('/login');
       }, 2000);
@@ -92,15 +61,18 @@ function UpdatePasswordPage() {
     }
   };
 
-  // Enquanto verifica a sessão
-  if (isValidSession === null) {
+  // Enquanto o contexto verifica a sessão
+  if (sessionLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
         <Loader2 className="h-8 w-8 animate-spin text-gray-500 mb-4" />
-        <p className="text-gray-600">Verificando sua sessão...</p>
+        <p className="text-gray-600">A verificar a sua sessão...</p>
       </div>
     );
   }
+
+  // Se não houver sessão após o carregamento, o link é inválido/expirado
+  const isValidSession = !!session;
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -110,7 +82,7 @@ function UpdatePasswordPage() {
           <CardDescription>
             {isValidSession 
               ? "Insira e confirme a sua nova senha abaixo."
-              : "Link de recuperação inválido ou expirado. Não foi possível validar a sua sessão."
+              : "Link de recuperação inválido ou expirado. Por favor, solicite um novo."
             }
           </CardDescription>
         </CardHeader>
@@ -147,15 +119,10 @@ function UpdatePasswordPage() {
               </Button>
             </form>
           ) : (
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600 text-center">
-                Não foi possível validar sua sessão de recuperação. Isso pode acontecer se:
+            <div className="space-y-4 text-center">
+              <p className="text-sm text-gray-600">
+                Não foi possível validar a sua sessão de recuperação.
               </p>
-              <ul className="text-sm text-gray-600 list-disc pl-5 space-y-1">
-                <li>O link de recuperação expirou</li>
-                <li>O link já foi utilizado</li>
-                <li>Houve um problema com o processo de autenticação</li>
-              </ul>
               <Button className="w-full" onClick={() => navigate('/login')}>
                 Voltar para o Login
               </Button>
