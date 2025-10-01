@@ -1,30 +1,26 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
+import { MessageCircle } from 'lucide-react';
 
-export function WhatsAppButton() {
-  const whatsappNumber = '5519996850973'; // Seu número de WhatsApp
-  const message = 'Olá! Gostaria de mais informações sobre os serviços.'; // Mensagem pré-definida
+const WhatsAppButton = () => {
+  const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER;
+  
+  if (!whatsappNumber) {
+    // Não renderiza o botão se o número não estiver definido no .env
+    return null;
+  }
 
-  const whatsappLink = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+  const whatsappUrl = `https://wa.me/${whatsappNumber}`;
 
   return (
-    <a 
-      href={whatsappLink} 
-      target="_blank" 
+    <a
+      href={whatsappUrl}
+      target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-6 right-6 z-50"
+      className="fixed bottom-6 right-6 bg-green-500 text-white p-4 rounded-full shadow-lg hover:bg-green-600 transition-transform hover:scale-110 z-50"
+      aria-label="Contactar no WhatsApp"
     >
-      <Button 
-        className="rounded-full w-14 h-14 shadow-lg bg-green-500 hover:bg-green-600 transition-all duration-300 flex items-center justify-center p-0"
-        aria-label="Fale conosco pelo WhatsApp"
-      >
-        {/* Usará a imagem que você adicionar na pasta public */}
-        <img 
-          src="/whatsapp-logo.png" 
-          alt="Logomarca do WhatsApp" 
-          className="h-8 w-8" 
-        />
-      </Button>
+      <MessageCircle size={28} />
     </a>
   );
-}
+};
+
+export default WhatsAppButton;
