@@ -11,7 +11,7 @@ import UserManagementPage from './pages/UserManagementPage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import { Toaster } from '@/components/ui/sonner';
 import { NotificationSystem } from './components/NotificationSystem';
-// import { WhatsAppButton } from './components/WhatsAppButton.jsx'; // Importa o novo componente
+import { WhatsAppButton } from './components/WhatsAppButton.jsx'; // Importa o novo componente
 
 function App() {
   return (
@@ -76,7 +76,7 @@ function App() {
           }
         />
       </Routes>
-      {/* <WhatsAppButton /> */} {/* Adiciona o botão flutuante aqui */}
+      <WhatsAppButton /> {/* Adiciona o botão flutuante aqui */}
       <Toaster richColors />
     </>
   )
