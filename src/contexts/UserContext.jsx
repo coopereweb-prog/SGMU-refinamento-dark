@@ -12,13 +12,10 @@ export const UserProvider = ({ children }) => {
   useEffect(() => {
     setLoading(true);
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      // A correção crucial está aqui:
-      // Apenas definimos como 'true' no evento específico.
-      // Nunca o redefinimos para 'false' aqui, curando a "amnésia".
-      if (_event === 'PASSWORD_RECOVERY') {
-        setIsPasswordRecovery(true);
-      }
       setSession(session);
+      // Define o estado de recuperação de senha APENAS para esse evento.
+      // Reseta em qualquer outro estado de sessão.
+      setIsPasswordRecovery(_event === 'PASSWORD_RECOVERY');
       setLoading(false);
     });
 
@@ -26,7 +23,9 @@ export const UserProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    if (session?.user) {
+    // A CONDIÇÃO MAIS IMPORTANTE:
+    // Só busca o perfil se houver uma sessão E NÃO ESTIVER no fluxo de recuperação de senha.
+    if (session?.user && !isPasswordRecovery) {
       const fetchProfile = async () => {
         const { data: userProfile } = await supabase
           .from('profiles')
@@ -37,9 +36,10 @@ export const UserProvider = ({ children }) => {
       };
       fetchProfile();
     } else {
+      // Garante que o perfil seja nulo se não houver sessão ou se estiver em recuperação.
       setProfile(null);
     }
-  }, [session]);
+  }, [session, isPasswordRecovery]); // Adiciona isPasswordRecovery como dependência
 
   const value = {
     session,

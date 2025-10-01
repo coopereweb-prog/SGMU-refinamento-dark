@@ -4,14 +4,20 @@ import { toast } from 'sonner';
 
 // Este componente agora aceita uma prop `allowedRoles`
 function ProtectedRoute({ children, allowedRoles }) {
-  const { profile, loading } = useUser();
+  const { profile, loading, isPasswordRecovery } = useUser();
 
   // Enquanto o perfil está a ser carregado, mostramos uma mensagem
   if (loading) {
     return <div>A verificar permissões...</div>;
   }
 
-  // Se não houver perfil, o utilizador não está logado. Redireciona para o login.
+  // Se o utilizador está no meio de uma recuperação de senha, ele não deve
+  // aceder a nenhuma rota protegida. Redireciona-o para a página correta.
+  if (isPasswordRecovery) {
+    return <Navigate to="/update-password" replace />;
+  }
+
+  // Se não houver perfil (e não estamos em recuperação), o utilizador não está logado.
   if (!profile) {
     return <Navigate to="/login" replace />;
   }
