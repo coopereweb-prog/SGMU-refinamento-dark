@@ -1,6 +1,6 @@
 import { MessageCircle } from 'lucide-react';
 
-const WhatsAppButton = () => {
+export const WhatsAppButton = () => {
   const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER;
   
   if (!whatsappNumber) {
@@ -22,5 +22,3 @@ const WhatsAppButton = () => {
     </a>
   );
 };
-
-export default WhatsAppButton;

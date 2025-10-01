@@ -13,7 +13,7 @@ import { useUser } from '../contexts/UserContext.jsx';
 import { ClientOrdersSummary } from '../components/ClientOrdersSummary.jsx';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-import WhatsAppButton from '../components/WhatsAppButton.jsx';
+import { WhatsAppButton } from '../components/WhatsAppButton.jsx';
 
 const mapContainerStyle = {
   width: '100%',
