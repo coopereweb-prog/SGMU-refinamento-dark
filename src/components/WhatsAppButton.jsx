@@ -3,6 +3,9 @@ import { MessageCircle } from 'lucide-react';
 export const WhatsAppButton = () => {
   const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER;
   
+  // Log de diagnóstico para o terminal e para a consola do browser
+  console.log('VITE_WHATSAPP_NUMBER:', whatsappNumber);
+
   if (!whatsappNumber) {
     // Não renderiza o botão se o número não estiver definido no .env
     return null;
