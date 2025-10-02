@@ -9,30 +9,28 @@ import { ManagePointsPage } from '@/pages/ManagePointsPage';
 import { ManageTagsPage } from '@/pages/ManageTagsPage';
 import { ManageUsersPage } from '@/pages/ManageUsersPage';
 import LoginPage from '@/pages/LoginPage';
+import UpdatePasswordPage from '@/pages/UpdatePasswordPage';
+import FieldTechnicianPage from '@/pages/FieldTechnicianPage';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import ClientDashboardPage from '@/pages/ClientDashboardPage';
 
 function App() {
   const ADMIN_ROLES = ['admin', 'operations_manager'];
+  const TECHNICIAN_ROLES = ['admin', 'operations_manager', 'field_technician'];
 
   return (
-    <AuthProvider>
-      <UserProvider>
-        <Router>
+    <Router>
+      <AuthProvider>
+        <UserProvider>
           <Routes>
+            {/* Rotas com o layout principal (cabeçalho, etc.) */}
             <Route element={<AppLayout />}>
-              {/* Rotas Públicas */}
               <Route path="/" element={<HomePage />} />
-              <Route path="/login" element={<LoginPage />} />
-              
-              {/* Rotas Protegidas para Clientes */}
               <Route path="/dashboard" element={
                 <ProtectedRoute allowedRoles={['client']}>
                   <ClientDashboardPage />
                 </ProtectedRoute>
               } />
-
-              {/* Rotas Protegidas para Admin */}
               <Route path="/admin" element={
                 <ProtectedRoute allowedRoles={ADMIN_ROLES}>
                   <AdminPage />
@@ -54,11 +52,20 @@ function App() {
                 </ProtectedRoute>
               } />
             </Route>
+
+            {/* Rotas de página inteira (sem o layout principal) */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/update-password" element={<UpdatePasswordPage />} />
+            <Route path="/technician-panel" element={
+              <ProtectedRoute allowedRoles={TECHNICIAN_ROLES}>
+                <FieldTechnicianPage />
+              </ProtectedRoute>
+            } />
           </Routes>
-        </Router>
-        <SonnerToaster />
-      </UserProvider>
-    </AuthProvider>
+          <SonnerToaster />
+        </UserProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 
