@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { Loader2, UserPlus } from 'lucide-react';
+import { WhatsAppButton } from '../components/WhatsAppButton';
 
 function LoginPage() {
   const [email, setEmail] = useState('');
@@ -138,6 +139,7 @@ function LoginPage() {
           </div>
         </div>
       </div>
+      <WhatsAppButton />
     </div>
   );
 }
