@@ -1,63 +1,105 @@
-import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useUser } from '../contexts/UserContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
 import { Button } from '@/components/ui/button';
-import { LogIn, LogOut } from 'lucide-react';
-import { supabase } from '../lib/supabase'; // Importa o cliente Supabase
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { LayoutDashboard, LogOut, User as UserIcon } from 'lucide-react';
 
-function Header() {
-  const { profile, loading } = useUser();
+export function Header() {
+  const { user, signOut } = useAuth();
+  const { profile } = useUser();
   const navigate = useNavigate();
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut(); // Adiciona a chamada para encerrar a sessão
+  const handleSignOut = async () => {
+    await signOut();
     navigate('/login');
   };
 
+  const getDashboardPath = () => {
+    if (!profile) return '/';
+    const role = profile.role;
+    if (role === 'admin' || role === 'operations_manager') {
+      return '/admin';
+    }
+    if (role === 'client') {
+      return '/dashboard';
+    }
+    if (role === 'field_technician') {
+      return '/technician-panel';
+    }
+    return '/';
+  };
+
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    const names = name.split(' ');
+    if (names.length > 1) {
+      return `${names[0][0]}${names[names.length - 1][0]}`;
+    }
+    return name.substring(0, 2);
+  };
+
   return (
-    <header className="bg-white shadow-md border-b">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex items-center justify-between">
-          {/* Lado esquerdo: Logo e Título */}
-          <div className="flex items-center space-x-4">
-            <Link to="/">
-              <img 
-                src="/logo.png" 
-                alt="Logomarca do SGUM" 
-                className="h-12 w-auto"
-              />
+    <header className="bg-white shadow-sm sticky top-0 z-50">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          <div className="flex-shrink-0">
+            <Link to="/" className="text-2xl font-bold text-gray-800">
+              SGMU
             </Link>
-            <div>
-              <h1 className="text-xl font-bold text-gray-800">SGUM</h1>
-              <p className="text-xs text-gray-500">Sistema de Gestão de mobiliário Urbano</p>
-            </div>
           </div>
-          
-          {/* Lado direito: Botão de Login/Logout e Saudação */}
-          <div className="flex items-center space-x-4">
-            {loading ? (
-              <span className="text-sm text-gray-500">Carregando...</span>
-            ) : profile ? (
-              <>
-                <span className="text-gray-700 font-medium">Olá, {profile.name}!</span>
-                <Button onClick={handleLogout} variant="outline" size="sm">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sair
-                </Button>
-              </>
+          <nav className="flex items-center space-x-4">
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={profile?.avatar_url} alt={profile?.name || 'User'} />
+                      <AvatarFallback>{getInitials(profile?.name)}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{profile?.name}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user.email}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate(getDashboardPath())}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate(getDashboardPath())}>
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    <span>Perfil</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sair</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
-              <Button asChild variant="outline" size="sm">
-                <Link to="/login">
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Área Restrita
-                </Link>
+              <Button asChild>
+                <Link to="/login">Entrar</Link>
               </Button>
             )}
-          </div>
+          </nav>
         </div>
       </div>
     </header>
   );
 }
-
-export default Header;
