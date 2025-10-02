@@ -1,59 +1,49 @@
 import { createContext, useState, useEffect, useContext } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 const UserContext = createContext(null);
 
-export const UserProvider = ({ children }) => {
-  const [session, setSession] = useState(null);
+export function UserProvider({ children }) {
+  const { user } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
-  useEffect(() => {
-    setLoading(true);
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-
-      // Lógica aprimorada para o estado de recuperação de senha
-      if (_event === 'PASSWORD_RECOVERY') {
-        setIsPasswordRecovery(true);
-      } else if (_event === 'SIGNED_IN' || _event === 'SIGNED_OUT') {
-        // Reseta o estado apenas em eventos explícitos de login ou logout
-        setIsPasswordRecovery(false);
-      }
-      // Para outros eventos como USER_UPDATED, o estado de isPasswordRecovery não é alterado,
-      // mantendo o fluxo de recuperação intacto.
-
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    // A CONDIÇÃO MAIS IMPORTANTE:
-    // Só busca o perfil se houver uma sessão E NÃO ESTIVER no fluxo de recuperação de senha.
-    if (session?.user && !isPasswordRecovery) {
-      const fetchProfile = async () => {
-        const { data: userProfile } = await supabase
+  const fetchProfile = async () => {
+    if (user) {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', session.user.id)
+          .eq('id', user.id)
           .single();
-        setProfile(userProfile || null);
-      };
-      fetchProfile();
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+          throw error;
+        }
+        
+        setProfile(data);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      } finally {
+        setLoading(false);
+      }
     } else {
-      // Garante que o perfil seja nulo se não houver sessão ou se estiver em recuperação.
+      // Se não há usuário, não há perfil e o carregamento terminou.
       setProfile(null);
+      setLoading(false);
     }
-  }, [session, isPasswordRecovery]); // Adiciona isPasswordRecovery como dependência
+  };
+
+  useEffect(() => {
+    fetchProfile();
+  }, [user]);
 
   const value = {
-    session,
     profile,
     loading,
-    isPasswordRecovery,
+    refreshProfile: fetchProfile, // Expõe uma função para recarregar o perfil
   };
 
   return (
@@ -61,12 +51,12 @@ export const UserProvider = ({ children }) => {
       {children}
     </UserContext.Provider>
   );
-};
+}
 
-export const useUser = () => {
+export function useUser() {
   const context = useContext(UserContext);
   if (context === undefined) {
-    throw new Error('useUser deve ser usado dentro de um UserProvider');
+    throw new Error('useUser must be used within a UserProvider');
   }
   return context;
-};
+}

@@ -11,31 +11,49 @@ import { ManageTagsPage } from '@/pages/ManageTagsPage';
 import { ManageUsersPage } from '@/pages/ManageUsersPage';
 import LoginPage from '@/pages/LoginPage';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { AdminRoute } from '@/components/AdminRoute';
-import { ClientDashboardPage } from '@/pages/ClientDashboardPage';
+import ClientDashboardPage from '@/pages/ClientDashboardPage';
 
 function App() {
+  const ADMIN_ROLES = ['admin', 'operations_manager'];
+
   return (
     <AuthProvider>
       <UserProvider>
         <Router>
           <Routes>
             <Route element={<AppLayout />}>
+              {/* Rotas Públicas */}
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<LoginPage />} />
               
-              {/* Rotas Protegidas */}
+              {/* Rotas Protegidas para Clientes */}
               <Route path="/dashboard" element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['client']}>
                   <ClientDashboardPage />
                 </ProtectedRoute>
               } />
 
-              {/* Rotas de Admin */}
-              <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
-              <Route path="/admin/points" element={<AdminRoute><ManagePointsPage /></AdminRoute>} />
-              <Route path="/admin/tags" element={<AdminRoute><ManageTagsPage /></AdminRoute>} />
-              <Route path="/admin/users" element={<AdminRoute><ManageUsersPage /></AdminRoute>} />
+              {/* Rotas Protegidas para Admin */}
+              <Route path="/admin" element={
+                <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                  <AdminPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/points" element={
+                <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                  <ManagePointsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/tags" element={
+                <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                  <ManageTagsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/users" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <ManageUsersPage />
+                </ProtectedRoute>
+              } />
             </Route>
           </Routes>
         </Router>

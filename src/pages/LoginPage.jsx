@@ -1,74 +1,66 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 function LoginPage() {
-  const [view, setView] = useState('signIn'); // 'signIn' ou 'forgotPassword'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [message, setMessage] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || null;
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
-    setMessage(null);
 
     try {
-      if (view === 'signIn') {
-        const { data, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-        if (signInError) throw signInError;
+      if (error) throw error;
 
-        // Se o login for bem-sucedido, busca o perfil para decidir para onde redirecionar
-        if (data.user) {
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', data.user.id)
-            .single();
+      // Se o login for bem-sucedido, busca o perfil para decidir para onde redirecionar
+      if (data.user) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
 
-          if (profileError) throw profileError;
+        if (profileError) throw profileError;
 
-          // Redireciona com base no papel do usuário
-          switch (profile.role) {
-            case 'admin':
-            case 'operations_manager':
-              navigate('/admin');
-              break;
-            case 'field_technician':
-              navigate('/technician-panel');
-              break;
-            case 'client':
-              navigate('/my-account'); // Redirecionamento atualizado para clientes
-              break;
-            default:
-              navigate('/');
-          }
+        // Se o usuário tentou acessar uma página antes do login, redireciona para lá.
+        if (from) {
+          navigate(from, { replace: true });
+          return;
         }
 
-      } else if (view === 'forgotPassword') {
-        const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/update-password`,
-        });
-        if (resetError) throw resetError;
-        setMessage('Se um e-mail válido foi inserido, um link de recuperação foi enviado.');
+        // Redirecionamento padrão com base na função
+        switch (profile.role) {
+          case 'admin':
+          case 'operations_manager':
+            navigate('/admin');
+            break;
+          case 'client':
+            navigate('/dashboard');
+            break;
+          default:
+            navigate('/');
+        }
       }
     } catch (err) {
-      setError(err.message || 'Ocorreu um erro. Por favor, tente novamente.');
-      toast.error('Falha no Login', { description: err.message });
-      console.error('Erro:', err);
+      toast.error('Falha no Login', {
+        description: err.message || 'Verifique suas credenciais e tente novamente.',
+      });
     } finally {
       setLoading(false);
     }
@@ -78,47 +70,23 @@ function LoginPage() {
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <Card className="w-full max-w-md mx-4">
         <CardHeader className="text-center">
-          {view === 'signIn' && <CardTitle className="text-2xl">Área Restrita</CardTitle>}
-          {view === 'forgotPassword' && <CardTitle className="text-2xl">Recuperar Senha</CardTitle>}
-          <CardDescription>
-            {view === 'signIn' && 'Insira as suas credenciais para aceder ao painel'}
-            {view === 'forgotPassword' && 'Insira o seu e-mail para receber um link de recuperação'}
-          </CardDescription>
+          <CardTitle className="text-2xl">Área Restrita</CardTitle>
+          <CardDescription>Insira suas credenciais para acessar o painel</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
               <Input id="email" type="email" placeholder="seu@email.com" required value={email} onChange={(e) => setEmail(e.target.value)} disabled={loading} />
             </div>
-
-            {view === 'signIn' && (
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} disabled={loading} />
-              </div>
-            )}
-
-            {error && <p className="text-sm text-red-500 text-center">{error}</p>}
-            {message && <p className="text-sm text-green-600 text-center">{message}</p>}
-
+            <div className="space-y-2">
+              <Label htmlFor="password">Senha</Label>
+              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} disabled={loading} />
+            </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'A processar...' : (view === 'signIn' ? 'Entrar' : 'Enviar Link')}
+              {loading ? <Loader2 className="animate-spin" /> : 'Entrar'}
             </Button>
           </form>
-
-          <div className="mt-4 text-center text-sm">
-            {view === 'signIn' ? (
-              <button onClick={() => setView('forgotPassword')} className="underline">Esqueceu a senha?</button>
-            ) : (
-              <button onClick={() => setView('signIn')} className="underline">Voltar para o Login</button>
-            )}
-          </div>
-           <div className="mt-6 text-center text-sm">
-            <Link to="/" className="underline">
-              Ir para o Mapa
-            </Link>
-          </div>
         </CardContent>
       </Card>
     </div>

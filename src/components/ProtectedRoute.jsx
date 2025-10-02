@@ -1,38 +1,37 @@
-import { Navigate } from 'react-router-dom';
-import { useUser } from '../contexts/UserContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
+import { Navigate, useLocation } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-// Este componente agora aceita uma prop `allowedRoles`
-function ProtectedRoute({ children, allowedRoles }) {
-  const { profile, loading, isPasswordRecovery } = useUser();
+export function ProtectedRoute({ children, allowedRoles }) {
+  const { user, session, loading: authLoading } = useAuth();
+  const { profile, loading: profileLoading } = useUser();
+  const location = useLocation();
 
-  // Enquanto o perfil está a ser carregado, mostramos uma mensagem
-  if (loading) {
-    return <div>A verificar permissões...</div>;
+  const isLoading = authLoading || profileLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
 
-  // Se o utilizador está no meio de uma recuperação de senha, ele não deve
-  // aceder a nenhuma rota protegida. Redireciona-o para a página correta.
-  if (isPasswordRecovery) {
-    return <Navigate to="/update-password" replace />;
+  if (!user || !session) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Se não houver perfil (e não estamos em recuperação), o utilizador não está logado.
-  if (!profile) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // Se a rota exige papéis específicos e o papel do utilizador não está na lista,
-  // redireciona para a página inicial e mostra um aviso.
-  if (allowedRoles && !allowedRoles.includes(profile.role)) {
+  // Se a rota exige papéis específicos e o perfil do usuário não está na lista,
+  // nega o acesso.
+  if (allowedRoles && !allowedRoles.includes(profile?.role)) {
     toast.error('Acesso Negado', {
-      description: 'Você não tem permissão para aceder a esta página.',
+      description: 'Você não tem permissão para acessar esta página.',
     });
-    return <Navigate to="/" replace />;
+    // Redireciona para a página inicial ou para o dashboard do cliente se ele tiver um.
+    return <Navigate to={profile?.role === 'client' ? '/dashboard' : '/'} replace />;
   }
 
-  // Se todas as verificações passarem, renderiza a página protegida.
   return children;
 }
-
-export default ProtectedRoute;
