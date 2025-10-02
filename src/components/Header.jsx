@@ -51,30 +51,34 @@ export function Header() {
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 md:h-20"> {/* Altura responsiva */}
-          <Link to="/" className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+        <div className="flex items-center justify-between h-20 sm:h-20 md:h-20 lg:h-20"> {/* Altura consistente e maior para mobile */}
+          <Link to="/" className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-shrink-0">
             <img 
-              className="h-12 md:h-16 w-auto" // Tamanho do logo responsivo
+              className="h-12 sm:h-14 md:h-16 w-auto" 
               src="/logo.png" 
               alt="SGMU Logo" 
             />
-            <div className="min-w-0">
-              <span className="font-bold text-xl sm:text-2xl text-gray-800 tracking-tight"> {/* Fonte responsiva */}
+            <div className="min-w-0 hidden sm:block">
+              <span className="font-bold text-lg sm:text-xl md:text-2xl text-gray-800 tracking-tight block">
                 SGMU
               </span>
-              <p className="text-sm text-gray-500"> {/* Fonte responsiva */}
+              <p className="text-xs sm:text-sm text-gray-500 leading-tight">
                 Sistema de Gestão de Mobiliário Urbano
               </p>
             </div>
+            {/* Versão mobile-only do logo e texto */}
+            <div className="sm:hidden min-w-0 text-center">
+                <span className="font-bold text-lg text-gray-800 block">SGMU</span>
+            </div>
           </Link>
-          <nav className="flex items-center">
+          <nav className="flex items-center flex-shrink-0 ml-2">
             {authLoading ? (
               <Skeleton className="h-8 w-20 rounded-md" />
             ) : user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <Avatar className="h-8 w-8">
+                  <Button variant="ghost" className="relative h-9 w-9 rounded-full sm:h-8 sm:w-8">
+                    <Avatar className="h-9 w-9 sm:h-8 sm:w-8">
                       <AvatarImage src={profile?.avatar_url} alt={profile?.name || 'User'} />
                       <AvatarFallback>{getInitials(profile?.name)}</AvatarFallback>
                     </Avatar>
@@ -106,7 +110,7 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button asChild size="sm" className="md:size-auto">
+              <Button asChild size="sm" className="px-4 py-2 h-9 sm:h-auto sm:px-3 sm:py-1.5">
                 <Link to="/login">Entrar</Link>
               </Button>
             )}
