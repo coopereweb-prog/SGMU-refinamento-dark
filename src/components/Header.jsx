@@ -12,9 +12,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { LayoutDashboard, LogOut, User as UserIcon } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function Header() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
   const { profile } = useUser();
   const navigate = useNavigate();
 
@@ -67,7 +68,9 @@ export function Header() {
             </div>
           </Link>
           <nav className="flex items-center">
-            {user ? (
+            {authLoading ? (
+              <Skeleton className="h-8 w-20 rounded-md" />
+            ) : user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
