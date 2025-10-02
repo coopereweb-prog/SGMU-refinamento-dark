@@ -50,18 +50,18 @@ export function Header() {
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          <Link to="/" className="flex items-center space-x-3 min-w-0"> {/* Allow container to shrink */}
+        <div className="flex items-center justify-between h-16 md:h-20"> {/* Altura responsiva */}
+          <Link to="/" className="flex items-center space-x-2 sm:space-x-3 min-w-0">
             <img 
-              className="h-16 w-auto flex-shrink-0" // Prevent logo from shrinking
+              className="h-12 md:h-16 w-auto" // Tamanho do logo responsivo
               src="/logo.png" 
               alt="SGMU Logo" 
             />
-            <div className="min-w-0"> {/* Allow text block to shrink and wrap */}
-              <span className="font-bold text-2xl text-gray-800 tracking-tight">
+            <div className="min-w-0">
+              <span className="font-bold text-xl sm:text-2xl text-gray-800 tracking-tight"> {/* Fonte responsiva */}
                 SGMU
               </span>
-              <p className="text-xs text-gray-500">
+              <p className="text-[10px] sm:text-xs text-gray-500"> {/* Fonte responsiva */}
                 Sistema de Gestão de Mobiliário Urbano
               </p>
             </div>
