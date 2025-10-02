@@ -8,18 +8,17 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Inicia a sessão a partir dos dados atuais
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const getInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       setLoading(false);
-    });
+    };
 
-    // Escuta por mudanças no estado de autenticação
+    getInitialSession();
+
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
-        // Garante que o loading seja falso após a primeira verificação
-        if (loading) setLoading(false);
       }
     );
 
@@ -32,12 +31,13 @@ export function AuthProvider({ children }) {
     session,
     user: session?.user || null,
     signOut: () => supabase.auth.signOut(),
+    loading, // Expondo o estado de loading
   };
 
-  // Renderiza os filhos apenas quando o estado de loading inicial for concluído
+  // Renderiza os filhos imediatamente, passando o estado de loading pelo contexto.
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }

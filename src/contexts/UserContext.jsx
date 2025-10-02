@@ -5,11 +5,13 @@ import { useAuth } from '@/contexts/AuthContext';
 const UserContext = createContext(null);
 
 export function UserProvider({ children }) {
-  const { user } = useAuth();
+  const auth = useAuth();
+  const user = auth?.user; // Acesso seguro ao usuário
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async () => {
+    // Apenas busca o perfil se o usuário existir
     if (user) {
       setLoading(true);
       try {
@@ -30,12 +32,13 @@ export function UserProvider({ children }) {
         setLoading(false);
       }
     } else {
-      // Se não há usuário, não há perfil e o carregamento terminou.
+      // Se não há usuário, limpa o perfil e finaliza o carregamento.
       setProfile(null);
       setLoading(false);
     }
   };
 
+  // O useEffect reage à mudança do objeto 'user'
   useEffect(() => {
     fetchProfile();
   }, [user]);
@@ -43,7 +46,7 @@ export function UserProvider({ children }) {
   const value = {
     profile,
     loading,
-    refreshProfile: fetchProfile, // Expõe uma função para recarregar o perfil
+    refreshProfile: fetchProfile,
   };
 
   return (
