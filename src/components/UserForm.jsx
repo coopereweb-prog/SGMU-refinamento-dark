@@ -1,90 +1,127 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Loader2 } from 'lucide-react';
+
+const userSchema = z.object({
+  email: z.string().email({ message: "Por favor, insira um e-mail válido." }),
+  role: z.enum(['admin', 'operations_manager', 'field_technician', 'client']),
+  full_name: z.string().optional(),
+  phone: z.string().optional(),
+});
 
 export function UserForm({ user, onSave, onCancel, isInvite = false }) {
-  const [formData, setFormData] = useState({
-    email: '',
-    role: 'client',
-    full_name: '',
-    phone: '',
+  const form = useForm({
+    resolver: zodResolver(userSchema),
+    defaultValues: {
+      email: '',
+      role: 'client',
+      full_name: '',
+      phone: '',
+    },
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (user) {
-      setFormData({
+      form.reset({
         email: user.email || '',
         role: user.app_metadata?.role || 'client',
         full_name: user.user_metadata?.full_name || '',
         phone: user.user_metadata?.phone || '',
       });
+    } else {
+      form.reset({ email: '', role: 'client', full_name: '', phone: '' });
     }
-  }, [user]);
+  }, [user, form]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleRoleChange = (value) => {
-    setFormData(prev => ({ ...prev, role: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    await onSave(formData);
-    setIsSubmitting(false);
+  const onSubmit = async (values) => {
+    await onSave(values);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <Input
-        name="email"
-        type="email"
-        value={formData.email}
-        onChange={handleChange}
-        placeholder="Email"
-        required
-        disabled={!isInvite && user} // Disable email editing for existing users
-      />
-      {!isInvite && (
-        <>
-          <Input
-            name="full_name"
-            value={formData.full_name}
-            onChange={handleChange}
-            placeholder="Nome Completo"
-          />
-          <Input
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            placeholder="Telefone"
-          />
-        </>
-      )}
-      <Select value={formData.role} onValueChange={handleRoleChange}>
-        <SelectTrigger>
-          <SelectValue placeholder="Selecione o papel" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="admin">Admin</SelectItem>
-          <SelectItem value="operations_manager">Gerente de Operações</SelectItem>
-          <SelectItem value="field_technician">Técnico de Campo</SelectItem>
-          <SelectItem value="client">Cliente</SelectItem>
-        </SelectContent>
-      </Select>
-      <div className="flex justify-end space-x-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-          Cancelar
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? (isInvite ? 'Enviando convite...' : 'Salvando...') : (isInvite ? 'Convidar' : 'Salvar')}
-        </Button>
-      </div>
-    </form>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input
+                  type="email"
+                  placeholder="email@exemplo.com"
+                  {...field}
+                  disabled={!isInvite && !!user}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        {!isInvite && (
+          <>
+            <FormField
+              control={form.control}
+              name="full_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome Completo</FormLabel>
+                  <FormControl><Input placeholder="Nome do usuário" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Telefone</FormLabel>
+                  <FormControl><Input placeholder="(00) 00000-0000" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
+        )}
+        <FormField
+          control={form.control}
+          name="role"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Função</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a função" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="operations_manager">Gerente de Operações</SelectItem>
+                  <SelectItem value="field_technician">Técnico de Campo</SelectItem>
+                  <SelectItem value="client">Cliente</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="flex justify-end space-x-2 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel} disabled={form.formState.isSubmitting}>
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? <Loader2 className="animate-spin" /> : (isInvite ? 'Convidar' : 'Salvar')}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }

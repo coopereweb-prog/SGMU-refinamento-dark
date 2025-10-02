@@ -1,16 +1,18 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import { UserProvider } from './contexts/UserContext';
-import { Toaster } from "@/components/ui/toaster"
-import { AppLayout } from './components/AppLayout';
-import HomePage from './pages/HomePage';
-import { AdminPage } from './pages/AdminPage';
-import { ManagePointsPage } from './pages/ManagePointsPage';
-import { ManageTagsPage } from './pages/ManageTagsPage';
-import { ManageUsersPage } from './pages/ManageUsersPage';
-import LoginPage from './pages/LoginPage';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import { AdminRoute } from './components/AdminRoute';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { UserProvider } from '@/contexts/UserContext';
+import { Toaster as SonnerToaster } from "@/components/ui/sonner";
+import { Toaster as ShadcnToaster } from "@/components/ui/toaster";
+import { AppLayout } from '@/components/AppLayout';
+import HomePage from '@/pages/HomePage';
+import { AdminPage } from '@/pages/AdminPage';
+import { ManagePointsPage } from '@/pages/ManagePointsPage';
+import { ManageTagsPage } from '@/pages/ManageTagsPage';
+import { ManageUsersPage } from '@/pages/ManageUsersPage';
+import LoginPage from '@/pages/LoginPage';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { AdminRoute } from '@/components/AdminRoute';
+import { ClientDashboardPage } from '@/pages/ClientDashboardPage';
 
 function App() {
   return (
@@ -25,7 +27,7 @@ function App() {
               {/* Rotas Protegidas */}
               <Route path="/dashboard" element={
                 <ProtectedRoute>
-                  <p>User Dashboard - Placeholder</p>
+                  <ClientDashboardPage />
                 </ProtectedRoute>
               } />
 
@@ -37,7 +39,8 @@ function App() {
             </Route>
           </Routes>
         </Router>
-        <Toaster />
+        <ShadcnToaster />
+        <SonnerToaster />
       </UserProvider>
     </AuthProvider>
   );
