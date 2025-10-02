@@ -1,85 +1,46 @@
-import { Routes, Route } from 'react-router-dom'
-import HomePage from './pages/HomePage.jsx';
-import LoginPage from './pages/LoginPage.jsx';
-import AdminPage from './pages/AdminPage.jsx';
-import PointsManagementPage from './pages/PointsManagementPage.jsx';
-import TagsManagementPage from './pages/TagsManagementPage.jsx';
-import FieldTechnicianPage from './pages/FieldTechnicianPage.jsx';
-import UpdatePasswordPage from './pages/UpdatePasswordPage.jsx';
-import ClientDashboardPage from './pages/ClientDashboardPage.jsx';
-import UserManagementPage from './pages/UserManagementPage.jsx';
-import ProtectedRoute from './components/ProtectedRoute.jsx';
-import { Toaster } from '@/components/ui/sonner';
-import { NotificationSystem } from './components/NotificationSystem';
-import { WhatsAppButton } from './components/WhatsAppButton.jsx'; // Importa o novo componente
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { UserProvider } from './contexts/UserContext';
+import { Toaster } from "@/components/ui/toaster"
+import { AppLayout } from './components/AppLayout';
+import HomePage from './pages/HomePage';
+import { AdminPage } from './pages/AdminPage';
+import { ManagePointsPage } from './pages/ManagePointsPage';
+import { ManageTagsPage } from './pages/ManageTagsPage';
+import { ManageUsersPage } from './pages/ManageUsersPage';
+import LoginPage from './pages/LoginPage';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { AdminRoute } from './components/AdminRoute';
 
 function App() {
   return (
-    <>
-      <NotificationSystem />
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/update-password" element={<UpdatePasswordPage />} />
-        
-        {/* Admin Routes */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute allowedRoles={['admin', 'operations_manager']}>
-              <AdminPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/points"
-          element={
-            <ProtectedRoute allowedRoles={['admin', 'operations_manager']}>
-              <PointsManagementPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/tags"
-          element={
-            <ProtectedRoute allowedRoles={['admin', 'operations_manager']}>
-              <TagsManagementPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/users"
-          element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <UserManagementPage />
-            </ProtectedRoute>
-          }
-        />
+    <AuthProvider>
+      <UserProvider>
+        <Router>
+          <Routes>
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/login" element={<LoginPage />} />
+              
+              {/* Rotas Protegidas */}
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <p>User Dashboard - Placeholder</p>
+                </ProtectedRoute>
+              } />
 
-        {/* Technician Route */}
-        <Route
-          path="/technician-panel"
-          element={
-            <ProtectedRoute allowedRoles={['field_technician']}>
-              <FieldTechnicianPage />
-            </ProtectedRoute>
-          }
-        />
-        
-        {/* Client Route */}
-        <Route
-          path="/my-account"
-          element={
-            <ProtectedRoute allowedRoles={['client']}>
-              <ClientDashboardPage />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-      <WhatsAppButton /> {/* Adiciona o botão flutuante aqui */}
-      <Toaster richColors />
-    </>
-  )
+              {/* Rotas de Admin */}
+              <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+              <Route path="/admin/points" element={<AdminRoute><ManagePointsPage /></AdminRoute>} />
+              <Route path="/admin/tags" element={<AdminRoute><ManageTagsPage /></AdminRoute>} />
+              <Route path="/admin/users" element={<AdminRoute><ManageUsersPage /></AdminRoute>} />
+            </Route>
+          </Routes>
+        </Router>
+        <Toaster />
+      </UserProvider>
+    </AuthProvider>
+  );
 }
 
 export default App;

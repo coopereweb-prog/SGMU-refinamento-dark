@@ -1,9 +1,9 @@
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from 'lucide-react';
@@ -25,24 +25,43 @@ const baseSchema = z.object({
   address_city: z.string().min(1, 'A cidade é obrigatória.'),
   address_state: z.string().min(1, 'O estado é obrigatório.'),
   address_zip_code: z.string().min(8, 'O CEP é obrigatório e deve ter 8 dígitos.').max(9, 'O CEP deve ter no máximo 9 dígitos.'),
+  trade_name: z.string().optional(),
+  legal_name: z.string().optional(),
+  signatory_name: z.string().optional(),
+  signatory_cpf: z.string().optional(),
 });
 
-const cpfSchema = baseSchema.extend({
-  name: z.string().min(1, 'O nome completo é obrigatório.'),
-  document_number: z.string().regex(/^\d{11}$/, 'CPF inválido. Deve conter 11 dígitos.'),
-});
-
-const cnpjSchema = baseSchema.extend({
-  trade_name: z.string().min(1, 'O nome fantasia é obrigatório.'),
-  legal_name: z.string().min(1, 'A razão social é obrigatória.'),
-  document_number: z.string().regex(/^\d{14}$/, 'CNPJ inválido. Deve conter 14 dígitos.'),
-  signatory_name: z.string().min(1, 'O nome do signatário é obrigatório.'),
-  signatory_cpf: z.string().regex(/^\d{11}$/, 'CPF do signatário inválido. Deve conter 11 dígitos.'),
+const refinedSchema = baseSchema.superRefine((data, ctx) => {
+  if (data.document_type === 'CPF') {
+    if (!/^\d{11}$/.test(data.document_number)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'CPF inválido. Deve conter 11 dígitos.',
+        path: ['document_number'],
+      });
+    }
+  } else if (data.document_type === 'CNPJ') {
+    if (!data.trade_name) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'O nome fantasia é obrigatório.', path: ['trade_name'] });
+    }
+    if (!data.legal_name) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'A razão social é obrigatória.', path: ['legal_name'] });
+    }
+    if (!/^\d{14}$/.test(data.document_number)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'CNPJ inválido. Deve conter 14 dígitos.', path: ['document_number'] });
+    }
+    if (!data.signatory_name) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'O nome do signatário é obrigatório.', path: ['signatory_name'] });
+    }
+    if (!/^\d{11}$/.test(data.signatory_cpf || '')) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'CPF do signatário inválido.', path: ['signatory_cpf'] });
+    }
+  }
 });
 
 export function ClientProfileForm({ profile, onSave }) {
   const form = useForm({
-    resolver: zodResolver(baseSchema), // Resolver base, será ajustado dinamicamente
+    resolver: zodResolver(refinedSchema),
     defaultValues: {
       name: profile?.name || '',
       email: profile?.email || '',
@@ -63,17 +82,6 @@ export function ClientProfileForm({ profile, onSave }) {
   });
 
   const documentType = form.watch('document_type');
-
-  // Atualiza o resolver dinamicamente com base no tipo de documento
-  useEffect(() => {
-    if (documentType === 'CPF') {
-      form.setResolver(zodResolver(cpfSchema));
-    } else if (documentType === 'CNPJ') {
-      form.setResolver(zodResolver(cnpjSchema));
-    } else {
-      form.setResolver(zodResolver(baseSchema));
-    }
-  }, [documentType, form]);
 
   const onSubmit = async (values) => {
     try {
@@ -123,7 +131,7 @@ export function ClientProfileForm({ profile, onSave }) {
           )}
         />
 
-        {documentType === 'CPF' && (
+        {documentType === 'CPF' ? (
           <>
             <FormField
               control={form.control}
@@ -148,9 +156,7 @@ export function ClientProfileForm({ profile, onSave }) {
               )}
             />
           </>
-        )}
-
-        {documentType === 'CNPJ' && (
+        ) : (
           <>
             <FormField
               control={form.control}
