@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { toast } from 'sonner';
-import Header from '../components/Header.jsx';
+import { Header } from '../components/Header.jsx';
 import { PointInfoWindow } from '../components/PointInfoWindow.jsx';
 import { Cart } from '../components/Cart.jsx';
 import { InfoPanel } from '../components/InfoPanel.jsx';
@@ -10,7 +10,6 @@ import { getPoints } from '../lib/supabase.js';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { EnhancedReservationForm } from '../components/EnhancedReservationForm.jsx';
 import { useUser } from '../contexts/UserContext.jsx';
-import { ClientOrdersSummary } from '../components/ClientOrdersSummary.jsx';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { WhatsAppButton } from '../components/WhatsAppButton.jsx';
@@ -175,9 +174,9 @@ function HomePage() {
   };
 
   const handleReservationSuccess = () => {
-    if (typeof window.showOrderCreatedNotification === 'function') {
-      window.showOrderCreatedNotification('ORDER_ID');
-    }
+    toast.success("Reserva criada com sucesso!", {
+      description: "Em breve nossa equipe entrará em contato.",
+    });
     
     setCartItems([]);
     loadPoints();
@@ -240,46 +239,42 @@ function HomePage() {
         </div>
 
         <div className="order-3 lg:order-3 lg:overflow-y-auto">
-          {userLoading ? (
-            <Card className="h-full flex flex-col items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
-              <p className="text-gray-500 mt-2">Carregando perfil...</p>
-            </Card>
-          ) : profile ? (
-            <ClientOrdersSummary onOrderActionSuccess={loadPoints} />
-          ) : showReservationForm ? (
-            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
-                <div className="p-6 relative z-60">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold">Finalizar Reserva</h3>
-                    <button 
-                      onClick={() => setShowReservationForm(false)}
-                      className="text-gray-500 hover:text-gray-700 z-60"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  <EnhancedReservationForm
-                    cartItems={cartItems}
-                    onClose={() => setShowReservationForm(false)}
-                    onReservationSuccess={handleReservationSuccess}
-                  />
-                </div>
-              </div>
-            </div>
-          ) : (
-            <Cart
-              items={cartItems}
-              onRemove={handleRemoveFromCart}
-              onClear={handleClearCart}
-              onUpdatePeriod={handleUpdateCartItemPeriod}
-              onReservationSuccess={handleReservationSuccess}
-              onShowReservationForm={() => setShowReservationForm(true)}
-            />
-          )}
+          <Cart
+            items={cartItems}
+            onRemove={handleRemoveFromCart}
+            onClear={handleClearCart}
+            onUpdatePeriod={handleUpdateCartItemPeriod}
+            onShowReservationForm={() => setShowReservationForm(true)}
+          />
         </div>
       </main>
+
+      {showReservationForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Finalizar Reserva</CardTitle>
+                <button 
+                  onClick={() => setShowReservationForm(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+              <CardDescription>Preencha seus dados para confirmar a reserva</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EnhancedReservationForm
+                cartItems={cartItems}
+                onClose={() => setShowReservationForm(false)}
+                onReservationSuccess={handleReservationSuccess}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       <WhatsAppButton />
     </div>
   );

@@ -1,8 +1,6 @@
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trash2, ShoppingBag } from 'lucide-react';
-import { EnhancedReservationForm } from './EnhancedReservationForm.jsx';
 import {
   Select,
   SelectContent,
@@ -11,38 +9,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export function Cart({ items, onRemove, onClear, onUpdatePeriod, onReservationSuccess, onShowReservationForm }) {
-  const [showReservationForm, setShowReservationForm] = useState(false);
-
+export function Cart({ items, onRemove, onClear, onUpdatePeriod, onShowReservationForm }) {
   const total = items.reduce((sum, item) => sum + (item.price || 0), 0);
-
-  const handleReservationSuccess = () => {
-    // Chama a função passada da HomePage para atualizar o mapa e limpar o carrinho
-    if (onReservationSuccess) {
-      onReservationSuccess();
-    }
-    setShowReservationForm(false);
-  };
-
-  if (showReservationForm) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Finalizar Reserva</CardTitle>
-            <CardDescription>Preencha seus dados para confirmar a reserva</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <EnhancedReservationForm
-              cartItems={items}
-              onClose={() => setShowReservationForm(false)}
-              onReservationSuccess={handleReservationSuccess}
-            />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <Card className="h-full flex flex-col">
@@ -109,7 +77,7 @@ export function Cart({ items, onRemove, onClear, onUpdatePeriod, onReservationSu
             <span className="text-lg font-bold">R$ {total.toFixed(2)}</span>
           </div>
           <div className="space-y-2">
-            <Button className="w-full" onClick={onShowReservationForm || (() => setShowReservationForm(true))}>
+            <Button className="w-full" onClick={onShowReservationForm}>
               Finalizar Reserva
             </Button>
             <Button variant="outline" className="w-full" onClick={onClear}>
