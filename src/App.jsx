@@ -2,7 +2,6 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { UserProvider } from '@/contexts/UserContext';
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
-import { Toaster as ShadcnToaster } from "@/components/ui/toaster";
 import { AppLayout } from '@/components/AppLayout';
 import HomePage from '@/pages/HomePage';
 import { AdminPage } from '@/pages/AdminPage';
@@ -57,7 +56,6 @@ function App() {
             </Route>
           </Routes>
         </Router>
-        <ShadcnToaster />
         <SonnerToaster />
       </UserProvider>
     </AuthProvider>
