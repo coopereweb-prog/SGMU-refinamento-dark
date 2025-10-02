@@ -62,7 +62,7 @@ export function Header() {
               <span className="font-bold text-xl sm:text-2xl text-gray-800 tracking-tight"> {/* Fonte responsiva */}
                 SGMU
               </span>
-              <p className="text-xs sm:text-sm text-gray-500"> {/* Fonte responsiva */}
+              <p className="text-sm text-gray-500"> {/* Fonte responsiva */}
                 Sistema de Gestão de Mobiliário Urbano
               </p>
             </div>
