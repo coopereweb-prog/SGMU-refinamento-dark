@@ -55,8 +55,8 @@ export function Header() {
             <Link to="/">
               <img 
                 className="h-8 w-auto" 
-                src="/light-square-logo.png" 
-                alt="Light Square" 
+                src="/logo.png" 
+                alt="SGMU Logo" 
               />
             </Link>
           </div>

@@ -77,8 +77,8 @@ function LoginPage() {
         <div className="mx-auto grid w-[350px] gap-6">
           <div className="grid gap-2 text-center">
             <img 
-              src="/light-square-logo.png" 
-              alt="Light Square" 
+              src="/logo.png" 
+              alt="SGMU Logo" 
               className="w-32 mx-auto mb-4"
             />
             <h1 className="text-3xl font-bold">Área Restrita</h1>
