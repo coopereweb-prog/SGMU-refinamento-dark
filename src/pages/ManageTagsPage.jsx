@@ -12,7 +12,7 @@ import {
 import { TagForm } from '@/components/TagForm';
 import { BaseModal } from '@/components/BaseModal';
 import { BaseAlertDialog } from '@/components/BaseAlertDialog';
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 
 export function ManageTagsPage() {
@@ -22,7 +22,6 @@ export function ManageTagsPage() {
   const [editingTag, setEditingTag] = useState(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [tagToDelete, setTagToDelete] = useState(null);
-  const { toast } = useToast();
 
   useEffect(() => {
     fetchTags();
@@ -33,7 +32,7 @@ export function ManageTagsPage() {
     const { data, error } = await supabase.from('tags').select('*').order('name');
     if (error) {
       console.error('Error fetching tags:', error);
-      toast({ title: "Erro", description: "Não foi possível carregar as tags.", variant: "destructive" });
+      toast.error("Erro", { description: "Não foi possível carregar as tags." });
     } else {
       setTags(data);
     }
@@ -55,18 +54,18 @@ export function ManageTagsPage() {
       if (editingTag) {
         const { error } = await supabase.from('tags').update(tagData).eq('id', editingTag.id);
         if (error) throw error;
-        toast({ title: "Sucesso", description: "Tag atualizada com sucesso." });
+        toast.success("Sucesso", { description: "Tag atualizada com sucesso." });
       } else {
         const { error } = await supabase.from('tags').insert(tagData);
         if (error) throw error;
-        toast({ title: "Sucesso", description: "Tag criada com sucesso." });
+        toast.success("Sucesso", { description: "Tag criada com sucesso." });
       }
       setIsFormOpen(false);
       setEditingTag(null);
       fetchTags();
     } catch (error) {
       console.error('Error saving tag:', error);
-      toast({ title: "Erro", description: `Falha ao salvar a tag: ${error.message}`, variant: "destructive" });
+      toast.error("Erro", { description: `Falha ao salvar a tag: ${error.message}` });
     }
   };
 
@@ -80,11 +79,11 @@ export function ManageTagsPage() {
     try {
       const { error } = await supabase.from('tags').delete().eq('id', tagToDelete.id);
       if (error) throw error;
-      toast({ title: "Sucesso", description: "Tag excluída com sucesso." });
+      toast.success("Sucesso", { description: "Tag excluída com sucesso." });
       fetchTags();
     } catch (error) {
       console.error('Error deleting tag:', error);
-      toast({ title: "Erro", description: `Falha ao excluir a tag: ${error.message}`, variant: "destructive" });
+      toast.error("Erro", { description: `Falha ao excluir a tag: ${error.message}` });
     } finally {
       setIsDeleteDialogOpen(false);
       setTagToDelete(null);

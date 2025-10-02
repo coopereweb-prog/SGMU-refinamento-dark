@@ -12,7 +12,7 @@ import {
 import { PointForm } from '@/components/PointForm';
 import { BaseModal } from '@/components/BaseModal';
 import { BaseAlertDialog } from '@/components/BaseAlertDialog';
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 
 export function ManagePointsPage() {
@@ -22,7 +22,6 @@ export function ManagePointsPage() {
   const [editingPoint, setEditingPoint] = useState(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [pointToDelete, setPointToDelete] = useState(null);
-  const { toast } = useToast();
 
   useEffect(() => {
     fetchPoints();
@@ -33,7 +32,7 @@ export function ManagePointsPage() {
     const { data, error } = await supabase.from('points').select('*').order('name');
     if (error) {
       console.error('Error fetching points:', error);
-      toast({ title: "Erro", description: "Não foi possível carregar os pontos.", variant: "destructive" });
+      toast.error("Erro", { description: "Não foi possível carregar os pontos." });
     } else {
       setPoints(data);
     }
@@ -63,7 +62,7 @@ export function ManagePointsPage() {
           .single();
         if (error) throw error;
         savedPoint = data;
-        toast({ title: "Sucesso", description: "Ponto atualizado com sucesso." });
+        toast.success("Sucesso", { description: "Ponto atualizado com sucesso." });
       } else {
         // Create new point
         const { data, error } = await supabase
@@ -73,7 +72,7 @@ export function ManagePointsPage() {
           .single();
         if (error) throw error;
         savedPoint = data;
-        toast({ title: "Sucesso", description: "Ponto criado com sucesso." });
+        toast.success("Sucesso", { description: "Ponto criado com sucesso." });
       }
 
       // Handle tags
@@ -91,7 +90,7 @@ export function ManagePointsPage() {
       fetchPoints();
     } catch (error) {
       console.error('Error saving point:', error);
-      toast({ title: "Erro", description: `Falha ao salvar o ponto: ${error.message}`, variant: "destructive" });
+      toast.error("Erro", { description: `Falha ao salvar o ponto: ${error.message}` });
     }
   };
 
@@ -111,11 +110,11 @@ export function ManagePointsPage() {
       const { error: pointError } = await supabase.from('points').delete().eq('id', pointToDelete.id);
       if (pointError) throw pointError;
 
-      toast({ title: "Sucesso", description: "Ponto excluído com sucesso." });
+      toast.success("Sucesso", { description: "Ponto excluído com sucesso." });
       fetchPoints();
     } catch (error) {
       console.error('Error deleting point:', error);
-      toast({ title: "Erro", description: `Falha ao excluir o ponto: ${error.message}`, variant: "destructive" });
+      toast.error("Erro", { description: `Falha ao excluir o ponto: ${error.message}` });
     } finally {
       setIsDeleteDialogOpen(false);
       setPointToDelete(null);

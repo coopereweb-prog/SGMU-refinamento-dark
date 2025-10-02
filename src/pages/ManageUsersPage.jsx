@@ -1,179 +1,181 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { UserForm } from '@/components/UserForm';
-import { BaseModal } from '@/components/BaseModal';
-import { BaseAlertDialog } from '@/components/BaseAlertDialog';
-import { useToast } from "@/components/ui/use-toast";
-import { Mail, Edit, Trash2 } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { UserForm } from "@/components/UserForm";
+import { BaseModal } from "@/components/BaseModal";
+import { BaseAlertDialog } from "@/components/BaseAlertDialog";
+import { toast } from "sonner";
+import { Mail, Edit, Trash2, Loader2 } from "lucide-react";
 
 export function ManageUsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
-  const [isInviteMode, setIsInviteMode] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState(null);
-  const { toast } = useToast();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    const { data: { users }, error } = await supabase.auth.admin.listUsers();
+    if (error) {
+      toast.error("Erro ao buscar usuários", { description: error.message });
+    } else {
+      setUsers(users);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  const fetchUsers = async () => {
-    setLoading(true);
-    const { data: { users: userList }, error } = await supabase.auth.admin.listUsers();
+  const handleInvite = async (values) => {
+    const { data, error } = await supabase.auth.admin.inviteUserByEmail(values.email, {
+      data: { role: values.role },
+    });
     if (error) {
-      console.error('Error fetching users:', error);
-      toast({ title: "Erro", description: "Não foi possível carregar os usuários.", variant: "destructive" });
+      toast.error("Erro ao convidar usuário", { description: error.message });
     } else {
-      setUsers(userList);
+      toast.success("Convite enviado!", { description: `Um e-mail de convite foi enviado para ${values.email}.` });
+      fetchUsers();
+      setIsInviteModalOpen(false);
     }
-    setLoading(false);
-  };
-
-  const handleInvite = () => {
-    setEditingUser(null);
-    setIsInviteMode(true);
-    setIsFormOpen(true);
   };
 
   const handleEdit = (user) => {
-    setEditingUser(user);
-    setIsInviteMode(false);
-    setIsFormOpen(true);
+    setSelectedUser(user);
+    setIsModalOpen(true);
   };
 
-  const handleSaveUser = async (formData) => {
-    try {
-      if (isInviteMode) {
-        // Invite user
-        const { data, error } = await supabase.auth.admin.inviteUserByEmail(formData.email, {
-          data: {
-            role: formData.role,
-          }
-        });
-        if (error) throw error;
-        toast({ title: "Sucesso", description: "Convite enviado para o usuário." });
-      } else if (editingUser) {
-        // Update user
-        const { data: { user }, error } = await supabase.auth.admin.updateUserById(
-          editingUser.id,
-          {
-            user_metadata: {
-              full_name: formData.full_name,
-              phone: formData.phone,
-            },
-            app_metadata: {
-              role: formData.role
-            }
-          }
-        );
-        if (error) throw error;
-        toast({ title: "Sucesso", description: "Usuário atualizado com sucesso." });
-      }
-      
-      setIsFormOpen(false);
-      setEditingUser(null);
-      setIsInviteMode(false);
+  const handleUpdate = async (values) => {
+    const { data, error } = await supabase.auth.admin.updateUserById(selectedUser.id, {
+      user_metadata: { full_name: values.full_name, phone: values.phone },
+      app_metadata: { role: values.role },
+    });
+    if (error) {
+      toast.error("Erro ao atualizar usuário", { description: error.message });
+    } else {
+      toast.success("Usuário atualizado com sucesso!");
       fetchUsers();
-    } catch (error) {
-      console.error('Error saving user:', error);
-      toast({ title: "Erro", description: `Falha ao salvar o usuário: ${error.message}`, variant: "destructive" });
+      setIsModalOpen(false);
+      setSelectedUser(null);
     }
   };
 
-  const openDeleteDialog = (user) => {
-    setUserToDelete(user);
-    setIsDeleteDialogOpen(true);
+  const handleDelete = (user) => {
+    setSelectedUser(user);
+    setIsAlertOpen(true);
   };
 
-  const handleDeleteUser = async () => {
-    if (!userToDelete) return;
-    try {
-      const { error } = await supabase.auth.admin.deleteUser(userToDelete.id);
-      if (error) throw error;
-      toast({ title: "Sucesso", description: "Usuário excluído com sucesso." });
+  const confirmDelete = async () => {
+    const { error } = await supabase.auth.admin.deleteUser(selectedUser.id);
+    if (error) {
+      toast.error("Erro ao deletar usuário", { description: error.message });
+    } else {
+      toast.success("Usuário deletado com sucesso!");
       fetchUsers();
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      toast({ title: "Erro", description: `Falha ao excluir o usuário: ${error.message}`, variant: "destructive" });
-    } finally {
-      setIsDeleteDialogOpen(false);
-      setUserToDelete(null);
+      setIsAlertOpen(false);
+      setSelectedUser(null);
     }
+  };
+
+  const getRoleBadge = (role) => {
+    const variants = {
+      admin: "destructive",
+      operations_manager: "default",
+      field_technician: "secondary",
+      client: "outline",
+    };
+    return <Badge variant={variants[role] || "outline"}>{role}</Badge>;
   };
 
   return (
     <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Gerenciar Usuários</h1>
-        <Button onClick={handleInvite}>
-          <Mail className="mr-2 h-4 w-4" /> Convidar Usuário
-        </Button>
-      </div>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Gerenciar Usuários</CardTitle>
+          <Button onClick={() => setIsInviteModalOpen(true)}>
+            <Mail className="mr-2 h-4 w-4" /> Convidar Usuário
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Função</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{getRoleBadge(user.app_metadata?.role)}</TableCell>
+                    <TableCell>
+                      <Badge variant={user.email_confirmed_at ? "default" : "secondary"}>
+                        {user.email_confirmed_at ? "Confirmado" : "Pendente"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(user)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(user)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
-      {loading ? (
-        <p>Carregando...</p>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Email</TableHead>
-              <TableHead>Nome</TableHead>
-              <TableHead>Papel</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.user_metadata?.full_name || 'N/A'}</TableCell>
-                <TableCell>{user.app_metadata?.role || 'client'}</TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={() => handleEdit(user)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(user)}>
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-
+      {/* Modal de Convite */}
       <BaseModal
-        isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        title={isInviteMode ? 'Convidar Usuário' : 'Editar Usuário'}
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        title="Convidar Novo Usuário"
+        description="Envie um convite por e-mail para um novo membro se juntar à plataforma."
       >
-        <UserForm
-          user={editingUser}
-          onSave={handleSaveUser}
-          onCancel={() => setIsFormOpen(false)}
-          isInvite={isInviteMode}
-        />
+        <UserForm onSave={handleInvite} onCancel={() => setIsInviteModalOpen(false)} isInvite={true} />
       </BaseModal>
 
+      {/* Modal de Edição */}
+      <BaseModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedUser(null);
+        }}
+        title="Editar Usuário"
+        description="Modifique as informações do usuário abaixo."
+      >
+        <UserForm user={selectedUser} onSave={handleUpdate} onCancel={() => {
+          setIsModalOpen(false);
+          setSelectedUser(null);
+        }} />
+      </BaseModal>
+
+      {/* Alerta de Deleção */}
       <BaseAlertDialog
-        isOpen={isDeleteDialogOpen}
-        onClose={() => setIsDeleteDialogOpen(false)}
-        onConfirm={handleDeleteUser}
+        isOpen={isAlertOpen}
+        onClose={() => setIsAlertOpen(false)}
+        onConfirm={confirmDelete}
         title="Você tem certeza?"
-        description={`Esta ação não pode ser desfeita. Isso excluirá permanentemente o usuário "${userToDelete?.email}".`}
-        confirmText="Excluir"
+        description={`Esta ação não pode ser desfeita. Isso irá deletar permanentemente o usuário ${selectedUser?.email}.`}
       />
     </div>
   );
