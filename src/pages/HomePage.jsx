@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { toast } from 'sonner';
-import { Header } from '../components/Header.jsx';
 import { PointInfoWindow } from '../components/PointInfoWindow.jsx';
 import { Cart } from '../components/Cart.jsx';
 import { InfoPanel } from '../components/InfoPanel.jsx';
@@ -11,7 +10,6 @@ import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { EnhancedReservationForm } from '../components/EnhancedReservationForm.jsx';
 import { useUser } from '../contexts/UserContext.jsx';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
 import { WhatsAppButton } from '../components/WhatsAppButton.jsx';
 
 const mapContainerStyle = {
@@ -184,9 +182,8 @@ function HomePage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      <Header />
-      <main className="flex-grow p-4 lg:p-6 flex flex-col lg:grid lg:grid-cols-[350px_1fr_350px] gap-6">
+    <div className="flex flex-col flex-grow">
+      <main className="flex-grow p-4 lg:p-6 flex flex-col lg:grid lg:grid-cols-[350px_1fr_350px] gap-6 h-full">
         
         <div className="space-y-6 order-2 lg:order-1 lg:overflow-y-auto">
           {loading ? <Skeleton className="h-48 w-full" /> : <InfoPanel points={points} />}
