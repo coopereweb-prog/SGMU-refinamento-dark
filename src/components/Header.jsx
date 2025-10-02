@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LayoutDashboard, LogOut, User as UserIcon } from 'lucide-react';
+import { LayoutDashboard, LogOut, User as UserIcon, LogIn } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function Header() {
@@ -106,8 +106,11 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button asChild size="sm" className="px-3 py-1.5 h-8 sm:px-4 sm:py-2 sm:h-9">
-                <Link to="/login">Entrar</Link>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/login">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Área Restrita
+                </Link>
               </Button>
             )}
           </nav>
