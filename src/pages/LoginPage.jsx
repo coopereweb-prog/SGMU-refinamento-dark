@@ -131,9 +131,9 @@ function LoginPage() {
               </form>
             </CardContent>
           </Card>
-          <div className="text-center text-sm">
+          <div className="text-center text-base">
             Ainda não tem uma conta?{" "}
-            <Link to="/" className="underline">
+            <Link to="/" className="underline font-bold">
               Cadastre-se
             </Link>
           </div>
