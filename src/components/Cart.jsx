@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trash2, ShoppingBag } from 'lucide-react';
-import { ReservationForm } from './ReservationForm.jsx';
+import { EnhancedReservationForm } from './EnhancedReservationForm.jsx';
 import {
   Select,
   SelectContent,
@@ -33,7 +33,7 @@ export function Cart({ items, onRemove, onClear, onUpdatePeriod, onReservationSu
             <CardDescription>Preencha seus dados para confirmar a reserva</CardDescription>
           </CardHeader>
           <CardContent>
-            <ReservationForm
+            <EnhancedReservationForm
               cartItems={items}
               onClose={() => setShowReservationForm(false)}
               onReservationSuccess={handleReservationSuccess}
