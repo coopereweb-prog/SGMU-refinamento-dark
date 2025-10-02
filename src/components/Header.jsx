@@ -66,7 +66,7 @@ export function Header() {
               </p>
             </div>
           </Link>
-          <nav className="flex items-center space-x-4">
+          <nav className="flex items-center">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -103,7 +103,7 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button asChild>
+              <Button asChild size="sm" className="md:size-auto">
                 <Link to="/login">Entrar</Link>
               </Button>
             )}
