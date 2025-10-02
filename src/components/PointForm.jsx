@@ -1,198 +1,174 @@
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { useState, useEffect, useCallback } from 'react';
-import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { supabase } from '../lib/supabase';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2 } from 'lucide-react';
-
-const pointSchema = z.object({
-  name: z.string().min(1, 'O nome é obrigatório.'),
-  description: z.string().optional(),
-  latitude: z.coerce.number().min(-90, 'Latitude inválida.').max(90, 'Latitude inválida.'),
-  longitude: z.coerce.number().min(-180, 'Longitude inválida.').max(180, 'Longitude inválida.'),
-  price_1y: z.coerce.number().min(0).optional(),
-  price_2y: z.coerce.number().min(0).optional(),
-  price_3y: z.coerce.number().min(0).optional(),
-  price_4y: z.coerce.number().min(0).optional(),
-  price_5y: z.coerce.number().min(0).optional(),
-});
-
-const mapContainerStyle = {
-  width: '100%',
-  height: '350px',
-  borderRadius: '0.5rem',
-  marginBottom: '1rem',
-};
-
-const novaOdessaCenter = {
-  lat: -22.78,
-  lng: -47.30
-};
+import { Checkbox } from '@/components/ui/checkbox';
+import { supabase } from '@/lib/supabase';
+import { compressImage } from '@/lib/image-utils';
 
 export function PointForm({ point, onSave, onCancel }) {
-  const form = useForm({
-    resolver: zodResolver(pointSchema),
-    defaultValues: point || {
-      name: '',
-      description: '',
-      latitude: 0,
-      longitude: 0,
-      price_1y: 0,
-      price_2y: 0,
-      price_3y: 0,
-      price_4y: 0,
-      price_5y: 0,
-    },
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    price_1y: '',
+    price_2y: '',
+    price_3y: '',
+    price_4y: '',
+    price_5y: '',
+    is_available: true,
+    image_url: '',
   });
-
-  const [mapCenter, setMapCenter] = useState(novaOdessaCenter);
-  const [markerPosition, setMarkerPosition] = useState(null);
-  const [isGeocoding, setIsGeocoding] = useState(false);
-
-  const { isLoaded } = useJsApiLoader({
-    id: 'point-form-map',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    language: 'pt-BR',
-  });
+  const [tags, setTags] = useState([]);
+  const [selectedTags, setSelectedTags] = useState(new Set());
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
 
   useEffect(() => {
-    if (point && point.latitude && point.longitude) {
-      const position = { lat: point.latitude, lng: point.longitude };
-      setMarkerPosition(position);
-      setMapCenter(position);
+    if (point) {
+      setFormData({
+        name: point.name || '',
+        description: point.description || '',
+        price_1y: point.price_1y || '',
+        price_2y: point.price_2y || '',
+        price_3y: point.price_3y || '',
+        price_4y: point.price_4y || '',
+        price_5y: point.price_5y || '',
+        is_available: point.is_available,
+        image_url: point.image_url || '',
+      });
+      // Carregar tags associadas ao ponto
+      const fetchPointTags = async () => {
+        const { data } = await supabase
+          .from('point_tags')
+          .select('tag_id')
+          .eq('point_id', point.id);
+        setSelectedTags(new Set(data.map(pt => pt.tag_id)));
+      };
+      fetchPointTags();
     }
   }, [point]);
 
-  const getAddressFromCoordinates = useCallback(async (lat, lng) => {
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}&language=pt-BR`;
-
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (data.status !== 'OK' || !data.results || data.results.length === 0) {
-      throw new Error('Nenhum resultado encontrado para estas coordenadas.');
-    }
-
-    const intersection = data.results.find(r => r.types.includes('intersection'));
-    if (intersection) {
-      const routes = intersection.address_components.filter(ac => ac.types.includes('route'));
-      if (routes.length >= 2) {
-        return `${routes[0].long_name} com ${routes[1].long_name}`;
-      }
-    }
-    
-    return data.results[0].formatted_address.split(',')[0];
+  useEffect(() => {
+    // Carregar todas as tags disponíveis
+    const fetchTags = async () => {
+      const { data } = await supabase.from('tags').select('*');
+      setTags(data || []);
+    };
+    fetchTags();
   }, []);
 
-  const handleMapClick = useCallback(async (e) => {
-    const lat = e.latLng.lat();
-    const lng = e.latLng.lng();
-    const position = { lat, lng };
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+  };
 
-    setMarkerPosition(position);
-    form.setValue('latitude', parseFloat(lat.toFixed(7)), { shouldValidate: true });
-    form.setValue('longitude', parseFloat(lng.toFixed(7)), { shouldValidate: true });
-    
-    setIsGeocoding(true);
-    try {
-      const address = await getAddressFromCoordinates(lat, lng);
-      form.setValue('name', address, { shouldValidate: true });
-    } catch (error) {
-      console.error("Geocoding error:", error);
-      form.setValue('name', 'Erro ao buscar endereço', { shouldValidate: true });
-    } finally {
-      setIsGeocoding(false);
-    }
-  }, [form, getAddressFromCoordinates]);
-
-  const onSubmit = async (values) => {
-    try {
-      let error;
-      if (point) {
-        const { error: updateError } = await supabase.from('points').update(values).eq('id', point.id);
-        error = updateError;
+  const handleTagChange = (tagId) => {
+    setSelectedTags(prev => {
+      const newSelectedTags = new Set(prev);
+      if (newSelectedTags.has(tagId)) {
+        newSelectedTags.delete(tagId);
       } else {
-        const { error: insertError } = await supabase.from('points').insert(values);
-        error = insertError;
+        newSelectedTags.add(tagId);
       }
+      return newSelectedTags;
+    });
+  };
 
-      if (error) throw error;
-      onSave();
-    } catch (error) {
-      console.error('Error saving point:', error);
-      alert('Não foi possível salvar o ponto. Verifique o console para mais detalhes.');
+  const handleImageChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setImageFile(e.target.files[0]);
     }
   };
 
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <p className="text-sm text-gray-600 mb-2">
-          Clique no mapa para definir a localização. As coordenadas e o nome do ponto serão preenchidos automaticamente.
-        </p>
-        {isLoaded ? (
-          <GoogleMap
-            mapContainerStyle={mapContainerStyle}
-            center={mapCenter}
-            zoom={point ? 18 : 14}
-            onClick={handleMapClick}
-          >
-            {markerPosition && <Marker position={markerPosition} />}
-          </GoogleMap>
-        ) : (
-          <Skeleton className="w-full h-[350px] mb-4" />
-        )}
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    let imageUrl = formData.image_url;
+
+    if (imageFile) {
+      try {
+        const compressedFile = await compressImage(imageFile);
+        const fileName = `${Date.now()}_${imageFile.name}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('point_images')
+          .upload(fileName, compressedFile, {
+            cacheControl: '3600',
+            upsert: false,
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data: publicUrlData } = supabase.storage
+          .from('point_images')
+          .getPublicUrl(uploadData.path);
         
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="flex items-center">
-                Nome do Ponto (Ex: Rua A com Rua B)
-                {isGeocoding && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
-              </FormLabel>
-              <FormControl><Input {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Descrição</FormLabel>
-              <FormControl><Textarea {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <div className="grid grid-cols-2 gap-4">
-          <FormField control={form.control} name="latitude" render={({ field }) => (<FormItem><FormLabel>Latitude</FormLabel><FormControl><Input type="number" step="any" {...field} /></FormControl><FormMessage /></FormItem>)} />
-          <FormField control={form.control} name="longitude" render={({ field }) => (<FormItem><FormLabel>Longitude</FormLabel><FormControl><Input type="number" step="any" {...field} /></FormControl><FormMessage /></FormItem>)} />
+        imageUrl = publicUrlData.publicUrl;
+
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    const pointData = {
+      ...formData,
+      image_url: imageUrl,
+      price_1y: formData.price_1y ? parseFloat(formData.price_1y) : null,
+      price_2y: formData.price_2y ? parseFloat(formData.price_2y) : null,
+      price_3y: formData.price_3y ? parseFloat(formData.price_3y) : null,
+      price_4y: formData.price_4y ? parseFloat(formData.price_4y) : null,
+      price_5y: formData.price_5y ? parseFloat(formData.price_5y) : null,
+    };
+
+    await onSave(pointData, Array.from(selectedTags));
+    setIsSubmitting(false);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <Input name="name" value={formData.name} onChange={handleChange} placeholder="Nome do Ponto" required />
+      <Textarea name="description" value={formData.description} onChange={handleChange} placeholder="Descrição" />
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <Input name="price_1y" type="number" value={formData.price_1y} onChange={handleChange} placeholder="Preço 1 Ano" />
+        <Input name="price_2y" type="number" value={formData.price_2y} onChange={handleChange} placeholder="Preço 2 Anos" />
+        <Input name="price_3y" type="number" value={formData.price_3y} onChange={handleChange} placeholder="Preço 3 Anos" />
+        <Input name="price_4y" type="number" value={formData.price_4y} onChange={handleChange} placeholder="Preço 4 Anos" />
+        <Input name="price_5y" type="number" value={formData.price_5y} onChange={handleChange} placeholder="Preço 5 Anos" />
+      </div>
+      <div>
+        <label className="text-sm font-medium">Tags</label>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+          {tags.map(tag => (
+            <div key={tag.id} className="flex items-center space-x-2">
+              <Checkbox
+                id={`tag-${tag.id}`}
+                checked={selectedTags.has(tag.id)}
+                onCheckedChange={() => handleTagChange(tag.id)}
+              />
+              <label htmlFor={`tag-${tag.id}`} className="text-sm">{tag.name}</label>
+            </div>
+          ))}
         </div>
-        <h3 className="font-medium">Preços por Período</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <FormField control={form.control} name="price_1y" render={({ field }) => (<FormItem><FormLabel>1 Ano (R$)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
-          <FormField control={form.control} name="price_2y" render={({ field }) => (<FormItem><FormLabel>2 Anos (R$)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
-          <FormField control={form.control} name="price_3y" render={({ field }) => (<FormItem><FormLabel>3 Anos (R$)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
-          <FormField control={form.control} name="price_4y" render={({ field }) => (<FormItem><FormLabel>4 Anos (R$)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
-          <FormField control={form.control} name="price_5y" render={({ field }) => (<FormItem><FormLabel>5 Anos (R$)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
-        </div>
-        <div className="flex justify-end gap-4 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>Cancelar</Button>
-          <Button type="submit">Salvar Ponto</Button>
-        </div>
-      </form>
-    </Form>
+      </div>
+      <div className="flex items-center space-x-2">
+        <Checkbox id="is_available" name="is_available" checked={formData.is_available} onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_available: checked }))} />
+        <label htmlFor="is_available">Disponível</label>
+      </div>
+      <div>
+        <label htmlFor="image" className="block text-sm font-medium text-gray-700">Imagem do Ponto</label>
+        <Input id="image" name="image" type="file" onChange={handleImageChange} className="mt-1" />
+        {formData.image_url && !imageFile && <img src={formData.image_url} alt="Preview" className="mt-2 h-20 w-20 object-cover" />}
+      </div>
+      <div className="flex justify-end space-x-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Salvando...' : 'Salvar'}
+        </Button>
+      </div>
+    </form>
   );
 }

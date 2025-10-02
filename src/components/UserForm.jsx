@@ -1,101 +1,90 @@
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { inviteUser, updateUserRole } from '../lib/supabase';
-import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const userSchema = z.object({
-  name: z.string().min(2, 'O nome é obrigatório.'),
-  email: z.string().email('E-mail inválido.'),
-  role: z.enum(['admin', 'operations_manager', 'field_technician'], {
-    required_error: "A função é obrigatória."
-  }),
-});
-
-export function UserForm({ user, onSave, onCancel }) {
-  const form = useForm({
-    resolver: zodResolver(userSchema),
-    defaultValues: user || { name: '', email: '', role: 'field_technician' },
+export function UserForm({ user, onSave, onCancel, isInvite = false }) {
+  const [formData, setFormData] = useState({
+    email: '',
+    role: 'client',
+    full_name: '',
+    phone: '',
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isEditing = !!user;
-
-  const onSubmit = async (values) => {
-    try {
-      if (isEditing) {
-        await updateUserRole(user.id, values.role);
-        toast.success('Função do usuário atualizada com sucesso!');
-      } else {
-        await inviteUser(values.email, values.name, values.role);
-        toast.success('Convite enviado com sucesso!', {
-          description: `Um e-mail foi enviado para ${values.email} para completar o cadastro.`,
-        });
-      }
-      onSave();
-    } catch (error) {
-      console.error('Error saving user:', error);
-      toast.error('Ocorreu um erro', { description: error.message });
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        email: user.email || '',
+        role: user.app_metadata?.role || 'client',
+        full_name: user.user_metadata?.full_name || '',
+        phone: user.user_metadata?.phone || '',
+      });
     }
+  }, [user]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleRoleChange = (value) => {
+    setFormData(prev => ({ ...prev, role: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    await onSave(formData);
+    setIsSubmitting(false);
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nome Completo</FormLabel>
-              <FormControl><Input placeholder="Nome do usuário" {...field} disabled={isEditing} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>E-mail</FormLabel>
-              <FormControl><Input type="email" placeholder="email@exemplo.com" {...field} disabled={isEditing} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="role"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Função</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma função" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="admin">Administrador</SelectItem>
-                  <SelectItem value="operations_manager">Gerente de Operações</SelectItem>
-                  <SelectItem value="field_technician">Técnico de Campo</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <div className="flex justify-end gap-4 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>Cancelar</Button>
-          <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? 'Salvando...' : 'Salvar'}
-          </Button>
-        </div>
-      </form>
-    </Form>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <Input
+        name="email"
+        type="email"
+        value={formData.email}
+        onChange={handleChange}
+        placeholder="Email"
+        required
+        disabled={!isInvite && user} // Disable email editing for existing users
+      />
+      {!isInvite && (
+        <>
+          <Input
+            name="full_name"
+            value={formData.full_name}
+            onChange={handleChange}
+            placeholder="Nome Completo"
+          />
+          <Input
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            placeholder="Telefone"
+          />
+        </>
+      )}
+      <Select value={formData.role} onValueChange={handleRoleChange}>
+        <SelectTrigger>
+          <SelectValue placeholder="Selecione o papel" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="admin">Admin</SelectItem>
+          <SelectItem value="operations_manager">Gerente de Operações</SelectItem>
+          <SelectItem value="field_technician">Técnico de Campo</SelectItem>
+          <SelectItem value="client">Cliente</SelectItem>
+        </SelectContent>
+      </Select>
+      <div className="flex justify-end space-x-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? (isInvite ? 'Enviando convite...' : 'Salvando...') : (isInvite ? 'Convidar' : 'Salvar')}
+        </Button>
+      </div>
+    </form>
   );
 }
