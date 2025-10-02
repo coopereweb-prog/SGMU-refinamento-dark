@@ -53,12 +53,14 @@ export function Header() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-16 md:h-20 lg:h-20">
           <Link to="/" className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-shrink-0">
-            <img 
-              className="h-10 sm:h-12 md:h-14 lg:h-16 w-auto transition-all duration-200 ease-in-out self-center" 
-              src="/logo.png" 
-              alt="SGMU Logo" 
-            />
-            <div className="min-w-0 self-center">
+            <div className="flex items-center">
+                <img 
+                    className="h-10 sm:h-12 md:h-14 lg:h-16 w-auto transition-all duration-200 ease-in-out" 
+                    src="/logo.png" 
+                    alt="SGMU Logo" 
+                />
+            </div>
+            <div className="min-w-0">
               <span className="font-bold text-lg sm:text-xl md:text-2xl text-gray-800 tracking-tight block">
                 SGMU
               </span>
@@ -67,7 +69,7 @@ export function Header() {
               </p>
             </div>
           </Link>
-          <nav className="flex items-center flex-shrink-0 ml-2 self-center">
+          <nav className="flex items-center flex-shrink-0 ml-2">
             {authLoading ? (
               <Skeleton className="h-8 w-20 rounded-md" />
             ) : user ? (
