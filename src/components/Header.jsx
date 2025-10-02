@@ -50,24 +50,22 @@ export function Header() {
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20"> {/* Aumentei a altura do header para acomodar */}
-          <div className="flex-shrink-0">
-            <Link to="/" className="flex items-center space-x-3">
-              <img 
-                className="h-16 w-auto" // Dobro do tamanho original (h-8)
-                src="/logo.png" 
-                alt="SGMU Logo" 
-              />
-              <div>
-                <span className="font-bold text-2xl text-gray-800 tracking-tight">
-                  SGMU
-                </span>
-                <p className="text-xs text-gray-500">
-                  Sistema de Gestão de Mobiliário Urbano
-                </p>
-              </div>
-            </Link>
-          </div>
+        <div className="flex items-center justify-between h-20">
+          <Link to="/" className="flex items-center space-x-3 min-w-0"> {/* Allow container to shrink */}
+            <img 
+              className="h-16 w-auto flex-shrink-0" // Prevent logo from shrinking
+              src="/logo.png" 
+              alt="SGMU Logo" 
+            />
+            <div className="min-w-0"> {/* Allow text block to shrink and wrap */}
+              <span className="font-bold text-2xl text-gray-800 tracking-tight">
+                SGMU
+              </span>
+              <p className="text-xs text-gray-500">
+                Sistema de Gestão de Mobiliário Urbano
+              </p>
+            </div>
+          </Link>
           <nav className="flex items-center space-x-4">
             {user ? (
               <DropdownMenu>
