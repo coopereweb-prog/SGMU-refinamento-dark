@@ -1,0 +1,5 @@
+-- Inserir dados padrão de pricing_tiers
+INSERT INTO public.pricing_tiers (name, price_1y, price_2y, price_3y, price_4y, price_5y, description_template) VALUES
+('Ouro', 500.00, 900.00, 1200.00, 1400.00, 1500.00, 'Ponto {{tier_name}} - {{point_name}}. Localização premium com alta visibilidade. Preços: 1 ano R${{price_1y}}, 2 anos R${{price_2y}}, 3 anos R${{price_3y}}, 4 anos R${{price_4y}}, 5 anos R${{price_5y}}.'),
+('Prata', 300.00, 550.00, 750.00, 900.00, 1000.00, 'Ponto {{tier_name}} - {{point_name}}. Excelente localização com boa visibilidade. Preços: 1 ano R${{price_1y}}, 2 anos R${{price_2y}}, 3 anos R${{price_3y}}, 4 anos R${{price_4y}}, 5 anos R${{price_5y}}.'),
+('Bronze', 150.00, 280.00, 400.00, 500.00, 550.00, 'Ponto {{tier_name}} - {{point_name}}. Localização padrão com visibilidade adequada. Preços: 1 ano R${{price_1y}}, 2 anos R${{price_2y}}, 3 anos R${{price_3y}}, 4 anos R${{price_4y}}, 5 anos R${{price_5y}}.');

@@ -1,0 +1,1 @@
+SELECT * FROM public.pricing_tiers ORDER BY name;
