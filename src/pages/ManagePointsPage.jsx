@@ -35,6 +35,7 @@ export function ManagePointsPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [pointToDelete, setPointToDelete] = useState(null);
   const [isAddingMode, setIsAddingMode] = useState(false);
+  const [newPointCoords, setNewPointCoords] = useState(null);
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -59,17 +60,37 @@ export function ManagePointsPage() {
 
   const handleAddNew = () => {
     setEditingPoint(null);
+    setNewPointCoords(null);
     setIsAddingMode(true);
+  };
+
+  const handleCancelAdd = () => {
+    setIsAddingMode(false);
+    setNewPointCoords(null);
   };
 
   const handleMapClick = (e) => {
     if (!isAddingMode) return;
     const lat = e.latLng.lat();
     const lng = e.latLng.lng();
-    
-    setEditingPoint({ latitude: lat, longitude: lng });
-    setIsFormOpen(true);
-    setIsAddingMode(false);
+    setNewPointCoords({ lat, lng });
+
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+      if (status === 'OK' && results[0]) {
+        const address = results[0].address_components;
+        const street = address.find(c => c.types.includes('route'))?.long_name;
+        const number = address.find(c => c.types.includes('street_number'))?.long_name;
+        const pointName = number ? `${street}, ${number}` : street;
+        
+        setEditingPoint({ latitude: lat, longitude: lng, name: pointName || '' });
+        setIsFormOpen(true);
+      } else {
+        toast.warning("Não foi possível encontrar o nome da rua.", { description: "Por favor, insira manualmente." });
+        setEditingPoint({ latitude: lat, longitude: lng, name: '' });
+        setIsFormOpen(true);
+      }
+    });
   };
 
   const handleEdit = (point) => {
@@ -140,7 +161,7 @@ export function ManagePointsPage() {
             <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Novo Ponto
           </Button>
         ) : (
-          <Button variant="destructive" onClick={() => setIsAddingMode(false)}>
+          <Button variant="destructive" onClick={handleCancelAdd}>
             <XCircle className="mr-2 h-4 w-4" /> Cancelar Adição
           </Button>
         )}
@@ -163,6 +184,12 @@ export function ManagePointsPage() {
                 {points.map(point => (
                   <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} />
                 ))}
+                {newPointCoords && (
+                  <Marker 
+                    position={newPointCoords} 
+                    icon={{ url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png' }}
+                  />
+                )}
               </GoogleMap>
             ) : <Skeleton className="w-full h-full" />}
           </div>
