@@ -247,8 +247,8 @@ function HomePage() {
       </main>
 
       {showReservationForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <Card className="w-full max-w-2xl"> {/* Removido max-h-[95vh] e overflow-y-auto */}
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"> {/* Adicionado p-4 aqui */}
+          <Card className="w-full sm:max-w-lg md:max-w-2xl max-h-[95vh] overflow-y-auto"> {/* Ajustado max-w e reintroduzido max-h e overflow */}
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle>Finalizar Reserva</CardTitle>
