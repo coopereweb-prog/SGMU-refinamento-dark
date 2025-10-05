@@ -30,7 +30,7 @@ export function Cart({ items, onRemove, onClear, onUpdatePeriod, onShowReservati
                 <CardContent className="p-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 mr-2">
-                      <h3 className="font-medium text-sm mb-2">{item.name}</h3>
+                      <h3 className="font-medium text-xs mb-2">{item.name}</h3>
                       <Select
                         value={String(item.period_years)}
                         onValueChange={(value) => onUpdatePeriod(index, parseInt(value))}
@@ -73,8 +73,8 @@ export function Cart({ items, onRemove, onClear, onUpdatePeriod, onShowReservati
       {items.length > 0 && (
         <div className="p-4 border-t bg-gray-50">
           <div className="flex items-center justify-between mb-4">
-            <span className="font-semibold">Total:</span>
-            <span className="text-lg font-bold">R$ {total.toFixed(2)}</span>
+            <span className="font-semibold text-sm">Total:</span>
+            <span className="text-base font-bold">R$ {total.toFixed(2)}</span>
           </div>
           <div className="space-y-2">
             <Button className="w-full" onClick={onShowReservationForm}>
