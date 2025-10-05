@@ -25,7 +25,7 @@ export function PointInfoWindow({ point, onAddToCart, onClose }) {
   return (
     <div className="absolute bottom-0 left-0 right-0 z-10 p-2 sm:p-4 pointer-events-none">
       <Card 
-        className="w-full max-h-[45vh] sm:max-h-[40vh] flex flex-col animate-in slide-in-from-bottom-10 duration-300 pointer-events-auto"
+        className="w-full flex flex-col animate-in slide-in-from-bottom-10 duration-300 pointer-events-auto"
       >
         <CardHeader className="flex-row items-start justify-between pb-4">
           <div className="flex-grow">
@@ -36,7 +36,7 @@ export function PointInfoWindow({ point, onAddToCart, onClose }) {
             <X className="h-5 w-5" />
           </Button>
         </CardHeader>
-        <CardContent className="overflow-y-auto">
+        <CardContent>
           <div className="space-y-4">
             <div>
               <h4 className="font-semibold mb-2 text-sm">Selecione o Período de Contrato:</h4>
