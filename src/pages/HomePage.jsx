@@ -1,7 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { TagFilter } from '@/components/TagFilter';
 import { Cart } from '@/components/Cart';
 import { PointInfoWindow } from '@/components/PointInfoWindow';
@@ -12,7 +11,7 @@ import { getStatusBadge } from '@/lib/utils';
 import { getPoints } from '@/lib/supabase';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
-import { MapPin, ShoppingCart, Menu, X, Loader2 } from 'lucide-react';
+import { ShoppingCart, Menu, X, Loader2 } from 'lucide-react';
 
 const mapContainerStyle = {
   width: '100%',
@@ -41,27 +40,29 @@ export function HomePage() {
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
   });
 
-  // MOVER PARA CIMA - Definir cartPointIds antes de usá-lo
+  // Definir cartPointIds antes de usar - CORREÇÃO APLICADA
   const cartPointIds = useMemo(() => new Set(cartItems.map(item => item.point_id)), [cartItems]);
 
   const loadPoints = async () => {
     try {
+      setLoading(true);
       const pointsData = await getPoints();
-      console.log('Pontos carregados:', pointsData); // Debug
+      console.log('Pontos carregados:', pointsData);
       
-      // Filtrar apenas pontos com coordenadas válidas - REMOVENDO filtro de status
+      // Filtrar apenas pontos com coordenadas válidas
       const validPoints = pointsData.filter(p => 
         typeof p.latitude === 'number' && 
         typeof p.longitude === 'number' &&
         p.latitude !== 0 && 
         p.longitude !== 0
-        // REMOVIDO: p.is_available === true && p.status === 'available'
       );
-      console.log('Pontos válidos:', validPoints); // Debug
+      console.log('Pontos válidos:', validPoints);
       setPoints(validPoints);
     } catch (error) {
       console.error('Erro ao carregar pontos:', error);
       toast.error('Erro ao carregar pontos', { description: error.message });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -70,18 +71,18 @@ export function HomePage() {
   }, []);
 
   const handleMarkerClick = useCallback((point) => {
-    console.log('Marker clicked:', point); // Debug
+    console.log('Marker clicked:', point);
     
     // Verificar o status do ponto
     if (point.status === 'sold') {
       toast.info('Este ponto já foi contratado.');
-      setSelectedPoint(point); // Ainda mostrar informações
+      setSelectedPoint(point);
       return;
     }
     
     if (point.status === 'reserved') {
       toast.info('Este ponto está reservado temporariamente.');
-      setSelectedPoint(point); // Ainda mostrar informações
+      setSelectedPoint(point);
       return;
     }
     
@@ -96,7 +97,7 @@ export function HomePage() {
       return;
     }
     setSelectedPoint(point);
-  }, [cartPointIds]); // Agora cartPointIds já existe
+  }, [cartPointIds]);
 
   const handleAddToCart = useCallback((point, periodYears) => {
     // Verificação rigorosa antes de adicionar ao carrinho
@@ -153,7 +154,6 @@ export function HomePage() {
     });
   }, []);
 
-  // REMOVER DUPLICATA - cartPointIds já foi definido acima
   const filteredPoints = useMemo(() => {
     if (selectedTags.length === 0) return points;
     
@@ -168,22 +168,24 @@ export function HomePage() {
     setIsReservationModalOpen(false);
     setSelectedPoint(null);
     setCartItems([]);
-    loadPoints(); // Recarregar pontos para atualizar status
+    loadPoints();
   }, []);
 
   const totalCartItems = cartItems.length;
 
+  // Loading state melhorado
   if (!isLoaded || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p>Carregando mapa...</p>
+          <p className="text-gray-600">Carregando mapa...</p>
         </div>
       </div>
     );
   }
 
+  // Map component com tratamento de erro
   const mapContent = (
     <GoogleMap
       mapContainerStyle={mapContainerStyle}
@@ -199,7 +201,6 @@ export function HomePage() {
     >
       {filteredPoints.map(point => {
         const isInCart = cartPointIds.has(point.id);
-        const status = getStatusBadge(point.status);
         
         let iconUrl = '/marker-available.png';
         if (point.status === 'sold') {
@@ -265,11 +266,9 @@ export function HomePage() {
       <div className="hidden md:block w-80 bg-white shadow-lg overflow-y-auto">
         <div className="p-6 space-y-6">
           <div className="text-center">
-            <img 
-              src="/logo.png" 
-              alt="SGMU Logo" 
-              className="w-24 h-24 mx-auto mb-4"
-            />
+            <div className="w-24 h-24 mx-auto mb-4 bg-gray-200 rounded-full flex items-center justify-center">
+              <span className="text-gray-500 text-xs">LOGO</span>
+            </div>
             <h1 className="text-2xl font-bold text-gray-800">SGMU</h1>
             <p className="text-sm text-gray-600">Sistema de Gestão de Mobiliário Urbano</p>
           </div>
