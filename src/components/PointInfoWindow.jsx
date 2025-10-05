@@ -1,19 +1,19 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Modal } from './Modal'; // Importando o novo componente
+import { Modal } from './Modal';
 
 export function PointInfoWindow({ point, onAddToCart, onClose, isOpen }) {
   const [selectedPeriod, setSelectedPeriod] = useState(1);
 
-  if (!point) return null;
+  if (!point || !point.tier) return null; // Garante que o ponto e o tier existam
 
   const priceOptions = [
-    { years: 1, price: point.price_1y },
-    { years: 2, price: point.price_2y },
-    { years: 3, price: point.price_3y },
-    { years: 4, price: point.price_4y },
-    { years: 5, price: point.price_5y },
+    { years: 1, price: point.tier.price_1y },
+    { years: 2, price: point.tier.price_2y },
+    { years: 3, price: point.tier.price_3y },
+    { years: 4, price: point.tier.price_4y },
+    { years: 5, price: point.tier.price_5y },
   ].filter(option => option.price != null);
 
   const selectedPrice = priceOptions.find(p => p.years === selectedPeriod)?.price ?? 0;
@@ -40,7 +40,7 @@ export function PointInfoWindow({ point, onAddToCart, onClose, isOpen }) {
             <SelectContent>
               {priceOptions.map(option => (
                 <SelectItem key={option.years} value={String(option.years)}>
-                  {option.years} Ano(s) - {option.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  {option.years} Ano(s) - {Number(option.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -50,7 +50,7 @@ export function PointInfoWindow({ point, onAddToCart, onClose, isOpen }) {
            <div className="text-lg text-center sm:text-left">
             <span className="font-medium">Valor Total: </span>
             <span className="font-bold text-green-600">
-              {selectedPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              {Number(selectedPrice).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </span>
           </div>
           <Button onClick={handleAddToCartClick} className="w-full sm:w-auto" size="lg">

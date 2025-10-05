@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, MapPin, Tag, ShoppingCart, ArrowRight } from 'lucide-react';
+import { Users, MapPin, Tag, ShoppingCart, ArrowRight, DollarSign } from 'lucide-react';
 
 export function AdminPage() {
   const navItems = [
@@ -15,6 +15,12 @@ export function AdminPage() {
       href: '/admin/points',
       icon: <MapPin className="h-6 w-6 text-gray-500" />,
       description: 'Adicione, edite ou remova pontos de instalação no mapa.'
+    },
+    {
+      title: 'Gerenciar Níveis de Preço',
+      href: '/admin/pricing',
+      icon: <DollarSign className="h-6 w-6 text-gray-500" />,
+      description: 'Defina as classificações e preços (Ouro, Prata, Bronze).'
     },
     {
       title: 'Gerenciar Tags',
@@ -35,7 +41,7 @@ export function AdminPage() {
       <h1 className="text-3xl font-bold text-gray-800">Painel do Administrador</h1>
       <p className="text-gray-600">Selecione uma das opções abaixo para começar.</p>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {navItems.map((item) => (
           <Link to={item.href} key={item.title} className="group">
             <Card className="hover:border-primary transition-all duration-200 h-full flex flex-col">

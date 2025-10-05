@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from '@/lib/supabase';
 import { compressImage } from '@/lib/image-utils';
 import { Loader2 } from 'lucide-react';
@@ -17,19 +18,17 @@ const pointSchema = z.object({
   description: z.string().optional(),
   latitude: z.coerce.number({ invalid_type_error: "Latitude deve ser um número." }),
   longitude: z.coerce.number({ invalid_type_error: "Longitude deve ser um número." }),
-  price_1y: z.coerce.number().positive().optional().or(z.literal('')),
-  price_2y: z.coerce.number().positive().optional().or(z.literal('')),
-  price_3y: z.coerce.number().positive().optional().or(z.literal('')),
-  price_4y: z.coerce.number().positive().optional().or(z.literal('')),
-  price_5y: z.coerce.number().positive().optional().or(z.literal('')),
+  pricing_tier_id: z.string().uuid("Você deve selecionar um nível de preço."),
   is_available: z.boolean().default(true),
   image_url: z.string().optional(),
 });
 
 export function PointForm({ point, onSave, onCancel }) {
   const [tags, setTags] = useState([]);
+  const [pricingTiers, setPricingTiers] = useState([]);
   const [selectedTags, setSelectedTags] = useState(new Set());
   const [imageFile, setImageFile] = useState(null);
+  const [baseName, setBaseName] = useState('');
 
   const form = useForm({
     resolver: zodResolver(pointSchema),
@@ -38,15 +37,13 @@ export function PointForm({ point, onSave, onCancel }) {
       description: '',
       latitude: '',
       longitude: '',
-      price_1y: '',
-      price_2y: '',
-      price_3y: '',
-      price_4y: '',
-      price_5y: '',
+      pricing_tier_id: '',
       is_available: true,
       image_url: '',
     },
   });
+
+  const selectedTierId = form.watch('pricing_tier_id');
 
   useEffect(() => {
     if (point) {
@@ -55,31 +52,19 @@ export function PointForm({ point, onSave, onCancel }) {
         description: point.description || '',
         latitude: point.latitude || '',
         longitude: point.longitude || '',
-        price_1y: point.price_1y || '',
-        price_2y: point.price_2y || '',
-        price_3y: point.price_3y || '',
-        price_4y: point.price_4y || '',
-        price_5y: point.price_5y || '',
+        pricing_tier_id: point.pricing_tier_id || '',
         is_available: point.is_available ?? true,
         image_url: point.image_url || '',
       });
+      setBaseName(point.name || '');
 
-      // Apenas busca as tags se for um ponto existente (com ID)
       if (point.id) {
         const fetchPointTags = async () => {
-          const { data, error } = await supabase.from('point_tags').select('tag_id').eq('point_id', point.id);
-          if (error) {
-            console.error("Error fetching point tags:", error);
-            toast.error("Erro ao carregar tags do ponto.");
-            setSelectedTags(new Set());
-          } else {
-            // Garante que 'data' não é nulo antes de mapear
-            setSelectedTags(new Set((data || []).map(pt => pt.tag_id)));
-          }
+          const { data } = await supabase.from('point_tags').select('tag_id').eq('point_id', point.id);
+          setSelectedTags(new Set((data || []).map(pt => pt.tag_id)));
         };
         fetchPointTags();
       } else {
-        // Se for um ponto novo, reseta as tags selecionadas
         setSelectedTags(new Set());
       }
     } else {
@@ -89,12 +74,30 @@ export function PointForm({ point, onSave, onCancel }) {
   }, [point, form]);
 
   useEffect(() => {
-    const fetchTags = async () => {
-      const { data } = await supabase.from('tags').select('*');
-      setTags(data || []);
+    const fetchInitialData = async () => {
+      const { data: tagsData } = await supabase.from('tags').select('*');
+      setTags(tagsData || []);
+      const { data: tiersData } = await supabase.from('pricing_tiers').select('*');
+      setPricingTiers(tiersData || []);
     };
-    fetchTags();
+    fetchInitialData();
   }, []);
+
+  useEffect(() => {
+    if (selectedTierId && pricingTiers.length > 0) {
+      const selectedTier = pricingTiers.find(t => t.id === selectedTierId);
+      if (selectedTier) {
+        // Atualiza nome
+        const newName = `${selectedTier.name} - ${baseName}`;
+        form.setValue('name', newName);
+
+        // Atualiza descrição
+        let newDescription = selectedTier.description_template || '';
+        newDescription = newDescription.replace('{{price_1y}}', Number(selectedTier.price_1y).toFixed(2));
+        form.setValue('description', newDescription);
+      }
+    }
+  }, [selectedTierId, pricingTiers, baseName, form]);
 
   const handleTagChange = (tagId) => {
     setSelectedTags(prev => {
@@ -112,26 +115,19 @@ export function PointForm({ point, onSave, onCancel }) {
 
   const onSubmit = async (values) => {
     let imageUrl = values.image_url;
-
     if (imageFile) {
       try {
         const compressedFile = await compressImage(imageFile);
         const fileName = `${Date.now()}_${imageFile.name}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('point_images')
-          .upload(fileName, compressedFile, { upsert: false });
-
+        const { data: uploadData, error: uploadError } = await supabase.storage.from('point_images').upload(fileName, compressedFile);
         if (uploadError) throw uploadError;
-
         const { data: publicUrlData } = supabase.storage.from('point_images').getPublicUrl(uploadData.path);
         imageUrl = publicUrlData.publicUrl;
       } catch (error) {
-        console.error('Error uploading image:', error);
-        form.setError("image_url", { message: "Falha no upload da imagem." });
+        toast.error("Falha no upload da imagem.", { description: error.message });
         return;
       }
     }
-
     const pointData = { ...values, image_url: imageUrl };
     await onSave(pointData, Array.from(selectedTags));
   };
@@ -139,26 +135,31 @@ export function PointForm({ point, onSave, onCancel }) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
+        <FormField control={form.control} name="pricing_tier_id" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Nível de Preço</FormLabel>
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormControl><SelectTrigger><SelectValue placeholder="Selecione o nível" /></SelectTrigger></FormControl>
+              <SelectContent>
+                {pricingTiers.map(tier => <SelectItem key={tier.id} value={tier.id}>{tier.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )} />
         <FormField control={form.control} name="name" render={({ field }) => (
-          <FormItem><FormLabel>Nome do Ponto</FormLabel><FormControl><Input placeholder="Ex: Av. Principal, 123" {...field} /></FormControl><FormMessage /></FormItem>
+          <FormItem><FormLabel>Nome do Ponto (Automático)</FormLabel><FormControl><Input placeholder="Será preenchido automaticamente" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={form.control} name="description" render={({ field }) => (
-          <FormItem><FormLabel>Descrição</FormLabel><FormControl><Textarea placeholder="Detalhes sobre o ponto" {...field} /></FormControl><FormMessage /></FormItem>
+          <FormItem><FormLabel>Descrição (Automática)</FormLabel><FormControl><Textarea placeholder="Será preenchida automaticamente" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
         <div className="grid grid-cols-2 gap-4">
           <FormField control={form.control} name="latitude" render={({ field }) => (
-            <FormItem><FormLabel>Latitude</FormLabel><FormControl><Input type="number" step="any" placeholder="-22.78" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Latitude</FormLabel><FormControl><Input type="number" step="any" disabled {...field} /></FormControl><FormMessage /></FormItem>
           )} />
           <FormField control={form.control} name="longitude" render={({ field }) => (
-            <FormItem><FormLabel>Longitude</FormLabel><FormControl><Input type="number" step="any" placeholder="-47.30" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Longitude</FormLabel><FormControl><Input type="number" step="any" disabled {...field} /></FormControl><FormMessage /></FormItem>
           )} />
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5].map(year => (
-            <FormField key={year} control={form.control} name={`price_${year}y`} render={({ field }) => (
-              <FormItem><FormLabel>Preço {year} Ano(s)</FormLabel><FormControl><Input type="number" step="0.01" placeholder="Ex: 1200.00" {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
-          ))}
         </div>
         <div>
           <FormLabel>Tags</FormLabel>
@@ -166,7 +167,7 @@ export function PointForm({ point, onSave, onCancel }) {
             {tags.map(tag => (
               <div key={tag.id} className="flex items-center space-x-2">
                 <Checkbox id={`tag-${tag.id}`} checked={selectedTags.has(tag.id)} onCheckedChange={() => handleTagChange(tag.id)} />
-                <label htmlFor={`tag-${tag.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{tag.name}</label>
+                <label htmlFor={`tag-${tag.id}`} className="text-sm font-medium leading-none">{tag.name}</label>
               </div>
             ))}
           </div>
