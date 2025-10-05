@@ -56,11 +56,22 @@ function HomePage() {
   }, []);
 
   const loadPoints = async () => {
-    const pointsData = await getPoints();
-    const validPoints = pointsData.filter(p => 
-      typeof p.latitude === 'number' && typeof p.longitude === 'number'
-    );
-    setPoints(validPoints);
+    try {
+      const pointsData = await getPoints();
+      console.log('Pontos carregados:', pointsData); // Debug
+      const validPoints = pointsData.filter(p => 
+        typeof p.latitude === 'number' && 
+        typeof p.longitude === 'number' &&
+        p.latitude !== 0 && 
+        p.longitude !== 0 &&
+        p.is_available === true
+      );
+      console.log('Pontos válidos:', validPoints); // Debug
+      setPoints(validPoints);
+    } catch (error) {
+      console.error('Erro ao carregar pontos:', error);
+      toast.error('Erro ao carregar pontos', { description: error.message });
+    }
   };
 
   useEffect(() => {
