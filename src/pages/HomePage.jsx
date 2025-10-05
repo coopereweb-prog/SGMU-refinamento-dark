@@ -41,6 +41,9 @@ export function HomePage() {
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
   });
 
+  // MOVER PARA CIMA - Definir cartPointIds antes de usá-lo
+  const cartPointIds = useMemo(() => new Set(cartItems.map(item => item.point_id)), [cartItems]);
+
   const loadPoints = async () => {
     try {
       const pointsData = await getPoints();
@@ -93,7 +96,7 @@ export function HomePage() {
       return;
     }
     setSelectedPoint(point);
-  }, [cartPointIds]);
+  }, [cartPointIds]); // Agora cartPointIds já existe
 
   const handleAddToCart = useCallback((point, periodYears) => {
     // Verificação rigorosa antes de adicionar ao carrinho
@@ -150,8 +153,7 @@ export function HomePage() {
     });
   }, []);
 
-  const cartPointIds = useMemo(() => new Set(cartItems.map(item => item.point_id)), [cartItems]);
-
+  // REMOVER DUPLICATA - cartPointIds já foi definido acima
   const filteredPoints = useMemo(() => {
     if (selectedTags.length === 0) return points;
     
