@@ -41,6 +41,7 @@ function HomePage() {
   const [selectedTags, setSelectedTags] = useState([]);
   const [map, setMap] = useState(null);
   const [showReservationForm, setShowReservationForm] = useState(false);
+  const [isCartExpanded, setIsCartExpanded] = useState(false);
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -182,7 +183,7 @@ function HomePage() {
   };
 
   return (
-    <div className="flex flex-col flex-grow">
+    <div className={`flex flex-col flex-grow ${isCartExpanded ? 'fixed inset-0 overflow-hidden' : ''}`}>
       <main className="flex-grow p-4 lg:p-6 flex flex-col lg:grid lg:grid-cols-[350px_1fr_350px] gap-6 h-full">
         
         <div className="space-y-6 order-2 lg:order-1 lg:overflow-y-auto">
@@ -235,13 +236,18 @@ function HomePage() {
           </div>
         </div>
 
-        <div className="order-3 lg:order-3 flex flex-col flex-grow min-h-[60vh] lg:min-h-0">
+        <div className="order-3 lg:order-3 flex flex-col lg:flex-grow lg:min-h-0">
           <Cart
             items={cartItems}
             onRemove={handleRemoveFromCart}
             onClear={handleClearCart}
             onUpdatePeriod={handleUpdateCartItemPeriod}
-            onShowReservationForm={() => setShowReservationForm(true)}
+            onShowReservationForm={() => {
+              setIsCartExpanded(false);
+              setShowReservationForm(true);
+            }}
+            isExpanded={isCartExpanded}
+            setIsExpanded={setIsCartExpanded}
           />
         </div>
       </main>
