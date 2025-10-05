@@ -37,7 +37,7 @@ export function ManagePointsPage() {
   const [isAddingMode, setIsAddingMode] = useState(false);
 
   const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script-admin',
+    id: 'google-map-script', // Corrigido para corresponder ao ID da HomePage
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
   });
 
