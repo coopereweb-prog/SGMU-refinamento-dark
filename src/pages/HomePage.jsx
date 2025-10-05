@@ -1,18 +1,16 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { TagFilter } from '@/components/TagFilter';
 import { Cart } from '@/components/Cart';
 import { PointInfoWindow } from '@/components/PointInfoWindow';
 import { InfoPanel } from '@/components/InfoPanel';
 import { EnhancedReservationForm } from '@/components/EnhancedReservationForm';
 import { Modal } from '@/components/Modal';
-import { getStatusBadge } from '@/lib/utils';
 import { getPoints } from '@/lib/supabase';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
-import { MapPin, ShoppingCart, Menu, X, Loader2 } from 'lucide-react';
+import { ShoppingCart, Menu, X, Loader2 } from 'lucide-react';
 
 const mapContainerStyle = {
   width: '100%',
@@ -41,23 +39,18 @@ export function HomePage() {
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
   });
 
-  // Definir cartPointIds antes de usar - CORREÇÃO APLICADA
   const cartPointIds = useMemo(() => new Set(cartItems.map(item => item.point_id)), [cartItems]);
 
   const loadPoints = async () => {
     try {
       setLoading(true);
       const pointsData = await getPoints();
-      console.log('Pontos carregados:', pointsData);
-      
-      // Filtrar apenas pontos com coordenadas válidas
       const validPoints = pointsData.filter(p => 
         typeof p.latitude === 'number' && 
         typeof p.longitude === 'number' &&
         p.latitude !== 0 && 
         p.longitude !== 0
       );
-      console.log('Pontos válidos:', validPoints);
       setPoints(validPoints);
     } catch (error) {
       console.error('Erro ao carregar pontos:', error);
@@ -72,27 +65,20 @@ export function HomePage() {
   }, []);
 
   const handleMarkerClick = useCallback((point) => {
-    console.log('Marker clicked:', point);
-    
-    // Verificar o status do ponto
     if (point.status === 'sold') {
       toast.info('Este ponto já foi contratado.');
       setSelectedPoint(point);
       return;
     }
-    
     if (point.status === 'reserved') {
       toast.info('Este ponto está reservado temporariamente.');
       setSelectedPoint(point);
       return;
     }
-    
-    // Verificação adicional para disponibilidade
     if (point.status !== 'available' || point.is_available !== true) {
       toast.error('Este ponto não está disponível para reserva.');
       return;
     }
-    
     if (cartPointIds.has(point.id)) {
       toast.info('Este ponto já está no seu carrinho');
       return;
@@ -101,7 +87,6 @@ export function HomePage() {
   }, [cartPointIds]);
 
   const handleAddToCart = useCallback((point, periodYears) => {
-    // Verificação rigorosa antes de adicionar ao carrinho
     if (point.status !== 'available' || point.is_available !== true) {
       toast.error('Este ponto não está mais disponível para reserva.');
       return;
@@ -174,7 +159,6 @@ export function HomePage() {
 
   const totalCartItems = cartItems.length;
 
-  // Loading state melhorado
   if (!isLoaded || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -186,7 +170,6 @@ export function HomePage() {
     );
   }
 
-  // Map component com tratamento de erro
   const mapContent = (
     <GoogleMap
       mapContainerStyle={mapContainerStyle}
@@ -267,11 +250,9 @@ export function HomePage() {
       <div className="hidden md:block w-80 bg-white shadow-lg overflow-y-auto">
         <div className="p-6 space-y-6">
           <div className="text-center">
-            <img 
-              src="/logo.png" 
-              alt="SGMU Logo" 
-              className="w-24 h-24 mx-auto mb-4"
-            />
+            <div className="w-24 h-24 mx-auto mb-4 bg-gray-200 rounded-full flex items-center justify-center">
+              <span className="text-gray-500 text-xs">LOGO</span>
+            </div>
             <h1 className="text-2xl font-bold text-gray-800">SGMU</h1>
             <p className="text-sm text-gray-600">Sistema de Gestão de Mobiliário Urbano</p>
           </div>
