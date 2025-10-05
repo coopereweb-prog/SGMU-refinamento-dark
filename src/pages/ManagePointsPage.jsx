@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,7 +13,19 @@ import {
 import { PointForm } from '@/components/PointForm';
 import { Modal } from '@/components/Modal';
 import { toast } from "sonner";
-import { PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, MapPin, XCircle } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const mapContainerStyle = {
+  width: '100%',
+  height: '400px',
+  borderRadius: '0.5rem',
+};
+
+const center = {
+  lat: -22.78,
+  lng: -47.30
+};
 
 export function ManagePointsPage() {
   const [points, setPoints] = useState([]);
@@ -21,10 +34,12 @@ export function ManagePointsPage() {
   const [editingPoint, setEditingPoint] = useState(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [pointToDelete, setPointToDelete] = useState(null);
+  const [isAddingMode, setIsAddingMode] = useState(false);
 
-  useEffect(() => {
-    fetchPoints();
-  }, []);
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script-admin',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+  });
 
   const fetchPoints = async () => {
     setLoading(true);
@@ -38,9 +53,24 @@ export function ManagePointsPage() {
     setLoading(false);
   };
 
+  useEffect(() => {
+    fetchPoints();
+  }, []);
+
   const handleAddNew = () => {
     setEditingPoint(null);
+    setIsAddingMode(true);
+    toast.info("Clique no mapa", { description: "Selecione a localização para o novo ponto." });
+  };
+
+  const handleMapClick = (e) => {
+    if (!isAddingMode) return;
+    const lat = e.latLng.lat();
+    const lng = e.latLng.lng();
+    
+    setEditingPoint({ latitude: lat, longitude: lng });
     setIsFormOpen(true);
+    setIsAddingMode(false);
   };
 
   const handleEdit = (point) => {
@@ -51,7 +81,7 @@ export function ManagePointsPage() {
   const handleSavePoint = async (pointData, tagIds) => {
     try {
       let savedPoint;
-      if (editingPoint) {
+      if (editingPoint && editingPoint.id) {
         // Update point
         const { data, error } = await supabase
           .from('points')
@@ -101,11 +131,9 @@ export function ManagePointsPage() {
   const handleDeletePoint = async () => {
     if (!pointToDelete) return;
     try {
-      // First, delete associations in point_tags
       const { error: tagsError } = await supabase.from('point_tags').delete().eq('point_id', pointToDelete.id);
       if (tagsError) throw tagsError;
 
-      // Then, delete the point
       const { error: pointError } = await supabase.from('points').delete().eq('id', pointToDelete.id);
       if (pointError) throw pointError;
 
@@ -121,22 +149,50 @@ export function ManagePointsPage() {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-4">
+    <div className="container mx-auto p-4 space-y-6">
+      <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Gerenciar Pontos</h1>
-        <Button onClick={handleAddNew}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Novo Ponto
-        </Button>
+        {!isAddingMode ? (
+          <Button onClick={handleAddNew}>
+            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Novo Ponto
+          </Button>
+        ) : (
+          <Button variant="destructive" onClick={() => setIsAddingMode(false)}>
+            <XCircle className="mr-2 h-4 w-4" /> Cancelar Adição
+          </Button>
+        )}
+      </div>
+
+      {isAddingMode && (
+        <div className="p-4 text-center bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="font-semibold text-blue-700">Clique no mapa para definir a localização do novo ponto.</p>
+        </div>
+      )}
+
+      <div className="relative h-[400px] w-full rounded-lg overflow-hidden shadow-md">
+        {isLoaded ? (
+          <GoogleMap
+            mapContainerStyle={mapContainerStyle}
+            center={center}
+            zoom={14}
+            onClick={handleMapClick}
+            options={{ draggableCursor: isAddingMode ? 'crosshair' : 'grab' }}
+          >
+            {points.map(point => (
+              <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} />
+            ))}
+          </GoogleMap>
+        ) : <Skeleton className="w-full h-full" />}
       </div>
 
       {loading ? (
-        <p>Carregando...</p>
+        <p>Carregando tabela de pontos...</p>
       ) : (
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
-              <TableHead>Disponível</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -144,7 +200,7 @@ export function ManagePointsPage() {
             {points.map((point) => (
               <TableRow key={point.id}>
                 <TableCell>{point.name}</TableCell>
-                <TableCell>{point.is_available ? 'Sim' : 'Não'}</TableCell>
+                <TableCell>{point.status}</TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="icon" onClick={() => handleEdit(point)}>
                     <Edit className="h-4 w-4" />
@@ -162,7 +218,7 @@ export function ManagePointsPage() {
       <Modal
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
-        title={editingPoint ? 'Editar Ponto' : 'Novo Ponto'}
+        title={editingPoint?.id ? 'Editar Ponto' : 'Novo Ponto'}
         description="Preencha os detalhes do ponto abaixo."
       >
         <PointForm
