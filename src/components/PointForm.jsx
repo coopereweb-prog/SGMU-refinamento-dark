@@ -10,6 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { supabase } from '@/lib/supabase';
 import { compressImage } from '@/lib/image-utils';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const pointSchema = z.object({
   name: z.string().min(3, { message: "O nome do ponto deve ter pelo menos 3 caracteres." }),
@@ -59,16 +60,31 @@ export function PointForm({ point, onSave, onCancel }) {
         price_3y: point.price_3y || '',
         price_4y: point.price_4y || '',
         price_5y: point.price_5y || '',
-        is_available: point.is_available,
+        is_available: point.is_available ?? true,
         image_url: point.image_url || '',
       });
-      const fetchPointTags = async () => {
-        const { data } = await supabase.from('point_tags').select('tag_id').eq('point_id', point.id);
-        setSelectedTags(new Set(data.map(pt => pt.tag_id)));
-      };
-      fetchPointTags();
+
+      // Apenas busca as tags se for um ponto existente (com ID)
+      if (point.id) {
+        const fetchPointTags = async () => {
+          const { data, error } = await supabase.from('point_tags').select('tag_id').eq('point_id', point.id);
+          if (error) {
+            console.error("Error fetching point tags:", error);
+            toast.error("Erro ao carregar tags do ponto.");
+            setSelectedTags(new Set());
+          } else {
+            // Garante que 'data' não é nulo antes de mapear
+            setSelectedTags(new Set((data || []).map(pt => pt.tag_id)));
+          }
+        };
+        fetchPointTags();
+      } else {
+        // Se for um ponto novo, reseta as tags selecionadas
+        setSelectedTags(new Set());
+      }
     } else {
-      form.reset(); // Limpa o formulário para um novo ponto
+      form.reset();
+      setSelectedTags(new Set());
     }
   }, [point, form]);
 
