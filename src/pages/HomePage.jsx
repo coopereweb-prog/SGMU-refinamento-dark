@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { EnhancedReservationForm } from '../components/EnhancedReservationForm.jsx';
 import { useUser } from '../contexts/UserContext.jsx';
 import { WhatsAppButton } from '../components/WhatsAppButton.jsx';
-import { Modal } from '../components/Modal.jsx'; // Importando o Modal
+import { Modal } from '../components/Modal.jsx';
 
 const mapContainerStyle = {
   width: '100%',
@@ -108,14 +108,16 @@ function HomePage() {
     }
   }, [cartItems, selectedPoint, cartPointIds]);
 
-  const handleMarkerClick = (point) => {
+  const handleMarkerClick = useCallback((point) => {
+    console.log('Marker clicked:', point); // Debug
     if (cartPointIds.has(point.id)) {
+      toast.info('Este ponto já está no seu carrinho');
       return;
     }
     setSelectedPoint(point);
-  };
+  }, [cartPointIds]);
 
-  const handleAddToCart = (point, periodYears) => {
+  const handleAddToCart = useCallback((point, periodYears) => {
     let price;
     switch (periodYears) {
       case 1: price = point.price_1y; break;
@@ -135,9 +137,10 @@ function HomePage() {
     };
     
     setCartItems(prev => [...prev, cartItem]);
-  };
+    toast.success('Ponto adicionado ao carrinho!');
+  }, []);
 
-  const handleUpdateCartItemPeriod = (itemIndex, newPeriod) => {
+  const handleUpdateCartItemPeriod = useCallback((itemIndex, newPeriod) => {
     setCartItems(prevCartItems => {
       const newCartItems = [...prevCartItems];
       const itemToUpdate = newCartItems[itemIndex];
@@ -161,17 +164,17 @@ function HomePage() {
 
       return newCartItems;
     });
-  };
+  }, []);
 
-  const handleRemoveFromCart = (index) => {
+  const handleRemoveFromCart = useCallback((index) => {
     setCartItems(prev => prev.filter((_, i) => i !== index));
-  };
+  }, []);
 
-  const handleClearCart = () => {
+  const handleClearCart = useCallback(() => {
     setCartItems([]);
-  };
+  }, []);
 
-  const handleReservationSuccess = () => {
+  const handleReservationSuccess = useCallback(() => {
     toast.success("Reserva criada com sucesso!", {
       description: "Em breve nossa equipe entrará em contato.",
     });
@@ -179,7 +182,7 @@ function HomePage() {
     setCartItems([]);
     loadPoints();
     setShowReservationForm(false);
-  };
+  }, []);
 
   return (
     <div className="flex flex-col flex-grow">
