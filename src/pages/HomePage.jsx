@@ -235,7 +235,7 @@ function HomePage() {
           </div>
         </div>
 
-        <div className="order-3 lg:order-3 flex flex-col min-h-[40vh] lg:min-h-0 lg:overflow-y-auto">
+        <div className="order-3 lg:order-3 flex flex-col min-h-[60vh] lg:min-h-0 lg:overflow-y-auto">
           <Cart
             items={cartItems}
             onRemove={handleRemoveFromCart}
