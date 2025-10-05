@@ -22,24 +22,30 @@ export function PointInfoWindow({ point, onAddToCart, onClose }) {
     onClose();
   };
 
-  // O div externo agora é um overlay de tela cheia
+  // O div externo agora é transparente, mas ainda captura cliques para fechar.
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-end justify-center p-4"
-      onClick={onClose} // Fecha ao clicar no fundo
+      className="fixed inset-0 z-40 flex items-end justify-center p-4"
+      onClick={onClose} // Fecha ao clicar no "fundo" transparente
     >
       <Card 
-        className="w-full max-w-4xl flex flex-col animate-in slide-in-from-bottom-10 duration-300"
+        className="relative w-full max-w-4xl flex flex-col animate-in slide-in-from-bottom-10 duration-300"
         onClick={(e) => e.stopPropagation()} // Impede que o clique no card feche o modal
       >
-        <CardHeader className="flex-row items-start justify-between pb-4">
-          <div className="flex-grow">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onClose} 
+          className="absolute top-3 right-3 z-10 h-8 w-8 rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80"
+        >
+          <X className="h-5 w-5" />
+        </Button>
+
+        <CardHeader className="pb-4 pr-12">
+          <div>
             <CardTitle>{point.name}</CardTitle>
             <CardDescription>{point.description}</CardDescription>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="flex-shrink-0 -mt-2 -mr-2">
-            <X className="h-5 w-5" />
-          </Button>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
