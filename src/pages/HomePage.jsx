@@ -195,7 +195,7 @@ function HomePage() {
             <h2 className="text-xl font-bold text-gray-700">Mapa Interativo - Pontos de Instalação</h2>
             <p className="text-sm text-gray-500">Clique nos marcadores para ver detalhes e adicionar ao carrinho</p>
           </div>
-          <div className="flex-grow rounded-lg shadow-md overflow-hidden">
+          <div className="relative flex-grow rounded-lg shadow-md overflow-hidden">
             {isLoaded ? (
               <GoogleMap
                 mapContainerStyle={mapContainerStyle}
@@ -203,6 +203,7 @@ function HomePage() {
                 zoom={initialZoom}
                 onLoad={onLoad}
                 onUnmount={onUnmount}
+                onClick={() => setSelectedPoint(null)}
               >
                 {filteredPoints.map((point) => {
                   const isInCart = cartPointIds.has(point.id);
@@ -220,17 +221,17 @@ function HomePage() {
                     />
                   );
                 })}
-                
-                {selectedPoint && (
-                  <PointInfoWindow
-                    point={selectedPoint}
-                    onAddToCart={handleAddToCart}
-                    onClose={() => setSelectedPoint(null)}
-                  />
-                )}
               </GoogleMap>
             ) : (
               <Skeleton className="w-full h-full" />
+            )}
+
+            {selectedPoint && (
+              <PointInfoWindow
+                point={selectedPoint}
+                onAddToCart={handleAddToCart}
+                onClose={() => setSelectedPoint(null)}
+              />
             )}
           </div>
         </div>
