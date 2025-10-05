@@ -22,10 +22,15 @@ export function PointInfoWindow({ point, onAddToCart, onClose }) {
     onClose();
   };
 
+  // O div externo agora é um overlay de tela cheia
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-10 p-2 sm:p-4 pointer-events-none">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-end justify-center p-4"
+      onClick={onClose} // Fecha ao clicar no fundo
+    >
       <Card 
-        className="w-full flex flex-col animate-in slide-in-from-bottom-10 duration-300 pointer-events-auto"
+        className="w-full max-w-4xl flex flex-col animate-in slide-in-from-bottom-10 duration-300"
+        onClick={(e) => e.stopPropagation()} // Impede que o clique no card feche o modal
       >
         <CardHeader className="flex-row items-start justify-between pb-4">
           <div className="flex-grow">

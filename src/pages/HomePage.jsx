@@ -225,14 +225,6 @@ function HomePage() {
             ) : (
               <Skeleton className="w-full h-full" />
             )}
-
-            {selectedPoint && (
-              <PointInfoWindow
-                point={selectedPoint}
-                onAddToCart={handleAddToCart}
-                onClose={() => setSelectedPoint(null)}
-              />
-            )}
           </div>
         </div>
 
@@ -246,6 +238,15 @@ function HomePage() {
           />
         </div>
       </main>
+
+      {/* Overlays de tela cheia são renderizados aqui, fora do grid principal */}
+      {selectedPoint && (
+        <PointInfoWindow
+          point={selectedPoint}
+          onAddToCart={handleAddToCart}
+          onClose={() => setSelectedPoint(null)}
+        />
+      )}
 
       {showReservationForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
