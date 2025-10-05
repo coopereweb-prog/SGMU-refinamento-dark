@@ -1,6 +1,3 @@
-import { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
 export function InfoPanel({ points }) {
   const stats = useMemo(() => {
     const total = points.length;
@@ -30,7 +27,7 @@ export function InfoPanel({ points }) {
           <span className="font-bold text-lg text-yellow-600">{stats.reserved}</span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-red-600">Vendidos:</span>
+          <span className="text-red-600">Contratados:</span>
           <span className="font-bold text-lg text-red-600">{stats.sold}</span>
         </div>
       </CardContent>
