@@ -9,8 +9,8 @@ import { getPoints } from '../lib/supabase.js';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { EnhancedReservationForm } from '../components/EnhancedReservationForm.jsx';
 import { useUser } from '../contexts/UserContext.jsx';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { WhatsAppButton } from '../components/WhatsAppButton.jsx';
+import { Modal } from '../components/Modal.jsx'; // Importando o Modal
 
 const mapContainerStyle = {
   width: '100%',
@@ -239,40 +239,25 @@ function HomePage() {
         </div>
       </main>
 
-      {/* Overlays de tela cheia são renderizados aqui, fora do grid principal */}
-      {selectedPoint && (
-        <PointInfoWindow
-          point={selectedPoint}
-          onAddToCart={handleAddToCart}
-          onClose={() => setSelectedPoint(null)}
-        />
-      )}
+      <PointInfoWindow
+        isOpen={!!selectedPoint}
+        point={selectedPoint}
+        onAddToCart={handleAddToCart}
+        onClose={() => setSelectedPoint(null)}
+      />
 
-      {showReservationForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <Card className="w-full sm:max-w-lg md:max-w-2xl max-h-[95vh] overflow-y-auto">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Finalizar Reserva</CardTitle>
-                <button 
-                  onClick={() => setShowReservationForm(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  ✕
-                </button>
-              </div>
-              <CardDescription>Preencha seus dados para confirmar a reserva</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <EnhancedReservationForm
-                cartItems={cartItems}
-                onClose={() => setShowReservationForm(false)}
-                onReservationSuccess={handleReservationSuccess}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <Modal
+        isOpen={showReservationForm}
+        onClose={() => setShowReservationForm(false)}
+        title="Finalizar Reserva"
+        description="Preencha seus dados para confirmar a reserva"
+      >
+        <EnhancedReservationForm
+          cartItems={cartItems}
+          onClose={() => setShowReservationForm(false)}
+          onReservationSuccess={handleReservationSuccess}
+        />
+      </Modal>
 
       <WhatsAppButton />
     </div>
