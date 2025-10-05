@@ -235,7 +235,7 @@ function HomePage() {
           </div>
         </div>
 
-        <div className="order-3 lg:order-3 lg:overflow-y-auto">
+        <div className="order-3 lg:order-3 flex flex-col min-h-[40vh] lg:min-h-0 lg:overflow-y-auto">
           <Cart
             items={cartItems}
             onRemove={handleRemoveFromCart}
@@ -247,8 +247,8 @@ function HomePage() {
       </main>
 
       {showReservationForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"> {/* Adicionado p-4 aqui */}
-          <Card className="w-full sm:max-w-lg md:max-w-2xl max-h-[95vh] overflow-y-auto"> {/* Ajustado max-w e reintroduzido max-h e overflow */}
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <Card className="w-full sm:max-w-lg md:max-w-2xl max-h-[95vh] overflow-y-auto">
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle>Finalizar Reserva</CardTitle>
