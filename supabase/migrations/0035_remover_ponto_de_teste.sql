@@ -1,0 +1,1 @@
+DELETE FROM public.points WHERE name = 'Ponto Teste Trigger';

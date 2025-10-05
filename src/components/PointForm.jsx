@@ -135,18 +135,27 @@ export function PointForm({ point, onSave, onCancel }) {
         return;
       }
     }
-    const pointData = { ...values, image_url: imageUrl };
+    
+    // Não incluímos os preços no objeto pointData, pois eles serão preenchidos automaticamente pela trigger
+    const pointData = { 
+      ...values, 
+      image_url: imageUrl
+    };
+    
     await onSave(pointData, Array.from(selectedTags));
   };
+
+  // Obter os preços do tier selecionado para exibição
+  const selectedTier = pricingTiers.find(t => t.id === selectedTierId);
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
         <FormField control={form.control} name="pricing_tier_id" render={({ field }) => (
           <FormItem>
-            <FormLabel>Nível de Preço</FormLabel>
+            <FormLabel>Classificação do Ponto</FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
-              <FormControl><SelectTrigger><SelectValue placeholder="Selecione o nível" /></SelectTrigger></FormControl>
+              <FormControl><SelectTrigger><SelectValue placeholder="Selecione a classificação" /></SelectTrigger></FormControl>
               <SelectContent>
                 {pricingTiers.map(tier => <SelectItem key={tier.id} value={tier.id}>{tier.name}</SelectItem>)}
               </SelectContent>
@@ -154,6 +163,20 @@ export function PointForm({ point, onSave, onCancel }) {
             <FormMessage />
           </FormItem>
         )} />
+        
+        {selectedTier && (
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <p className="text-sm font-semibold text-blue-700 mb-2">Preços automáticos baseados na classificação:</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+              <div>1 ano: R$ {Number(selectedTier.price_1y).toFixed(2)}</div>
+              <div>2 anos: R$ {Number(selectedTier.price_2y).toFixed(2)}</div>
+              <div>3 anos: R$ {Number(selectedTier.price_3y).toFixed(2)}</div>
+              <div>4 anos: R$ {Number(selectedTier.price_4y).toFixed(2)}</div>
+              <div>5 anos: R$ {Number(selectedTier.price_5y).toFixed(2)}</div>
+            </div>
+          </div>
+        )}
+        
         <FormField control={form.control} name="name" render={({ field }) => (
           <FormItem><FormLabel>Nome do Ponto (Automático)</FormLabel><FormControl><Input placeholder="Será preenchido automaticamente" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
