@@ -61,11 +61,11 @@ export function PricingTierForm({ tier, onSave, onCancel }) {
             <FormControl><Textarea placeholder="Use as variáveis abaixo para criar um texto dinâmico." {...field} /></FormControl>
             <FormDescription className="text-xs">
               Variáveis: 
-              <code className="mx-1 font-mono bg-muted p-0.5 rounded-sm">{{tier_name}}</code>
-              <code className="mx-1 font-mono bg-muted p-0.5 rounded-sm">{{point_name}}</code>
-              <code className="mx-1 font-mono bg-muted p-0.5 rounded-sm">{{price_1y}}</code>
+              <code className="mx-1 font-mono bg-muted p-0.5 rounded-sm">{`{{tier_name}}`}</code>
+              <code className="mx-1 font-mono bg-muted p-0.5 rounded-sm">{`{{point_name}}`}</code>
+              <code className="mx-1 font-mono bg-muted p-0.5 rounded-sm">{`{{price_1y}}`}</code>
               ...
-              <code className="mx-1 font-mono bg-muted p-0.5 rounded-sm">{{price_5y}}</code>
+              <code className="mx-1 font-mono bg-muted p-0.5 rounded-sm">{`{{price_5y}}`}</code>
             </FormDescription>
             <FormMessage />
           </FormItem>
