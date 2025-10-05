@@ -59,12 +59,15 @@ function HomePage() {
     try {
       const pointsData = await getPoints();
       console.log('Pontos carregados:', pointsData); // Debug
+      
+      // Filtrar apenas pontos que estão realmente disponíveis
       const validPoints = pointsData.filter(p => 
         typeof p.latitude === 'number' && 
         typeof p.longitude === 'number' &&
         p.latitude !== 0 && 
         p.longitude !== 0 &&
-        p.is_available === true
+        p.is_available === true && // Garantir que is_available seja true
+        p.status === 'available' // Garantir que status seja 'available'
       );
       console.log('Pontos válidos:', validPoints); // Debug
       setPoints(validPoints);
@@ -121,6 +124,13 @@ function HomePage() {
 
   const handleMarkerClick = useCallback((point) => {
     console.log('Marker clicked:', point); // Debug
+    
+    // Verificar se o ponto está realmente disponível
+    if (point.status !== 'available' || point.is_available !== true) {
+      toast.error('Este ponto não está mais disponível para reserva.');
+      return;
+    }
+    
     if (cartPointIds.has(point.id)) {
       toast.info('Este ponto já está no seu carrinho');
       return;
@@ -129,6 +139,12 @@ function HomePage() {
   }, [cartPointIds]);
 
   const handleAddToCart = useCallback((point, periodYears) => {
+    // Verificação adicional antes de adicionar ao carrinho
+    if (point.status !== 'available' || point.is_available !== true) {
+      toast.error('Este ponto não está mais disponível para reserva.');
+      return;
+    }
+    
     let price;
     switch (periodYears) {
       case 1: price = point.price_1y; break;
@@ -191,7 +207,7 @@ function HomePage() {
     });
     
     setCartItems([]);
-    loadPoints();
+    loadPoints(); // Recarregar pontos para atualizar o status
     setShowReservationForm(false);
   }, []);
 

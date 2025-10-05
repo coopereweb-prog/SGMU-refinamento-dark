@@ -1,0 +1,1 @@
+SELECT public.expire_old_reservations();
