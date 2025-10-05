@@ -190,7 +190,7 @@ function HomePage() {
           <TagFilter onFilterChange={setSelectedTags} />
         </div>
 
-        <div className="order-1 lg:order-2 flex flex-col h-96 lg:h-auto">
+        <div className="order-1 lg:order-2 flex flex-col h-[40vh] lg:h-auto">
           <div className="mb-4 text-center">
             <h2 className="text-xl font-bold text-gray-700">Mapa Interativo - Pontos de Instalação</h2>
             <p className="text-sm text-gray-500">Clique nos marcadores para ver detalhes e adicionar ao carrinho</p>
@@ -235,7 +235,7 @@ function HomePage() {
           </div>
         </div>
 
-        <div className="order-3 lg:order-3 flex flex-col min-h-[60vh] lg:min-h-0 lg:overflow-y-auto">
+        <div className="order-3 lg:order-3 flex flex-col h-[60vh] lg:h-auto overflow-y-auto">
           <Cart
             items={cartItems}
             onRemove={handleRemoveFromCart}
