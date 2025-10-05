@@ -8,6 +8,7 @@ import { AdminPage } from '@/pages/AdminPage';
 import { ManagePointsPage } from '@/pages/ManagePointsPage';
 import { ManageTagsPage } from '@/pages/ManageTagsPage';
 import { ManageUsersPage } from '@/pages/ManageUsersPage';
+import { ManageOrdersPage } from '@/pages/ManageOrdersPage'; // Importando a nova página
 import LoginPage from '@/pages/LoginPage';
 import UpdatePasswordPage from '@/pages/UpdatePasswordPage';
 import FieldTechnicianPage from '@/pages/FieldTechnicianPage';
@@ -49,6 +50,11 @@ function App() {
               <Route path="/admin/users" element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <ManageUsersPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/orders" element={
+                <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                  <ManageOrdersPage />
                 </ProtectedRoute>
               } />
             </Route>
