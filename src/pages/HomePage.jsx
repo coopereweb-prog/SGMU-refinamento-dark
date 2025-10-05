@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { TagFilter } from '@/components/TagFilter';
 import { Cart } from '@/components/Cart';
 import { PointInfoWindow } from '@/components/PointInfoWindow';
@@ -11,7 +12,7 @@ import { getStatusBadge } from '@/lib/utils';
 import { getPoints } from '@/lib/supabase';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
-import { ShoppingCart, Menu, X, Loader2 } from 'lucide-react';
+import { MapPin, ShoppingCart, Menu, X, Loader2 } from 'lucide-react';
 
 const mapContainerStyle = {
   width: '100%',
@@ -266,9 +267,11 @@ export function HomePage() {
       <div className="hidden md:block w-80 bg-white shadow-lg overflow-y-auto">
         <div className="p-6 space-y-6">
           <div className="text-center">
-            <div className="w-24 h-24 mx-auto mb-4 bg-gray-200 rounded-full flex items-center justify-center">
-              <span className="text-gray-500 text-xs">LOGO</span>
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="SGMU Logo" 
+              className="w-24 h-24 mx-auto mb-4"
+            />
             <h1 className="text-2xl font-bold text-gray-800">SGMU</h1>
             <p className="text-sm text-gray-600">Sistema de Gestão de Mobiliário Urbano</p>
           </div>
