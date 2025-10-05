@@ -10,8 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TagForm } from '@/components/TagForm';
-import { BaseModal } from '@/components/BaseModal';
-import { BaseAlertDialog } from '@/components/BaseAlertDialog';
+import { Modal } from '@/components/Modal';
 import { toast } from "sonner";
 import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 
@@ -127,26 +126,30 @@ export function ManageTagsPage() {
         </Table>
       )}
 
-      <BaseModal
+      <Modal
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         title={editingTag ? 'Editar Tag' : 'Nova Tag'}
+        description="Insira o nome para a tag."
       >
         <TagForm
           tag={editingTag}
           onSave={handleSaveTag}
           onCancel={() => setIsFormOpen(false)}
         />
-      </BaseModal>
+      </Modal>
 
-      <BaseAlertDialog
+      <Modal
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
-        onConfirm={handleDeleteTag}
         title="Você tem certeza?"
         description={`Esta ação não pode ser desfeita. Isso excluirá permanentemente a tag "${tagToDelete?.name}".`}
-        confirmText="Excluir"
-      />
+      >
+        <div className="flex justify-end space-x-4 pt-4">
+          <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancelar</Button>
+          <Button variant="destructive" onClick={handleDeleteTag}>Excluir</Button>
+        </div>
+      </Modal>
     </div>
   );
 }

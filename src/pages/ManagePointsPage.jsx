@@ -10,8 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PointForm } from '@/components/PointForm';
-import { BaseModal } from '@/components/BaseModal';
-import { BaseAlertDialog } from '@/components/BaseAlertDialog';
+import { Modal } from '@/components/Modal';
 import { toast } from "sonner";
 import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 
@@ -160,26 +159,30 @@ export function ManagePointsPage() {
         </Table>
       )}
 
-      <BaseModal
+      <Modal
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         title={editingPoint ? 'Editar Ponto' : 'Novo Ponto'}
+        description="Preencha os detalhes do ponto abaixo."
       >
         <PointForm
           point={editingPoint}
           onSave={handleSavePoint}
           onCancel={() => setIsFormOpen(false)}
         />
-      </BaseModal>
+      </Modal>
 
-      <BaseAlertDialog
+      <Modal
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
-        onConfirm={handleDeletePoint}
         title="Você tem certeza?"
         description={`Esta ação não pode ser desfeita. Isso excluirá permanentemente o ponto "${pointToDelete?.name}".`}
-        confirmText="Excluir"
-      />
+      >
+        <div className="flex justify-end space-x-4 pt-4">
+          <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancelar</Button>
+          <Button variant="destructive" onClick={handleDeletePoint}>Excluir</Button>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -5,8 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { UserForm } from "@/components/UserForm";
-import { BaseModal } from "@/components/BaseModal";
-import { BaseAlertDialog } from "@/components/BaseAlertDialog";
+import { Modal } from "@/components/Modal";
 import { toast } from "sonner";
 import { Mail, Edit, Trash2, Loader2 } from "lucide-react";
 
@@ -144,17 +143,17 @@ export function ManageUsersPage() {
       </Card>
 
       {/* Modal de Convite */}
-      <BaseModal
+      <Modal
         isOpen={isInviteModalOpen}
         onClose={() => setIsInviteModalOpen(false)}
         title="Convidar Novo Usuário"
         description="Envie um convite por e-mail para um novo membro se juntar à plataforma."
       >
         <UserForm onSave={handleInvite} onCancel={() => setIsInviteModalOpen(false)} isInvite={true} />
-      </BaseModal>
+      </Modal>
 
       {/* Modal de Edição */}
-      <BaseModal
+      <Modal
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
@@ -167,16 +166,20 @@ export function ManageUsersPage() {
           setIsModalOpen(false);
           setSelectedUser(null);
         }} />
-      </BaseModal>
+      </Modal>
 
       {/* Alerta de Deleção */}
-      <BaseAlertDialog
+      <Modal
         isOpen={isAlertOpen}
         onClose={() => setIsAlertOpen(false)}
-        onConfirm={confirmDelete}
         title="Você tem certeza?"
         description={`Esta ação não pode ser desfeita. Isso irá deletar permanentemente o usuário ${selectedUser?.email}.`}
-      />
+      >
+        <div className="flex justify-end space-x-4 pt-4">
+          <Button variant="outline" onClick={() => setIsAlertOpen(false)}>Cancelar</Button>
+          <Button variant="destructive" onClick={confirmDelete}>Excluir</Button>
+        </div>
+      </Modal>
     </div>
   );
 }
