@@ -91,9 +91,16 @@ export function PointForm({ point, onSave, onCancel }) {
         const newName = `${selectedTier.name} - ${baseName}`;
         form.setValue('name', newName);
 
-        // Atualiza descrição
+        // Atualiza descrição com todas as variáveis
         let newDescription = selectedTier.description_template || '';
-        newDescription = newDescription.replace('{{price_1y}}', Number(selectedTier.price_1y).toFixed(2));
+        newDescription = newDescription
+          .replace(/{{tier_name}}/g, selectedTier.name)
+          .replace(/{{point_name}}/g, baseName)
+          .replace(/{{price_1y}}/g, Number(selectedTier.price_1y).toFixed(2))
+          .replace(/{{price_2y}}/g, Number(selectedTier.price_2y).toFixed(2))
+          .replace(/{{price_3y}}/g, Number(selectedTier.price_3y).toFixed(2))
+          .replace(/{{price_4y}}/g, Number(selectedTier.price_4y).toFixed(2))
+          .replace(/{{price_5y}}/g, Number(selectedTier.price_5y).toFixed(2));
         form.setValue('description', newDescription);
       }
     }

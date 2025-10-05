@@ -5,7 +5,7 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Loader2 } from 'lucide-react';
 
 const tierSchema = z.object({
@@ -56,7 +56,19 @@ export function PricingTierForm({ tier, onSave, onCancel }) {
           ))}
         </div>
         <FormField control={form.control} name="description_template" render={({ field }) => (
-          <FormItem><FormLabel>Modelo de Descrição</FormLabel><FormControl><Textarea placeholder="Use {{price_1y}} para o valor inicial." {...field} /></FormControl><FormMessage /></FormItem>
+          <FormItem>
+            <FormLabel>Modelo de Descrição</FormLabel>
+            <FormControl><Textarea placeholder="Use as variáveis abaixo para criar um texto dinâmico." {...field} /></FormControl>
+            <FormDescription className="text-xs">
+              Variáveis: 
+              <code className="mx-1 font-mono bg-muted p-0.5 rounded-sm">{{tier_name}}</code>
+              <code className="mx-1 font-mono bg-muted p-0.5 rounded-sm">{{point_name}}</code>
+              <code className="mx-1 font-mono bg-muted p-0.5 rounded-sm">{{price_1y}}</code>
+              ...
+              <code className="mx-1 font-mono bg-muted p-0.5 rounded-sm">{{price_5y}}</code>
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
         )} />
         <div className="flex justify-end space-x-2 pt-4">
           <Button type="button" variant="outline" onClick={onCancel} disabled={form.formState.isSubmitting}>Cancelar</Button>
