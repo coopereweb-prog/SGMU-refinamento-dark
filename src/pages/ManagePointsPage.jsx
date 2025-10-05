@@ -13,12 +13,12 @@ import {
 import { PointForm } from '@/components/PointForm';
 import { Modal } from '@/components/Modal';
 import { toast } from "sonner";
-import { PlusCircle, Edit, Trash2, MapPin, XCircle } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, XCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const mapContainerStyle = {
   width: '100%',
-  height: '400px',
+  height: '100%',
   borderRadius: '0.5rem',
 };
 
@@ -37,7 +37,7 @@ export function ManagePointsPage() {
   const [isAddingMode, setIsAddingMode] = useState(false);
 
   const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script', // Corrigido para corresponder ao ID da HomePage
+    id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
   });
 
@@ -60,7 +60,6 @@ export function ManagePointsPage() {
   const handleAddNew = () => {
     setEditingPoint(null);
     setIsAddingMode(true);
-    toast.info("Clique no mapa", { description: "Selecione a localização para o novo ponto." });
   };
 
   const handleMapClick = (e) => {
@@ -82,29 +81,17 @@ export function ManagePointsPage() {
     try {
       let savedPoint;
       if (editingPoint && editingPoint.id) {
-        // Update point
-        const { data, error } = await supabase
-          .from('points')
-          .update(pointData)
-          .eq('id', editingPoint.id)
-          .select()
-          .single();
+        const { data, error } = await supabase.from('points').update(pointData).eq('id', editingPoint.id).select().single();
         if (error) throw error;
         savedPoint = data;
         toast.success("Sucesso", { description: "Ponto atualizado com sucesso." });
       } else {
-        // Create new point
-        const { data, error } = await supabase
-          .from('points')
-          .insert(pointData)
-          .select()
-          .single();
+        const { data, error } = await supabase.from('points').insert(pointData).select().single();
         if (error) throw error;
         savedPoint = data;
         toast.success("Sucesso", { description: "Ponto criado com sucesso." });
       }
 
-      // Handle tags
       const { error: deleteError } = await supabase.from('point_tags').delete().eq('point_id', savedPoint.id);
       if (deleteError) throw deleteError;
 
@@ -131,12 +118,8 @@ export function ManagePointsPage() {
   const handleDeletePoint = async () => {
     if (!pointToDelete) return;
     try {
-      const { error: tagsError } = await supabase.from('point_tags').delete().eq('point_id', pointToDelete.id);
-      if (tagsError) throw tagsError;
-
-      const { error: pointError } = await supabase.from('points').delete().eq('id', pointToDelete.id);
-      if (pointError) throw pointError;
-
+      await supabase.from('point_tags').delete().eq('point_id', pointToDelete.id);
+      await supabase.from('points').delete().eq('id', pointToDelete.id);
       toast.success("Sucesso", { description: "Ponto excluído com sucesso." });
       fetchPoints();
     } catch (error) {
@@ -163,56 +146,57 @@ export function ManagePointsPage() {
         )}
       </div>
 
-      {isAddingMode && (
-        <div className="p-4 text-center bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="font-semibold text-blue-700">Clique no mapa para definir a localização do novo ponto.</p>
+      {isAddingMode ? (
+        <div className="h-[60vh] flex flex-col gap-4">
+          <div className="p-4 text-center bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="font-semibold text-blue-700">Clique no mapa para definir a localização do novo ponto.</p>
+          </div>
+          <div className="relative flex-grow w-full rounded-lg overflow-hidden shadow-md">
+            {isLoaded ? (
+              <GoogleMap
+                mapContainerStyle={mapContainerStyle}
+                center={center}
+                zoom={14}
+                onClick={handleMapClick}
+                options={{ draggableCursor: 'crosshair' }}
+              >
+                {points.map(point => (
+                  <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} />
+                ))}
+              </GoogleMap>
+            ) : <Skeleton className="w-full h-full" />}
+          </div>
         </div>
-      )}
-
-      <div className="relative h-[400px] w-full rounded-lg overflow-hidden shadow-md">
-        {isLoaded ? (
-          <GoogleMap
-            mapContainerStyle={mapContainerStyle}
-            center={center}
-            zoom={14}
-            onClick={handleMapClick}
-            options={{ draggableCursor: isAddingMode ? 'crosshair' : 'grab' }}
-          >
-            {points.map(point => (
-              <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} />
-            ))}
-          </GoogleMap>
-        ) : <Skeleton className="w-full h-full" />}
-      </div>
-
-      {loading ? (
-        <p>Carregando tabela de pontos...</p>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {points.map((point) => (
-              <TableRow key={point.id}>
-                <TableCell>{point.name}</TableCell>
-                <TableCell>{point.status}</TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={() => handleEdit(point)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(point)}>
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </TableCell>
+        loading ? (
+          <p>Carregando tabela de pontos...</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {points.map((point) => (
+                <TableRow key={point.id}>
+                  <TableCell>{point.name}</TableCell>
+                  <TableCell>{point.status}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="icon" onClick={() => handleEdit(point)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(point)}>
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )
       )}
 
       <Modal
