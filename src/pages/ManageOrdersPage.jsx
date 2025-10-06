@@ -16,6 +16,7 @@ import { Loader2, Search, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
+import { getOrderStatusProps } from '@/lib/utils';
 
 export function ManageOrdersPage() {
   const [orders, setOrders] = useState([]);
@@ -60,20 +61,6 @@ export function ManageOrdersPage() {
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
-
-  const getStatusBadge = (status) => {
-    const variants = {
-      pending: 'default',
-      completed: 'success',
-      cancelled: 'destructive',
-    };
-    const labels = {
-      pending: 'Pendente',
-      completed: 'Concluído',
-      cancelled: 'Cancelado',
-    };
-    return <Badge variant={variants[status] || 'secondary'}>{labels[status] || status}</Badge>;
-  };
 
   const handleViewOrder = (orderId) => {
     // Navegar para uma página de detalhes do pedido (pode ser implementada depois)
@@ -121,38 +108,43 @@ export function ManageOrdersPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                orders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell>
-                      <div className="font-medium">{order.customer_name}</div>
-                      <div className="text-sm text-muted-foreground">{order.customer_email}</div>
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(order.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {order.order_items?.length || 0} item(ns)
-                        {order.order_items && order.order_items.length > 0 && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            {order.order_items.slice(0, 2).map(item => item.points?.name).filter(Boolean).join(', ')}
-                            {order.order_items.length > 2 && '...'}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {Number(order.total_amount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(order.status)}</TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="outline" size="sm" onClick={() => handleViewOrder(order.id)}>
-                        <Eye className="h-4 w-4 mr-2" />
-                        Ver Detalhes
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
+                orders.map((order) => {
+                  const statusProps = getOrderStatusProps(order.status);
+                  return (
+                    <TableRow key={order.id}>
+                      <TableCell>
+                        <div className="font-medium">{order.customer_name}</div>
+                        <div className="text-sm text-muted-foreground">{order.customer_email}</div>
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(order.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          {order.order_items?.length || 0} item(ns)
+                          {order.order_items && order.order_items.length > 0 && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              {order.order_items.slice(0, 2).map(item => item.points?.name).filter(Boolean).join(', ')}
+                              {order.order_items.length > 2 && '...'}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {Number(order.total_amount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={statusProps.variant}>{statusProps.label}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="outline" size="sm" onClick={() => handleViewOrder(order.id)}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          Ver Detalhes
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>

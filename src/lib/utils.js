@@ -5,27 +5,32 @@ export function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-export function getStatusBadge(status) {
+/**
+ * Retorna as propriedades (label e variant) para o Badge de status de um pedido.
+ * @param {string} status O status do pedido (ex: 'pending', 'completed').
+ * @returns {{label: string, variant: string}}
+ */
+export function getOrderStatusProps(status) {
   switch (status) {
-    case 'available':
+    case 'pending':
       return {
-        label: 'Disponível',
-        className: 'bg-green-500 hover:bg-green-600',
+        label: 'Pendente',
+        variant: 'default',
       };
-    case 'reserved':
+    case 'completed':
       return {
-        label: 'Reservado',
-        className: 'bg-yellow-500 hover:bg-yellow-600',
+        label: 'Concluído',
+        variant: 'success',
       };
-    case 'sold':
+    case 'cancelled':
       return {
-        label: 'Contratado',
-        className: 'bg-red-500 hover:bg-red-600',
+        label: 'Cancelado',
+        variant: 'destructive',
       };
     default:
       return {
-        label: 'Indefinido',
-        className: 'bg-gray-500 hover:bg-gray-600',
+        label: status || 'Indefinido',
+        variant: 'secondary',
       };
   }
 }

@@ -72,32 +72,6 @@ export const deleteTag = async (id) => {
   if (tagsError) throw tagsError;
 };
 
-
-export const updatePointStatus = async (pointId, status, dadosCliente = null) => {
-  const updateData = {
-    status,
-    updated_at: new Date().toISOString()
-  }
-
-  if (dadosCliente) {
-    updateData.dados_cliente = dadosCliente
-    updateData.reservado_em = new Date().toISOString()
-  }
-
-  const { data, error } = await supabase
-    .from('points')
-    .update(updateData)
-    .eq('id', pointId)
-    .select()
-
-  if (error) {
-    console.error('Erro ao atualizar ponto:', error)
-    return null
-  }
-
-  return data[0]
-}
-
 export const createOrder = async (customerData, cartItems) => {
   // Mapeia os itens do carrinho para uma estrutura mais simples, enviando apenas o necessário.
   const itemsForFunction = cartItems.map(item => ({
@@ -118,28 +92,6 @@ export const createOrder = async (customerData, cartItems) => {
   }
 
   return data
-}
-
-// Função para upload de imagens
-export const uploadImagem = async (file, path) => {
-  const { data, error } = await supabase.storage
-    .from('placas-fotos')
-    .upload(path, file)
-
-  if (error) {
-    console.error('Erro ao fazer upload:', error)
-    return null
-  }
-
-  return data
-}
-
-export const getImagemUrl = (path) => {
-  const { data } = supabase.storage
-    .from('placas-fotos')
-    .getPublicUrl(path)
-
-  return data.publicUrl
 }
 
 // Nova função para modificar um pedido
