@@ -3,10 +3,10 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Mail } from 'lucide-react';
 import { WhatsAppButton } from '../components/WhatsAppButton';
 
 function LoginPage() {
@@ -14,6 +14,7 @@ function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || null;
@@ -57,9 +58,29 @@ function LoginPage() {
         }
       }
     } catch (err) {
-      // Mensagem de erro mais clara e específica para o usuário
       toast.error('Falha no Login', {
         description: 'E-mail ou senha inválidos. Por favor, verifique seus dados e tente novamente.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/update-password`,
+      });
+      if (error) throw error;
+      toast.success('E-mail enviado!', {
+        description: `Se o e-mail ${email} estiver cadastrado, você receberá um link para redefinir sua senha.`,
+      });
+      setIsForgotPassword(false); // Volta para a tela de login
+    } catch (error) {
+      toast.error('Erro ao enviar e-mail', {
+        description: error.message,
       });
     } finally {
       setLoading(false);
@@ -69,22 +90,44 @@ function LoginPage() {
   return (
     <div className="w-full min-h-screen flex items-center justify-center py-12">
       <div className="mx-auto grid w-[350px] gap-6">
-          <div className="grid gap-2 text-center">
-            <img 
-              src="/logo.png" 
-              alt="SGMU Logo" 
-              className="w-32 mx-auto mb-4"
-            />
-            <h1 className="text-3xl font-bold">Área Restrita</h1>
-            <p className="text-balance text-muted-foreground">
-              Insira suas credenciais para acessar o painel
-            </p>
-          </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Login</CardTitle>
-            </CardHeader>
-            <CardContent>
+        <div className="grid gap-2 text-center">
+          <img 
+            src="/logo.png" 
+            alt="SGMU Logo" 
+            className="w-32 mx-auto mb-4"
+          />
+          <h1 className="text-3xl font-bold">Área Restrita</h1>
+          <p className="text-balance text-muted-foreground">
+            {isForgotPassword ? 'Insira seu e-mail para redefinir a senha' : 'Insira suas credenciais para acessar o painel'}
+          </p>
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>{isForgotPassword ? 'Redefinir Senha' : 'Login'}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isForgotPassword ? (
+              <form onSubmit={handlePasswordReset} className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="seu@email.com"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? <Loader2 className="animate-spin" /> : 'Enviar Link de Redefinição'}
+                </Button>
+                <Button variant="link" onClick={() => setIsForgotPassword(false)}>
+                  Voltar para o Login
+                </Button>
+              </form>
+            ) : (
               <form onSubmit={handleLogin} className="grid gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
@@ -101,12 +144,14 @@ function LoginPage() {
                 <div className="grid gap-2">
                   <div className="flex items-center">
                     <Label htmlFor="password">Senha</Label>
-                    <a
-                      href="#"
-                      className="ml-auto inline-block text-sm underline"
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="ml-auto h-auto p-0 text-sm underline"
+                      onClick={() => setIsForgotPassword(true)}
                     >
                       Esqueceu sua senha?
-                    </a>
+                    </Button>
                   </div>
                   <div className="relative">
                     <Input 
@@ -134,15 +179,18 @@ function LoginPage() {
                   {loading ? <Loader2 className="animate-spin" /> : 'Entrar'}
                 </Button>
               </form>
-            </CardContent>
-          </Card>
+            )}
+          </CardContent>
+        </Card>
+        {!isForgotPassword && (
           <div className="text-center text-base">
             Ainda não tem uma conta?{" "}
             <Link to="/" className="underline font-bold">
               Cadastre-se
             </Link>
           </div>
-        </div>
+        )}
+      </div>
       <WhatsAppButton />
     </div>
   );
