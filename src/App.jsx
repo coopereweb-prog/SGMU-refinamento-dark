@@ -9,7 +9,7 @@ import { ManagePointsPage } from '@/pages/ManagePointsPage';
 import { ManageTagsPage } from '@/pages/ManageTagsPage';
 import { ManageUsersPage } from '@/pages/ManageUsersPage';
 import { ManageOrdersPage } from '@/pages/ManageOrdersPage';
-import { ManagePricingPage } from '@/pages/ManagePricingPage'; // Importando a nova página
+import { ManagePricingPage } from '@/pages/ManagePricingPage';
 import LoginPage from '@/pages/LoginPage';
 import UpdatePasswordPage from '@/pages/UpdatePasswordPage';
 import FieldTechnicianPage from '@/pages/FieldTechnicianPage';
@@ -25,9 +25,11 @@ function App() {
       <AuthProvider>
         <UserProvider>
           <Routes>
-            {/* Rotas com o layout principal (cabeçalho, etc.) */}
+            {/* Rota da HomePage agora é de tela cheia, sem o AppLayout */}
+            <Route path="/" element={<HomePage />} />
+
+            {/* Rotas que continuam usando o layout principal (cabeçalho, etc.) */}
             <Route element={<AppLayout />}>
-              <Route path="/" element={<HomePage />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute allowedRoles={['client']}>
                   <ClientDashboardPage />

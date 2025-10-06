@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
-import { Button } from '@/components/ui/button';
 import { TagFilter } from '@/components/TagFilter';
 import { Cart } from '@/components/Cart';
 import { PointInfoWindow } from '@/components/PointInfoWindow';
@@ -8,14 +7,12 @@ import { InfoPanel } from '@/components/InfoPanel';
 import { EnhancedReservationForm } from '@/components/EnhancedReservationForm';
 import { Modal } from '@/components/Modal';
 import { getPoints } from '@/lib/supabase';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
-import { ShoppingCart, Menu, X, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 const mapContainerStyle = {
   width: '100%',
   height: '100%',
-  borderRadius: '0.5rem',
 };
 
 const center = {
@@ -23,16 +20,13 @@ const center = {
   lng: -47.30
 };
 
-export function HomePage() {
+function HomePage() {
   const [points, setPoints] = useState([]);
   const [selectedPoint, setSelectedPoint] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedTags, setSelectedTags] = useState([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const isMobile = useIsMobile();
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -157,140 +151,87 @@ export function HomePage() {
     loadPoints();
   }, []);
 
-  const totalCartItems = cartItems.length;
-
   if (!isLoaded || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="flex items-center justify-center h-screen bg-gray-100">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Carregando mapa...</p>
+          <p className="text-gray-600">Carregando mapa e pontos...</p>
         </div>
       </div>
     );
   }
 
-  const mapContent = (
-    <GoogleMap
-      mapContainerStyle={mapContainerStyle}
-      center={center}
-      zoom={14}
-      options={{
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: false,
-        zoomControl: true,
-        gestureHandling: 'cooperative',
-      }}
-    >
-      {filteredPoints.map(point => {
-        const isInCart = cartPointIds.has(point.id);
-        
-        let iconUrl = '/marker-available.png';
-        if (point.status === 'sold') {
-          iconUrl = '/marker-sold.png';
-        } else if (point.status === 'reserved') {
-          iconUrl = '/marker-reserved.png';
-        } else if (isInCart) {
-          iconUrl = '/marker-in-cart.png';
-        }
-
-        return (
-          <Marker
-            key={point.id}
-            position={{ lat: point.latitude, lng: point.longitude }}
-            icon={{
-              url: iconUrl,
-              scaledSize: new window.google.maps.Size(40, 40),
-              origin: new window.google.maps.Point(0, 0),
-              anchor: new window.google.maps.Point(20, 40),
-            }}
-            onClick={() => handleMarkerClick(point)}
-          />
-        );
-      })}
-    </GoogleMap>
-  );
-
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-gray-100">
-      {/* Header para Mobile */}
-      <div className="md:hidden bg-white shadow-sm p-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-800">SGMU - Placas Nova Odessa</h1>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+    <div className="flex h-screen bg-gray-100">
+      {/* Sidebar */}
+      <aside className="w-96 bg-white shadow-lg p-6 space-y-6 overflow-y-auto">
+        <div className="text-center">
+          <img 
+            className="h-24 w-auto mx-auto transition-all duration-200 ease-in-out" 
+            src="/logo.png" 
+            alt="SGMU Logo" 
+          />
+          <h1 className="text-2xl font-bold text-gray-800 mt-4">SGMU</h1>
+          <p className="text-sm text-gray-600">Sistema de Gestão de Mobiliário Urbano</p>
+        </div>
+        <TagFilter onFilterChange={setSelectedTags} />
+        <InfoPanel points={filteredPoints} />
+      </aside>
+
+      {/* Main Content (Map) */}
+      <main className="flex-1 relative">
+        <GoogleMap
+          mapContainerStyle={mapContainerStyle}
+          center={center}
+          zoom={14}
+          options={{
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: false,
+            zoomControl: true,
+            gestureHandling: 'cooperative',
+          }}
         >
-          {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </Button>
-      </div>
+          {filteredPoints.map(point => {
+            const isInCart = cartPointIds.has(point.id);
+            
+            let iconUrl = '/marker-available.png';
+            if (point.status === 'sold') {
+              iconUrl = '/marker-sold.png';
+            } else if (point.status === 'reserved') {
+              iconUrl = '/marker-reserved.png';
+            } else if (isInCart) {
+              iconUrl = '/marker-in-cart.png';
+            }
 
-      {/* Mobile Menu Overlay */}
-      {isMobile && isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-50" onClick={() => setIsMobileMenuOpen(false)}>
-          <div className="bg-white w-80 h-full shadow-xl overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="p-4 border-b">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Menu</h2>
-                <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)}>
-                  <X className="h-6 w-6" />
-                </Button>
-              </div>
-            </div>
-            <div className="p-4 space-y-4">
-              <TagFilter onFilterChange={setSelectedTags} />
-              <InfoPanel points={filteredPoints} />
-            </div>
-          </div>
+            return (
+              <Marker
+                key={point.id}
+                position={{ lat: point.latitude, lng: point.longitude }}
+                icon={{
+                  url: iconUrl,
+                  scaledSize: new window.google.maps.Size(40, 40),
+                  origin: new window.google.maps.Point(0, 0),
+                  anchor: new window.google.maps.Point(20, 40),
+                }}
+                onClick={() => handleMarkerClick(point)}
+              />
+            );
+          })}
+        </GoogleMap>
+
+        {/* Cart Overlay */}
+        <div className="absolute top-4 right-4 w-96 max-h-[calc(100vh-2rem)]">
+          <Cart
+            items={cartItems}
+            onRemove={handleRemoveFromCart}
+            onClear={handleClearCart}
+            onUpdatePeriod={handleUpdatePeriod}
+            onShowReservationForm={() => setIsReservationModalOpen(true)}
+          />
         </div>
-      )}
-
-      {/* Sidebar - Desktop */}
-      <div className="hidden md:block w-80 bg-white shadow-lg overflow-y-auto">
-        <div className="p-6 space-y-6">
-          <div className="text-center">
-            <div className="w-24 h-24 mx-auto mb-4 bg-gray-200 rounded-full flex items-center justify-center">
-              <span className="text-gray-500 text-xs">LOGO</span>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-800">SGMU</h1>
-            <p className="text-sm text-gray-600">Sistema de Gestão de Mobiliário Urbano</p>
-          </div>
-          
-          <TagFilter onFilterChange={setSelectedTags} />
-          <InfoPanel points={filteredPoints} />
-        </div>
-      </div>
-
-      {/* Map Container */}
-      <div className="flex-1 relative">
-        {mapContent}
-        
-        {/* Cart Button - Mobile */}
-        {isMobile && (
-          <Button
-            className="absolute bottom-4 right-4 z-10 shadow-lg"
-            size="lg"
-            onClick={() => setIsCartOpen(true)}
-          >
-            <ShoppingCart className="h-5 w-5 mr-2" />
-            Carrinho ({totalCartItems})
-          </Button>
-        )}
-
-        {/* Cart - Desktop */}
-        {!isMobile && (
-          <div className="absolute top-4 right-4 w-96 max-h-[80vh] overflow-hidden">
-            <Cart
-              items={cartItems}
-              onRemove={handleRemoveFromCart}
-              onClear={handleClearCart}
-              onUpdatePeriod={handleUpdatePeriod}
-              onShowReservationForm={() => setIsReservationModalOpen(true)}
-            />
-          </div>
-        )}
-      </div>
+      </main>
 
       {/* Modals */}
       <PointInfoWindow
@@ -312,27 +253,6 @@ export function HomePage() {
           onReservationSuccess={handleReservationSuccess}
         />
       </Modal>
-
-      {/* Mobile Cart Modal */}
-      {isMobile && (
-        <Modal
-          isOpen={isCartOpen}
-          onClose={() => setIsCartOpen(false)}
-          title="Seu Carrinho"
-          description={totalCartItems > 0 ? `Você tem ${totalCartItems} item(ns) no carrinho.` : 'Seu carrinho está vazio.'}
-        >
-          <Cart
-            items={cartItems}
-            onRemove={handleRemoveFromCart}
-            onClear={handleClearCart}
-            onUpdatePeriod={handleUpdatePeriod}
-            onShowReservationForm={() => {
-              setIsCartOpen(false);
-              setIsReservationModalOpen(true);
-            }}
-          />
-        </Modal>
-      )}
     </div>
   );
 }
