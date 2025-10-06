@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, User, Clock, AlertCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 export function PointDetails({ point, onAddToCart }) {
   const [selectedPeriod, setSelectedPeriod] = useState(1);
@@ -111,7 +112,17 @@ export function PointDetails({ point, onAddToCart }) {
   };
 
   return (
-    <div className="p-1 space-y-2">
+    <div className="p-1 space-y-4">
+      {point.tags && point.tags.length > 0 && (
+        <div className="border-b pb-4">
+          <h4 className="font-semibold mb-2 text-sm">Características:</h4>
+          <div className="flex flex-wrap gap-2">
+            {point.tags.map(tag => (
+              <Badge key={tag.id} variant="secondary">{tag.name}</Badge>
+            ))}
+          </div>
+        </div>
+      )}
       {renderContentByStatus()}
     </div>
   );
