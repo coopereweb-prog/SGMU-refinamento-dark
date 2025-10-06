@@ -17,6 +17,7 @@ import {
 import { toast } from 'sonner';
 import { useUser } from '../contexts/UserContext'; // Importa o useUser
 import { ClientProfileForm } from '../components/ClientProfileForm'; // Importa o novo formulário
+import { WhatsAppButton } from '../components/WhatsAppButton';
 
 function ClientDashboardPage() {
   const { profile, loading: userProfileLoading, session } = useUser(); // Obtém o perfil e o estado de carregamento do contexto
@@ -239,6 +240,7 @@ function ClientDashboardPage() {
           onSave={handleSaveOrder}
         />
       )}
+      <WhatsAppButton />
     </div>
   );
 }
