@@ -1,18 +1,21 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
-import { TagFilter } from '@/components/TagFilter';
-import { Cart } from '@/components/Cart';
-import { PointInfoWindow } from '@/components/PointInfoWindow';
-import { InfoPanel } from '@/components/InfoPanel';
-import { EnhancedReservationForm } from '@/components/EnhancedReservationForm';
-import { Modal } from '@/components/Modal';
-import { getPoints } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { PointInfoWindow } from '../components/PointInfoWindow.jsx';
+import { Cart } from '../components/Cart.jsx';
+import { InfoPanel } from '../components/InfoPanel.jsx';
+import { TagFilter } from '../components/TagFilter.jsx';
+import { getPoints } from '../lib/supabase.js';
+import { Skeleton } from '@/components/ui/skeleton.jsx';
+import { EnhancedReservationForm } from '../components/EnhancedReservationForm.jsx';
+import { useUser } from '../contexts/UserContext.jsx';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { WhatsAppButton } from '../components/WhatsAppButton.jsx';
 
 const mapContainerStyle = {
   width: '100%',
   height: '100%',
+  borderRadius: '0.5rem',
 };
 
 const center = {
@@ -20,72 +23,99 @@ const center = {
   lng: -47.30
 };
 
+const initialZoom = 14;
+
+const ICONS = {
+  available: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png',
+  reserved: 'http://maps.google.com/mapfiles/ms/icons/yellow-dot.png',
+  sold: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
+  inCart: '/shopping-cart-icon.svg', 
+};
+
 function HomePage() {
+  const { profile, loading: userLoading } = useUser();
   const [points, setPoints] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedPoint, setSelectedPoint] = useState(null);
   const [cartItems, setCartItems] = useState([]);
-  const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [selectedTags, setSelectedTags] = useState([]);
+  const [map, setMap] = useState(null);
+  const [showReservationForm, setShowReservationForm] = useState(false);
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
   });
 
-  const cartPointIds = useMemo(() => new Set(cartItems.map(item => item.point_id)), [cartItems]);
+  const onLoad = useCallback((mapInstance) => {
+    setMap(mapInstance);
+  }, []);
+
+  const onUnmount = useCallback(() => {
+    setMap(null);
+  }, []);
 
   const loadPoints = async () => {
-    try {
-      setLoading(true);
-      const pointsData = await getPoints();
-      const validPoints = pointsData.filter(p => 
-        typeof p.latitude === 'number' && 
-        typeof p.longitude === 'number' &&
-        p.latitude !== 0 && 
-        p.longitude !== 0
-      );
-      setPoints(validPoints);
-    } catch (error) {
-      console.error('Erro ao carregar pontos:', error);
-      toast.error('Erro ao carregar pontos', { description: error.message });
-    } finally {
-      setLoading(false);
-    }
+    const pointsData = await getPoints();
+    const validPoints = pointsData.filter(p => 
+      typeof p.latitude === 'number' && typeof p.longitude === 'number'
+    );
+    setPoints(validPoints);
   };
 
   useEffect(() => {
-    loadPoints();
+    setLoading(true);
+    loadPoints().finally(() => setLoading(false));
   }, []);
 
-  const handleMarkerClick = useCallback((point) => {
-    if (point.status === 'sold') {
-      toast.info('Este ponto já foi contratado.');
-      setSelectedPoint(point);
+  const filteredPoints = useMemo(() => {
+    if (selectedTags.length === 0) {
+      return points;
+    }
+    return points.filter(point =>
+      point.tags && point.tags.some(tag => selectedTags.includes(tag.id))
+    );
+  }, [points, selectedTags]);
+
+  useEffect(() => {
+    if (!map || !isLoaded || points.length === 0) return;
+
+    if (filteredPoints.length === 0) {
+      map.setCenter(center);
+      map.setZoom(initialZoom);
       return;
     }
-    if (point.status === 'reserved') {
-      toast.info('Este ponto está reservado temporariamente.');
-      setSelectedPoint(point);
+
+    if (filteredPoints.length === 1) {
+      map.setCenter({ lat: filteredPoints[0].latitude, lng: filteredPoints[0].longitude });
+      map.setZoom(16);
       return;
     }
-    if (point.status !== 'available' || point.is_available !== true) {
-      toast.error('Este ponto não está disponível para reserva.');
-      return;
+
+    const bounds = new window.google.maps.LatLngBounds();
+    filteredPoints.forEach(point => {
+      bounds.extend({ lat: point.latitude, lng: point.longitude });
+    });
+    map.fitBounds(bounds);
+
+  }, [map, filteredPoints, points, isLoaded]);
+
+  const cartPointIds = useMemo(() => new Set(cartItems.map(item => item.point_id)), [cartItems]);
+
+  useEffect(() => {
+    if (selectedPoint && cartPointIds.has(selectedPoint.id)) {
+      setSelectedPoint(null);
     }
+  }, [cartItems, selectedPoint, cartPointIds]);
+
+  const handleMarkerClick = (point) => {
     if (cartPointIds.has(point.id)) {
-      toast.info('Este ponto já está no seu carrinho');
       return;
     }
     setSelectedPoint(point);
-  }, [cartPointIds]);
+  };
 
-  const handleAddToCart = useCallback((point, periodYears) => {
-    if (point.status !== 'available' || point.is_available !== true) {
-      toast.error('Este ponto não está mais disponível para reserva.');
-      return;
-    }
-    
+  const handleAddToCart = (point, periodYears) => {
     let price;
     switch (periodYears) {
       case 1: price = point.price_1y; break;
@@ -105,154 +135,144 @@ function HomePage() {
     };
     
     setCartItems(prev => [...prev, cartItem]);
-    toast.success('Ponto adicionado ao carrinho!');
-  }, []);
+  };
 
-  const handleRemoveFromCart = useCallback((index) => {
-    setCartItems(prev => prev.filter((_, i) => i !== index));
-  }, []);
+  const handleUpdateCartItemPeriod = (itemIndex, newPeriod) => {
+    setCartItems(prevCartItems => {
+      const newCartItems = [...prevCartItems];
+      const itemToUpdate = newCartItems[itemIndex];
+      const point = itemToUpdate.point;
 
-  const handleClearCart = useCallback(() => {
-    setCartItems([]);
-  }, []);
-
-  const handleUpdatePeriod = useCallback((index, newPeriod) => {
-    setCartItems(prev => {
-      const updated = [...prev];
-      const item = updated[index];
-      let price;
+      let newPrice;
       switch (newPeriod) {
-        case 1: price = item.point.price_1y; break;
-        case 2: price = item.point.price_2y; break;
-        case 3: price = item.point.price_3y; break;
-        case 4: price = item.point.price_4y; break;
-        case 5: price = item.point.price_5y; break;
-        default: price = 0;
+        case 1: newPrice = point.price_1y; break;
+        case 2: newPrice = point.price_2y; break;
+        case 3: newPrice = point.price_3y; break;
+        case 4: newPrice = point.price_4y; break;
+        case 5: newPrice = point.price_5y; break;
+        default: newPrice = 0;
       }
-      updated[index] = { ...item, period_years: newPeriod, price };
-      return updated;
-    });
-  }, []);
 
-  const filteredPoints = useMemo(() => {
-    if (selectedTags.length === 0) return points;
+      newCartItems[itemIndex] = {
+        ...itemToUpdate,
+        period_years: newPeriod,
+        price: newPrice,
+      };
+
+      return newCartItems;
+    });
+  };
+
+  const handleRemoveFromCart = (index) => {
+    setCartItems(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleClearCart = () => {
+    setCartItems([]);
+  };
+
+  const handleReservationSuccess = () => {
+    toast.success("Reserva criada com sucesso!", {
+      description: "Em breve nossa equipe entrará em contato.",
+    });
     
-    return points.filter(point => {
-      if (!point.tags || point.tags.length === 0) return false;
-      const pointTagIds = point.tags.map(tag => tag.id);
-      return selectedTags.some(tagId => pointTagIds.includes(tagId));
-    });
-  }, [points, selectedTags]);
-
-  const handleReservationSuccess = useCallback(() => {
-    setIsReservationModalOpen(false);
-    setSelectedPoint(null);
     setCartItems([]);
     loadPoints();
-  }, []);
-
-  if (!isLoaded || loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-100">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Carregando mapa e pontos...</p>
-        </div>
-      </div>
-    );
-  }
+    setShowReservationForm(false);
+  };
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
-      <aside className="w-96 bg-white shadow-lg p-6 space-y-6 overflow-y-auto">
-        <div className="text-center">
-          <img 
-            className="h-24 w-auto mx-auto transition-all duration-200 ease-in-out" 
-            src="/logo.png" 
-            alt="SGMU Logo" 
-          />
-          <h1 className="text-2xl font-bold text-gray-800 mt-4">SGMU</h1>
-          <p className="text-sm text-gray-600">Sistema de Gestão de Mobiliário Urbano</p>
+    <div className="flex flex-col flex-grow">
+      <main className="flex-grow p-4 lg:p-6 flex flex-col lg:grid lg:grid-cols-[350px_1fr_350px] gap-6 h-full">
+        
+        <div className="space-y-6 order-2 lg:order-1 lg:overflow-y-auto">
+          {loading ? <Skeleton className="h-48 w-full" /> : <InfoPanel points={points} />}
+          <TagFilter onFilterChange={setSelectedTags} />
         </div>
-        <TagFilter onFilterChange={setSelectedTags} />
-        <InfoPanel points={filteredPoints} />
-      </aside>
 
-      {/* Main Content (Map) */}
-      <main className="flex-1 relative">
-        <GoogleMap
-          mapContainerStyle={mapContainerStyle}
-          center={center}
-          zoom={14}
-          options={{
-            mapTypeControl: false,
-            streetViewControl: false,
-            fullscreenControl: false,
-            zoomControl: true,
-            gestureHandling: 'cooperative',
-          }}
-        >
-          {filteredPoints.map(point => {
-            const isInCart = cartPointIds.has(point.id);
-            
-            let iconUrl = '/marker-available.png';
-            if (point.status === 'sold') {
-              iconUrl = '/marker-sold.png';
-            } else if (point.status === 'reserved') {
-              iconUrl = '/marker-reserved.png';
-            } else if (isInCart) {
-              iconUrl = '/marker-in-cart.png';
-            }
+        <div className="order-1 lg:order-2 flex flex-col h-96 lg:h-auto">
+          <div className="mb-4 text-center">
+            <h2 className="text-xl font-bold text-gray-700">Mapa Interativo - Pontos de Instalação</h2>
+            <p className="text-sm text-gray-500">Clique nos marcadores para ver detalhes e adicionar ao carrinho</p>
+          </div>
+          <div className="flex-grow rounded-lg shadow-md overflow-hidden">
+            {isLoaded ? (
+              <GoogleMap
+                mapContainerStyle={mapContainerStyle}
+                center={center}
+                zoom={initialZoom}
+                onLoad={onLoad}
+                onUnmount={onUnmount}
+              >
+                {filteredPoints.map((point) => {
+                  const isInCart = cartPointIds.has(point.id);
+                  const iconUrl = isInCart ? ICONS.inCart : ICONS[point.status] || ICONS.available;
 
-            return (
-              <Marker
-                key={point.id}
-                position={{ lat: point.latitude, lng: point.longitude }}
-                icon={{
-                  url: iconUrl,
-                  scaledSize: new window.google.maps.Size(40, 40),
-                  origin: new window.google.maps.Point(0, 0),
-                  anchor: new window.google.maps.Point(20, 40),
-                }}
-                onClick={() => handleMarkerClick(point)}
-              />
-            );
-          })}
-        </GoogleMap>
+                  return (
+                    <Marker
+                      key={point.id}
+                      position={{ lat: point.latitude, lng: point.longitude }}
+                      onClick={() => handleMarkerClick(point)}
+                      icon={{
+                        url: iconUrl,
+                        scaledSize: new window.google.maps.Size(32, 32),
+                      }}
+                    />
+                  );
+                })}
+                
+                {selectedPoint && (
+                  <PointInfoWindow
+                    point={selectedPoint}
+                    onAddToCart={handleAddToCart}
+                    onClose={() => setSelectedPoint(null)}
+                  />
+                )}
+              </GoogleMap>
+            ) : (
+              <Skeleton className="w-full h-full" />
+            )}
+          </div>
+        </div>
 
-        {/* Cart Overlay */}
-        <div className="absolute top-4 right-4 w-96 max-h-[calc(100vh-2rem)]">
+        <div className="order-3 lg:order-3 lg:overflow-y-auto">
           <Cart
             items={cartItems}
             onRemove={handleRemoveFromCart}
             onClear={handleClearCart}
-            onUpdatePeriod={handleUpdatePeriod}
-            onShowReservationForm={() => setIsReservationModalOpen(true)}
+            onUpdatePeriod={handleUpdateCartItemPeriod}
+            onShowReservationForm={() => setShowReservationForm(true)}
           />
         </div>
       </main>
 
-      {/* Modals */}
-      <PointInfoWindow
-        point={selectedPoint}
-        onAddToCart={handleAddToCart}
-        onClose={() => setSelectedPoint(null)}
-        isOpen={!!selectedPoint}
-      />
+      {showReservationForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Finalizar Reserva</CardTitle>
+                <button 
+                  onClick={() => setShowReservationForm(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+              <CardDescription>Preencha seus dados para confirmar a reserva</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EnhancedReservationForm
+                cartItems={cartItems}
+                onClose={() => setShowReservationForm(false)}
+                onReservationSuccess={handleReservationSuccess}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
-      <Modal
-        isOpen={isReservationModalOpen}
-        onClose={() => setIsReservationModalOpen(false)}
-        title="Finalizar Reserva"
-        description="Preencha seus dados para confirmar a reserva dos pontos selecionados."
-      >
-        <EnhancedReservationForm
-          cartItems={cartItems}
-          onClose={() => setIsReservationModalOpen(false)}
-          onReservationSuccess={handleReservationSuccess}
-        />
-      </Modal>
+      <WhatsAppButton />
     </div>
   );
 }

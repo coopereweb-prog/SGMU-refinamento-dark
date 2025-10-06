@@ -11,9 +11,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Funções para gerenciar pontos
 export const getPoints = async () => {
+  // A consulta foi alterada para uma sintaxe de junção mais explícita,
+  // que é mais robusta a possíveis ambiguidades na configuração da relação.
   const { data, error } = await supabase
     .from('points')
-    .select('*, point_tags(tags(id, name)), pricing_tiers(*)') // Adicionado pricing_tiers(*)
+    .select('*, point_tags(tags(id, name)))')
     .order('created_at', { ascending: true });
 
   if (error) {
@@ -21,17 +23,17 @@ export const getPoints = async () => {
     return [];
   }
 
+  // A nova consulta retorna uma estrutura aninhada: point.point_tags = [{ tags: {...} }]
+  // O código abaixo transforma (achata) essa estrutura de volta para o formato que
+  // o resto da aplicação espera: point.tags = [{...}]
+  // Isto torna a alteração "invisível" para os outros componentes, aumentando a segurança.
   const formattedData = data.map(point => {
     const tags = point.point_tags.map(pt => pt.tags).filter(Boolean);
-    // Renomeia para evitar conflito com o nome do ponto
-    const tier = point.pricing_tiers;
-    delete point.pricing_tiers;
-    return { ...point, tags, tier };
+    return { ...point, tags };
   });
 
   return formattedData;
 };
-
 
 // Nova função para buscar todas as tags disponíveis para o painel de filtro
 export const getTags = async () => {

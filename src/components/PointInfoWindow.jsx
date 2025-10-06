@@ -1,16 +1,15 @@
 import { useState } from 'react';
+import { InfoWindow } from '@react-google-maps/api';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Modal } from './Modal';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, User, Clock, AlertCircle } from 'lucide-react';
 
-export function PointInfoWindow({ point, onAddToCart, onClose, isOpen }) {
+export function PointInfoWindow({ point, onAddToCart, onClose }) {
   const [selectedPeriod, setSelectedPeriod] = useState(1);
 
   if (!point) return null;
 
-  // Verifica se o ponto tem tier ou preços diretos
   const hasTier = point.tier && typeof point.tier === 'object';
   
   const priceOptions = [
@@ -28,7 +27,6 @@ export function PointInfoWindow({ point, onAddToCart, onClose, isOpen }) {
     onClose();
   };
 
-  // Renderizar conteúdo baseado no status
   const renderContentByStatus = () => {
     switch (point.status) {
       case 'sold':
@@ -38,38 +36,24 @@ export function PointInfoWindow({ point, onAddToCart, onClose, isOpen }) {
               <AlertCircle className="h-5 w-5 text-red-600" />
               <span className="font-semibold text-red-700">Ponto Contratado</span>
             </div>
-            
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4 text-gray-500" />
-                <span className="text-sm"><strong>Contratante:</strong> {point.company_name || 'Informação não disponível'}</span>
+                <span className="text-sm"><strong>Contratante:</strong> {point.company_name || 'N/A'}</span>
               </div>
-              
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-gray-500" />
-                <span className="text-sm"><strong>Período:</strong> {point.sold_until ? `Até ${new Date(point.sold_until).toLocaleDateString('pt-BR')}` : 'Informação não disponível'}</span>
+                <span className="text-sm"><strong>Período:</strong> {point.sold_until ? `Até ${new Date(point.sold_until).toLocaleDateString('pt-BR')}` : 'N/A'}</span>
               </div>
-              
               {point.installation_photo_url && (
                 <div>
                   <p className="text-sm font-medium mb-2">Foto da Instalação:</p>
-                  <img 
-                    src={point.installation_photo_url} 
-                    alt="Instalação" 
-                    className="w-full h-48 object-cover rounded-lg"
-                  />
+                  <img src={point.installation_photo_url} alt="Instalação" className="w-full h-48 object-cover rounded-lg"/>
                 </div>
               )}
             </div>
-            
-            <div className="pt-4 border-t">
-              <Button variant="outline" onClick={onClose} className="w-full">
-                Fechar
-              </Button>
-            </div>
           </div>
         );
-        
       case 'reserved':
         return (
           <div className="space-y-4">
@@ -77,28 +61,17 @@ export function PointInfoWindow({ point, onAddToCart, onClose, isOpen }) {
               <Clock className="h-5 w-5 text-yellow-600" />
               <span className="font-semibold text-yellow-700">Ponto Reservado</span>
             </div>
-            
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-gray-500" />
                 <span className="text-sm">
-                  <strong>Reservado até:</strong> {point.reserved_until ? new Date(point.reserved_until).toLocaleString('pt-BR') : 'Informação não disponível'}
+                  <strong>Reservado até:</strong> {point.reserved_until ? new Date(point.reserved_until).toLocaleString('pt-BR') : 'N/A'}
                 </span>
               </div>
-              
-              <p className="text-sm text-gray-600">
-                Este ponto está temporariamente reservado e não está disponível para novas reservas no momento.
-              </p>
-            </div>
-            
-            <div className="pt-4 border-t">
-              <Button variant="outline" onClick={onClose} className="w-full">
-                Fechar
-              </Button>
+              <p className="text-sm text-gray-600">Este ponto está temporariamente reservado.</p>
             </div>
           </div>
         );
-        
       case 'available':
       default:
         return (
@@ -106,9 +79,9 @@ export function PointInfoWindow({ point, onAddToCart, onClose, isOpen }) {
             {priceOptions.length > 0 ? (
               <>
                 <div>
-                  <h4 className="font-semibold mb-2 text-sm">Selecione o Período de Contrato:</h4>
+                  <h4 className="font-semibold mb-2 text-sm">Selecione o Período:</h4>
                   <Select value={String(selectedPeriod)} onValueChange={(value) => setSelectedPeriod(Number(value))}>
-                    <SelectTrigger className="w-full sm:w-[220px]">
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Selecione o período" />
                     </SelectTrigger>
                     <SelectContent>
@@ -121,20 +94,20 @@ export function PointInfoWindow({ point, onAddToCart, onClose, isOpen }) {
                   </Select>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t">
-                   <div className="text-lg text-center sm:text-left">
-                    <span className="font-medium">Valor Total: </span>
+                  <div className="text-lg text-center sm:text-left">
+                    <span className="font-medium">Valor: </span>
                     <span className="font-bold text-green-600">
                       {Number(selectedPrice).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
                   </div>
-                  <Button onClick={handleAddToCartClick} className="w-full sm:w-auto" size="lg">
-                    Adicionar ao Carrinho
+                  <Button onClick={handleAddToCartClick} className="w-full sm:w-auto">
+                    Adicionar
                   </Button>
                 </div>
               </>
             ) : (
               <div className="text-center py-4">
-                <p className="text-gray-500">Este ponto não possui preços disponíveis no momento.</p>
+                <p className="text-gray-500">Sem preços disponíveis.</p>
               </div>
             )}
           </div>
@@ -143,29 +116,15 @@ export function PointInfoWindow({ point, onAddToCart, onClose, isOpen }) {
   };
 
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={onClose} 
-      title={point.name} 
-      description={point.description}
+    <InfoWindow
+      position={{ lat: point.latitude, lng: point.longitude }}
+      onCloseClick={onClose}
     >
-      <div className="space-y-4">
-        {/* Badge de status */}
-        <div className="flex justify-center">
-          <Badge variant={
-            point.status === 'sold' ? 'destructive' :
-            point.status === 'reserved' ? 'secondary' :
-            'default'
-          }>
-            {point.status === 'sold' ? 'Contratado' :
-             point.status === 'reserved' ? 'Reservado' :
-             'Disponível'}
-          </Badge>
-        </div>
-        
-        {/* Conteúdo baseado no status */}
+      <div className="p-1 space-y-2" style={{ width: '280px' }}>
+        <h3 className="font-bold text-base">{point.name}</h3>
+        <p className="text-xs text-gray-600 mb-2">{point.description}</p>
         {renderContentByStatus()}
       </div>
-    </Modal>
+    </InfoWindow>
   );
 }
