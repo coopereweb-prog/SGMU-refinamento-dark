@@ -70,7 +70,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
             navigate('/technician-panel');
             break;
           case 'client':
-            navigate('/my-account');
+            navigate('/dashboard');
             break;
           default:
             navigate('/');
@@ -116,7 +116,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
       onReservationSuccess();
       
       setTimeout(() => {
-        navigate('/my-account');
+        navigate('/dashboard');
       }, 3000);
     } catch (err) {
       const friendlyMessage =
