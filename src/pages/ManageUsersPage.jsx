@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { listUsers, inviteUser, updateUser, deleteUser } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -19,14 +19,13 @@ export function ManageUsersPage() {
 
   const fetchUsers = async () => {
     setLoading(true);
-    try {
-      const usersData = await listUsers();
-      setUsers(usersData);
-    } catch (error) {
+    const { data: { users }, error } = await supabase.auth.admin.listUsers();
+    if (error) {
       toast.error("Erro ao buscar usuários", { description: error.message });
-    } finally {
-      setLoading(false);
+    } else {
+      setUsers(users);
     }
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -34,13 +33,15 @@ export function ManageUsersPage() {
   }, []);
 
   const handleInvite = async (values) => {
-    try {
-      await inviteUser(values.email, values.full_name, values.role);
+    const { data, error } = await supabase.auth.admin.inviteUserByEmail(values.email, {
+      data: { role: values.role },
+    });
+    if (error) {
+      toast.error("Erro ao convidar usuário", { description: error.message });
+    } else {
       toast.success("Convite enviado!", { description: `Um e-mail de convite foi enviado para ${values.email}.` });
       fetchUsers();
       setIsInviteModalOpen(false);
-    } catch (error) {
-      toast.error("Erro ao convidar usuário", { description: error.message });
     }
   };
 
@@ -50,18 +51,17 @@ export function ManageUsersPage() {
   };
 
   const handleUpdate = async (values) => {
-    const userData = {
+    const { data, error } = await supabase.auth.admin.updateUserById(selectedUser.id, {
       user_metadata: { full_name: values.full_name, phone: values.phone },
       app_metadata: { role: values.role },
-    };
-    try {
-      await updateUser(selectedUser.id, userData);
+    });
+    if (error) {
+      toast.error("Erro ao atualizar usuário", { description: error.message });
+    } else {
       toast.success("Usuário atualizado com sucesso!");
       fetchUsers();
       setIsModalOpen(false);
       setSelectedUser(null);
-    } catch (error) {
-      toast.error("Erro ao atualizar usuário", { description: error.message });
     }
   };
 
@@ -71,14 +71,14 @@ export function ManageUsersPage() {
   };
 
   const confirmDelete = async () => {
-    try {
-      await deleteUser(selectedUser.id);
+    const { error } = await supabase.auth.admin.deleteUser(selectedUser.id);
+    if (error) {
+      toast.error("Erro ao deletar usuário", { description: error.message });
+    } else {
       toast.success("Usuário deletado com sucesso!");
       fetchUsers();
       setIsAlertOpen(false);
       setSelectedUser(null);
-    } catch (error) {
-      toast.error("Erro ao deletar usuário", { description: error.message });
     }
   };
 
