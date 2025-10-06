@@ -244,29 +244,19 @@ function HomePage() {
       </main>
 
       {showReservationForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Finalizar Reserva</CardTitle>
-                <button 
-                  onClick={() => setShowReservationForm(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  ✕
-                </button>
-              </div>
-              <CardDescription>Preencha seus dados para confirmar a reserva</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <EnhancedReservationForm
-                cartItems={cartItems}
-                onClose={() => setShowReservationForm(false)}
-                onReservationSuccess={handleReservationSuccess}
-              />
-            </CardContent>
-          </Card>
-        </div>
+        <Modal
+          isOpen={showReservationForm}
+          onClose={() => setShowReservationForm(false)}
+          title="Finalizar Reserva"
+          description="Preencha seus dados para confirmar a reserva"
+          className="border-4 border-yellow-400 shadow-lg"
+        >
+          <EnhancedReservationForm
+            cartItems={cartItems}
+            onClose={() => setShowReservationForm(false)}
+            onReservationSuccess={handleReservationSuccess}
+          />
+        </Modal>
       )}
 
       {selectedPoint && (
