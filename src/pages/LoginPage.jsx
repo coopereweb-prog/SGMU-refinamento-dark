@@ -74,7 +74,7 @@ function LoginPage() {
         redirectTo: `${window.location.origin}/update-password`,
       });
       if (error) throw error;
-      toast.success('E-mail enviado!', {
+      toast.success('Verifique seu e-mail', {
         description: `Se o e-mail ${email} estiver cadastrado, você receberá um link para redefinir sua senha.`,
       });
       setIsForgotPassword(false); // Volta para a tela de login

@@ -65,7 +65,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
         redirectTo: `${window.location.origin}/update-password`,
       });
       if (error) throw error;
-      toast.success('E-mail enviado!', {
+      toast.success('Verifique seu e-mail', {
         description: `Se o e-mail ${loginData.email} estiver cadastrado, você receberá um link para redefinir sua senha.`,
       });
       setView('login');
