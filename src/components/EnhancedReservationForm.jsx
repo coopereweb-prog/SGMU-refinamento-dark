@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createOrder } from '../lib/supabase.js';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
@@ -161,9 +162,6 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
     );
   }
 
-  const inputClasses = "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
-  const inputErrorClasses = `${inputClasses} border-destructive`;
-
   return (
     <div className="space-y-4">
       {showLoginOption ? (
@@ -172,7 +170,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="login-email">E-mail</Label>
-              <input 
+              <Input
                 id="login-email" 
                 name="email"
                 type="email" 
@@ -181,12 +179,12 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
                 value={loginData.email} 
                 onChange={handleLoginInputChange} 
                 disabled={loading}
-                className={error ? inputErrorClasses : inputClasses}
+                className={error ? 'border-destructive' : ''}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="login-password">Senha</Label>
-              <input 
+              <Input
                 id="login-password" 
                 name="password"
                 type="password" 
@@ -194,7 +192,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
                 value={loginData.password} 
                 onChange={handleLoginInputChange} 
                 disabled={loading}
-                className={error ? inputErrorClasses : inputClasses}
+                className={error ? 'border-destructive' : ''}
               />
             </div>
 
@@ -244,7 +242,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
             <form onSubmit={handleCreateAccountAndReserve} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome Completo</Label>
-                <input 
+                <Input
                   id="name" 
                   type="text" 
                   placeholder="Seu nome" 
@@ -252,12 +250,11 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
                   value={customerData.name} 
                   onChange={handleInputChange} 
                   disabled={loading}
-                  className={inputClasses}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
-                <input 
+                <Input
                   id="email" 
                   type="email" 
                   placeholder="seu@email.com" 
@@ -265,12 +262,11 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
                   value={customerData.email} 
                   onChange={handleInputChange} 
                   disabled={loading}
-                  className={inputClasses}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Telefone / WhatsApp</Label>
-                <input 
+                <Input
                   id="phone" 
                   type="tel" 
                   placeholder="(19) 99999-9999" 
@@ -278,12 +274,11 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
                   value={customerData.phone} 
                   onChange={handleInputChange} 
                   disabled={loading}
-                  className={inputClasses}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
-                <input 
+                <Input
                   id="password" 
                   type="password" 
                   placeholder="Crie uma senha" 
@@ -291,12 +286,11 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
                   value={customerData.password} 
                   onChange={handleInputChange} 
                   disabled={loading}
-                  className={inputClasses}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-                <input 
+                <Input
                   id="confirmPassword" 
                   type="password" 
                   placeholder="Confirme sua senha" 
@@ -304,7 +298,6 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
                   value={customerData.confirmPassword} 
                   onChange={handleInputChange} 
                   disabled={loading}
-                  className={inputClasses}
                 />
               </div>
 
@@ -334,7 +327,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
             <form onSubmit={handleReserveAsGuest} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome Completo</Label>
-                <input 
+                <Input
                   id="name" 
                   type="text" 
                   placeholder="Seu nome" 
@@ -342,12 +335,11 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
                   value={customerData.name} 
                   onChange={handleInputChange} 
                   disabled={loading}
-                  className={inputClasses}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
-                <input 
+                <Input
                   id="email" 
                   type="email" 
                   placeholder="seu@email.com" 
@@ -355,12 +347,11 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
                   value={customerData.email} 
                   onChange={handleInputChange} 
                   disabled={loading}
-                  className={inputClasses}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Telefone / WhatsApp</Label>
-                <input 
+                <Input
                   id="phone" 
                   type="tel" 
                   placeholder="(19) 99999-9999" 
@@ -368,7 +359,6 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
                   value={customerData.phone} 
                   onChange={handleInputChange} 
                   disabled={loading}
-                  className={inputClasses}
                 />
               </div>
 
