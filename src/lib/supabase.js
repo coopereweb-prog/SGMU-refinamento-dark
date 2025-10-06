@@ -11,26 +11,41 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Funções para gerenciar pontos
 export const getPoints = async () => {
-  // A consulta foi alterada para uma sintaxe de junção mais explícita,
-  // que é mais robusta a possíveis ambiguidades na configuração da relação.
-  const { data, error } = await supabase
+  const { data: points, error: pointsError } = await supabase
     .from('points')
-    .select('*, point_tags(tags(id, name)))')
+    .select('*')
     .order('created_at', { ascending: true });
 
-  if (error) {
-    console.error('Erro ao buscar pontos:', error);
+  if (pointsError) {
+    console.error('Erro ao buscar pontos:', pointsError);
     return [];
   }
+  if (!points) return [];
 
-  // A nova consulta retorna uma estrutura aninhada: point.point_tags = [{ tags: {...} }]
-  // O código abaixo transforma (achata) essa estrutura de volta para o formato que
-  // o resto da aplicação espera: point.tags = [{...}]
-  // Isto torna a alteração "invisível" para os outros componentes, aumentando a segurança.
-  const formattedData = data.map(point => {
-    const tags = point.point_tags.map(pt => pt.tags).filter(Boolean);
-    return { ...point, tags };
-  });
+  const { data: relations, error: relationsError } = await supabase
+    .from('point_tags')
+    .select('point_id, tags(id, name)');
+
+  if (relationsError) {
+    console.error('Erro ao buscar relações de tags:', relationsError);
+    // Retorna os pontos sem tags se a busca de relações falhar
+    return points.map(p => ({ ...p, tags: [] }));
+  }
+
+  const tagsByPointId = relations.reduce((acc, relation) => {
+    if (!acc[relation.point_id]) {
+      acc[relation.point_id] = [];
+    }
+    if (relation.tags) {
+      acc[relation.point_id].push(relation.tags);
+    }
+    return acc;
+  }, {});
+
+  const formattedData = points.map(point => ({
+    ...point,
+    tags: tagsByPointId[point.id] || [],
+  }));
 
   return formattedData;
 };
