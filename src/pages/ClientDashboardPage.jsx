@@ -28,14 +28,15 @@ function ClientDashboardPage() {
   const navigate = useNavigate();
 
   const fetchOrders = async () => {
-    setLoadingOrders(true); // Usa o novo estado de carregamento
+    setLoadingOrders(true);
     
-    if (!profile?.email) { // Usa profile.email diretamente
+    if (!profile) {
       setOrders([]);
       setLoadingOrders(false);
       return;
     }
     
+    // Consulta mais robusta: busca por user_id OU por email (para pedidos de convidados)
     const { data, error } = await supabase
       .from('orders')
       .select(`
@@ -45,7 +46,7 @@ function ClientDashboardPage() {
           points (id, name, installation_photo_url, price_1y, price_2y, price_3y, price_4y, price_5y) 
         )
       `)
-      .eq('customer_email', profile.email) // Usa profile.email
+      .or(`user_id.eq.${profile.id},and(customer_email.eq.${profile.email},user_id.is.null)`)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -54,14 +55,14 @@ function ClientDashboardPage() {
     } else {
       setOrders(data);
     }
-    setLoadingOrders(false); // Usa o novo estado de carregamento
+    setLoadingOrders(false);
   };
 
   useEffect(() => {
-    if (!userProfileLoading) { // Espera o perfil do usuário carregar
+    if (!userProfileLoading) {
       fetchOrders();
     }
-  }, [userProfileLoading, profile]); // Adiciona profile como dependência
+  }, [userProfileLoading, profile]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -98,16 +99,10 @@ function ClientDashboardPage() {
     }
   };
 
-  // Função para recarregar o perfil após a atualização no formulário
   const handleProfileSave = async () => {
-    // O UserContext já tem um listener para `onAuthStateChange` que recarrega o perfil.
-    // Se o perfil não for atualizado automaticamente, podemos forçar um refresh aqui.
-    // Por enquanto, vamos confiar no UserContext.
-    // Se necessário, poderíamos adicionar uma função `refreshProfile` ao UserContext.
-    console.log("Perfil salvo, UserContext deve recarregar.");
+    // O UserContext já lida com a atualização do perfil.
   };
 
-  // Condição de carregamento combinada
   if (userProfileLoading || loadingOrders) return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
 
   return (

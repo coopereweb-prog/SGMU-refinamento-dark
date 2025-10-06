@@ -10,7 +10,6 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-// O e-mail para onde as notificações de novas reservas serão enviadas.
 const ADMIN_EMAIL = 'placas.novaodessa@gmail.com'
 
 interface PointData {
@@ -34,6 +33,17 @@ Deno.serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    // Verifica se há um usuário autenticado
+    let userId = null;
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader) {
+      const jwt = authHeader.replace('Bearer ', '');
+      const { data: { user } } = await supabaseAdmin.auth.getUser(jwt);
+      if (user) {
+        userId = user.id;
+      }
+    }
+
     const { customerData, items } = await req.json()
 
     if (!customerData || !items || !Array.isArray(items) || items.length === 0) {
@@ -41,7 +51,6 @@ Deno.serve(async (req: Request) => {
     }
 
     const pointIds = items.map(item => item.point_id);
-    // Buscamos também o nome do ponto para usar nos e-mails
     const { data: pointsData, error: pointsError } = await supabaseAdmin
       .from('points')
       .select('id, name, price_1y, price_2y, price_3y, price_4y, price_5y')
@@ -86,13 +95,14 @@ Deno.serve(async (req: Request) => {
       customer_phone: customerData.phone,
       total_amount: calculatedTotalAmount,
       items: validatedItems,
+      p_user_id: userId, // Passa o ID do usuário para a função
     })
 
     if (rpcError) {
       throw rpcError
     }
 
-    // --- INÍCIO DA LÓGICA DE ENVIO DE E-MAIL ---
+    // --- LÓGICA DE ENVIO DE E-MAIL (sem alterações) ---
     try {
       const resendApiKey = Deno.env.get('RESEND_API_KEY');
       if (!resendApiKey) {
@@ -100,55 +110,26 @@ Deno.serve(async (req: Request) => {
       } else {
         const resend = new Resend(resendApiKey);
         const orderIdShort = (newOrderId as string).substring(0, 8);
-
-        // Prepara a lista de itens para os e-mails
         const itemsListHtml = items.map(item => {
           const pointDetails = pointDetailsMap.get(item.point_id);
           return `<li>${pointDetails?.name || 'Ponto desconhecido'} - ${item.period_years} ano(s)</li>`;
         }).join('');
 
-        // 1. Envia e-mail de confirmação para o cliente
         await resend.emails.send({
           from: 'Placas Nova Odessa <onboarding@resend.dev>',
           to: [customerData.email],
           subject: `Confirmação da sua reserva #${orderIdShort}`,
-          html: `
-            <h1>Olá, ${customerData.name}!</h1>
-            <p>Sua reserva foi realizada com sucesso e é válida por 48 horas.</p>
-            <p><strong>Número do Pedido:</strong> ${orderIdShort}</p>
-            <h3>Itens Reservados:</h3>
-            <ul>${itemsListHtml}</ul>
-            <p><strong>Valor Total:</strong> R$ ${calculatedTotalAmount.toFixed(2)}</p>
-            <p>Em breve, nossa equipe entrará em contato para dar continuidade ao processo.</p>
-            <p>Obrigado,<br>Equipe Placas Nova Odessa</p>
-          `,
+          html: `<h1>Olá, ${customerData.name}!</h1><p>Sua reserva foi realizada com sucesso e é válida por 48 horas.</p><p><strong>Número do Pedido:</strong> ${orderIdShort}</p><h3>Itens Reservados:</h3><ul>${itemsListHtml}</ul><p><strong>Valor Total:</strong> R$ ${calculatedTotalAmount.toFixed(2)}</p><p>Em breve, nossa equipe entrará em contato para dar continuidade ao processo.</p><p>Obrigado,<br>Equipe Placas Nova Odessa</p>`,
         });
 
-        // 2. Envia e-mail de notificação para o administrador
         await resend.emails.send({
           from: 'Notificação do Sistema <onboarding@resend.dev>',
           to: [ADMIN_EMAIL],
           subject: `Nova reserva recebida - Pedido #${orderIdShort}`,
-          html: `
-            <h1>Nova Reserva Recebida</h1>
-            <p>Uma nova reserva foi feita através do site.</p>
-            <p><strong>Número do Pedido:</strong> ${orderIdShort}</p>
-            <h3>Dados do Cliente:</h3>
-            <ul>
-              <li><strong>Nome:</strong> ${customerData.name}</li>
-              <li><strong>E-mail:</strong> ${customerData.email}</li>
-              <li><strong>Telefone:</strong> ${customerData.phone}</li>
-            </ul>
-            <h3>Itens Reservados:</h3>
-            <ul>${itemsListHtml}</ul>
-            <p><strong>Valor Total:</strong> R$ ${calculatedTotalAmount.toFixed(2)}</p>
-            <p>Acesse o painel administrativo para gerenciar este pedido.</p>
-          `,
+          html: `<h1>Nova Reserva Recebida</h1><p>Uma nova reserva foi feita através do site.</p><p><strong>Número do Pedido:</strong> ${orderIdShort}</p><h3>Dados do Cliente:</h3><ul><li><strong>Nome:</strong> ${customerData.name}</li><li><strong>E-mail:</strong> ${customerData.email}</li><li><strong>Telefone:</strong> ${customerData.phone}</li></ul><h3>Itens Reservados:</h3><ul>${itemsListHtml}</ul><p><strong>Valor Total:</strong> R$ ${calculatedTotalAmount.toFixed(2)}</p><p>Acesse o painel administrativo para gerenciar este pedido.</p>`,
         });
       }
     } catch (emailError) {
-      // Se o envio de e-mail falhar, apenas registramos o erro no console
-      // mas não interrompemos o fluxo. O pedido já foi criado.
       console.error('Falha ao enviar e-mails de notificação:', emailError);
     }
     // --- FIM DA LÓGICA DE ENVIO DE E-MAIL ---

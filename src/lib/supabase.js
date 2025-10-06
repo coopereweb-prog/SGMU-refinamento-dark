@@ -88,17 +88,24 @@ export const deleteTag = async (id) => {
 };
 
 export const createOrder = async (customerData, cartItems) => {
-  // Mapeia os itens do carrinho para uma estrutura mais simples, enviando apenas o necessário.
+  const { data: { session } } = await supabase.auth.getSession();
+
   const itemsForFunction = cartItems.map(item => ({
     point_id: item.point_id,
     period_years: item.period_years,
   }));
+
+  const headers = {};
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
+  }
 
   const { data, error } = await supabase.functions.invoke('create-order', {
     body: {
       customerData,
       items: itemsForFunction,
     },
+    headers,
   })
 
   if (error) {
