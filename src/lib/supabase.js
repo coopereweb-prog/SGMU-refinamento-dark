@@ -168,17 +168,18 @@ export const updateOrderItemPeriod = async (orderId, orderItemId, newPeriod) => 
 };
 
 // Funções para gerenciar usuários
-export const getUsers = async () => {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .in('role', ['admin', 'operations_manager', 'field_technician']);
-  
-  if (error) {
-    console.error('Error fetching users:', error);
-    throw error;
-  }
-  return data;
+export const listUsers = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("Usuário não autenticado.");
+
+  const { data, error } = await supabase.functions.invoke('list-users', {
+    headers: {
+      Authorization: `Bearer ${session.access_token}`
+    }
+  });
+
+  if (error) throw error;
+  return data.users;
 };
 
 export const inviteUser = async (email, name, role) => {
@@ -196,13 +197,17 @@ export const inviteUser = async (email, name, role) => {
   return data;
 };
 
-export const updateUserRole = async (userId, role) => {
-  const { data, error } = await supabase
-    .from('profiles')
-    .update({ role })
-    .eq('id', userId)
-    .select();
-  
+export const updateUser = async (userIdToUpdate, userData) => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("Usuário não autenticado.");
+
+  const { data, error } = await supabase.functions.invoke('update-user', {
+    body: { userIdToUpdate, userData },
+    headers: {
+      Authorization: `Bearer ${session.access_token}`
+    }
+  });
+
   if (error) throw error;
   return data;
 };
