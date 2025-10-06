@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export function EnhancedReservationForm({ cartItems, onClose, onReservationSuccess }) {
@@ -23,6 +23,9 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
   const [key, setKey] = useState(0);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,7 +55,6 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
 
       if (loginError) throw loginError;
 
-      // Após o login, cria a ordem com o usuário logado
       const orderData = await createOrder(customerData, cartItems);
       setSuccess(true);
       onReservationSuccess();
@@ -62,9 +64,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
       }, 2000);
 
     } catch (err) {
-      const friendlyMessage =
-        err?.message ??
-        'Não foi possível realizar o login. Por favor, verifique suas credenciais.';
+      const friendlyMessage = 'Não foi possível realizar o login. Por favor, verifique suas credenciais.';
       setError(friendlyMessage);
     } finally {
       setLoading(false);
@@ -95,7 +95,6 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
 
       if (signUpError) throw signUpError;
 
-      // A sessão é definida automaticamente após o signUp, então a função createOrder a pegará
       const orderData = await createOrder(customerData, cartItems);
       setSuccess(true);
       onReservationSuccess();
@@ -109,9 +108,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
         setShowLoginOption(true);
         setLoginData(prev => ({ ...prev, email: customerData.email }));
       } else {
-        const friendlyMessage =
-          err?.message ??
-          'Não foi possível completar sua reserva. Por favor, tente novamente.';
+        const friendlyMessage = err?.message ?? 'Não foi possível completar sua reserva. Por favor, tente novamente.';
         setError(friendlyMessage);
       }
     } finally {
@@ -129,11 +126,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
       setSuccess(true);
       onReservationSuccess();
     } catch (err) {
-      const friendlyMessage =
-        err?.context?.error ??
-        err?.message ??
-        err?.error ??
-        'Não foi possível completar sua reserva. Por favor, tente novamente.';
+      const friendlyMessage = err?.context?.error ?? err?.message ?? err?.error ?? 'Não foi possível completar sua reserva. Por favor, tente novamente.';
       setError(friendlyMessage);
     } finally {
       setLoading(false);
@@ -175,16 +168,28 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
             </div>
             <div className="space-y-2">
               <Label htmlFor="login-password">Senha</Label>
-              <Input
-                id="login-password" 
-                name="password"
-                type="password" 
-                required 
-                value={loginData.password} 
-                onChange={handleLoginInputChange} 
-                disabled={loading}
-                className={error ? 'border-destructive' : ''}
-              />
+              <div className="relative">
+                <Input
+                  id="login-password" 
+                  name="password"
+                  type={showLoginPassword ? 'text' : 'password'} 
+                  required 
+                  value={loginData.password} 
+                  onChange={handleLoginInputChange} 
+                  disabled={loading}
+                  className={`pr-10 ${error ? 'border-destructive' : ''}`}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-gray-500"
+                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  disabled={loading}
+                >
+                  {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
 
             {error && (
@@ -233,63 +238,33 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
             <form onSubmit={handleCreateAccountAndReserve} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome Completo</Label>
-                <Input
-                  id="name" 
-                  type="text" 
-                  placeholder="Seu nome" 
-                  required 
-                  value={customerData.name} 
-                  onChange={handleInputChange} 
-                  disabled={loading}
-                />
+                <Input id="name" type="text" placeholder="Seu nome" required value={customerData.name} onChange={handleInputChange} disabled={loading} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email" 
-                  type="email" 
-                  placeholder="seu@email.com" 
-                  required 
-                  value={customerData.email} 
-                  onChange={handleInputChange} 
-                  disabled={loading}
-                />
+                <Input id="email" type="email" placeholder="seu@email.com" required value={customerData.email} onChange={handleInputChange} disabled={loading} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Telefone / WhatsApp</Label>
-                <Input
-                  id="phone" 
-                  type="tel" 
-                  placeholder="(19) 99999-9999" 
-                  required 
-                  value={customerData.phone} 
-                  onChange={handleInputChange} 
-                  disabled={loading}
-                />
+                <Input id="phone" type="tel" placeholder="(19) 99999-9999" required value={customerData.phone} onChange={handleInputChange} disabled={loading} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password" 
-                  type="password" 
-                  placeholder="Crie uma senha" 
-                  required 
-                  value={customerData.password} 
-                  onChange={handleInputChange} 
-                  disabled={loading}
-                />
+                <div className="relative">
+                  <Input id="password" type={showCreatePassword ? 'text' : 'password'} placeholder="Crie uma senha" required value={customerData.password} onChange={handleInputChange} disabled={loading} className="pr-10" />
+                  <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-gray-500" onClick={() => setShowCreatePassword(!showCreatePassword)} disabled={loading}>
+                    {showCreatePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-                <Input
-                  id="confirmPassword" 
-                  type="password" 
-                  placeholder="Confirme sua senha" 
-                  required 
-                  value={customerData.confirmPassword} 
-                  onChange={handleInputChange} 
-                  disabled={loading}
-                />
+                <div className="relative">
+                  <Input id="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} placeholder="Confirme sua senha" required value={customerData.confirmPassword} onChange={handleInputChange} disabled={loading} className="pr-10" />
+                  <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-gray-500" onClick={() => setShowConfirmPassword(!showConfirmPassword)} disabled={loading}>
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
 
               {error && (
@@ -301,56 +276,23 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
               )}
 
               <div className="flex justify-end space-x-4">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setShowLoginOption(true)} 
-                  disabled={loading}
-                >
-                  Já tenho conta
-                </Button>
-                <Button type="submit" className="w-40" disabled={loading}>
-                  {loading ? <Loader2 className="animate-spin" /> : 'Criar Conta e Reservar'}
-                </Button>
+                <Button type="button" variant="outline" onClick={() => setShowLoginOption(true)} disabled={loading}>Já tenho conta</Button>
+                <Button type="submit" className="w-40" disabled={loading}>{loading ? <Loader2 className="animate-spin" /> : 'Criar Conta e Reservar'}</Button>
               </div>
             </form>
           ) : (
             <form onSubmit={handleReserveAsGuest} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome Completo</Label>
-                <Input
-                  id="name" 
-                  type="text" 
-                  placeholder="Seu nome" 
-                  required 
-                  value={customerData.name} 
-                  onChange={handleInputChange} 
-                  disabled={loading}
-                />
+                <Input id="name" type="text" placeholder="Seu nome" required value={customerData.name} onChange={handleInputChange} disabled={loading} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email" 
-                  type="email" 
-                  placeholder="seu@email.com" 
-                  required 
-                  value={customerData.email} 
-                  onChange={handleInputChange} 
-                  disabled={loading}
-                />
+                <Input id="email" type="email" placeholder="seu@email.com" required value={customerData.email} onChange={handleInputChange} disabled={loading} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Telefone / WhatsApp</Label>
-                <Input
-                  id="phone" 
-                  type="tel" 
-                  placeholder="(19) 99999-9999" 
-                  required 
-                  value={customerData.phone} 
-                  onChange={handleInputChange} 
-                  disabled={loading}
-                />
+                <Input id="phone" type="tel" placeholder="(19) 99999-9999" required value={customerData.phone} onChange={handleInputChange} disabled={loading} />
               </div>
 
               {error && (
@@ -362,17 +304,8 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
               )}
 
               <div className="flex justify-end space-x-4">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setShowLoginOption(true)} 
-                  disabled={loading}
-                >
-                  Já tenho conta
-                </Button>
-                <Button type="submit" className="w-40" disabled={loading}>
-                  {loading ? <Loader2 className="animate-spin" /> : 'Reservar como Convidado'}
-                </Button>
+                <Button type="button" variant="outline" onClick={() => setShowLoginOption(true)} disabled={loading}>Já tenho conta</Button>
+                <Button type="submit" className="w-40" disabled={loading}>{loading ? <Loader2 className="animate-spin" /> : 'Reservar como Convidado'}</Button>
               </div>
             </form>
           )}
