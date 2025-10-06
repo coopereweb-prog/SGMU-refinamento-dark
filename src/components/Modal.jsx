@@ -1,19 +1,23 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export function Modal({ isOpen, onClose, title, description, children }) {
+export function Modal({ isOpen, onClose, title, description, children, className }) {
   if (!isOpen) {
     return null;
   }
 
   return (
     <div 
-      className="fixed inset-0 z-40 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4"
       onClick={onClose}
     >
       <Card 
-        className="relative w-full max-w-lg flex flex-col animate-in fade-in-0 zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto"
+        className={cn(
+          "relative w-full max-w-lg flex flex-col animate-in fade-in-0 zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto",
+          className
+        )}
         onClick={(e) => e.stopPropagation()}
       >
         <Button 

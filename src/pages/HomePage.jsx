@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { toast } from 'sonner';
-import { PointInfoWindow } from '../components/PointInfoWindow.jsx';
+import { Modal } from '../components/Modal.jsx';
+import { PointDetails } from '../components/PointDetails.jsx';
 import { Cart } from '../components/Cart.jsx';
 import { InfoPanel } from '../components/InfoPanel.jsx';
 import { TagFilter } from '../components/TagFilter.jsx';
@@ -110,8 +111,10 @@ function HomePage() {
 
   const handleMarkerClick = (point) => {
     if (cartPointIds.has(point.id)) {
+      toast.info("Este ponto já está no seu carrinho.");
       return;
     }
+    // Abre o modal para qualquer status, pois o componente PointDetails lida com a exibição
     setSelectedPoint(point);
   };
 
@@ -135,6 +138,8 @@ function HomePage() {
     };
     
     setCartItems(prev => [...prev, cartItem]);
+    setSelectedPoint(null); // Fecha o modal
+    toast.success(`${point.name} foi adicionado ao carrinho!`);
   };
 
   const handleUpdateCartItemPeriod = (itemIndex, newPeriod) => {
@@ -220,14 +225,6 @@ function HomePage() {
                     />
                   );
                 })}
-                
-                {selectedPoint && (
-                  <PointInfoWindow
-                    point={selectedPoint}
-                    onAddToCart={handleAddToCart}
-                    onClose={() => setSelectedPoint(null)}
-                  />
-                )}
               </GoogleMap>
             ) : (
               <Skeleton className="w-full h-full" />
@@ -270,6 +267,21 @@ function HomePage() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {selectedPoint && (
+        <Modal
+          isOpen={!!selectedPoint}
+          onClose={() => setSelectedPoint(null)}
+          title={selectedPoint.name}
+          description={selectedPoint.description}
+          className="border-4 border-yellow-400 shadow-lg"
+        >
+          <PointDetails
+            point={selectedPoint}
+            onAddToCart={handleAddToCart}
+          />
+        </Modal>
       )}
 
       <WhatsAppButton />

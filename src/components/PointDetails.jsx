@@ -1,30 +1,25 @@
 import { useState } from 'react';
-import { InfoWindow } from '@react-google-maps/api';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { Calendar, User, Clock, AlertCircle } from 'lucide-react';
 
-export function PointInfoWindow({ point, onAddToCart, onClose }) {
+export function PointDetails({ point, onAddToCart }) {
   const [selectedPeriod, setSelectedPeriod] = useState(1);
 
   if (!point) return null;
 
-  const hasTier = point.tier && typeof point.tier === 'object';
-  
   const priceOptions = [
-    { years: 1, price: hasTier ? point.tier.price_1y : point.price_1y },
-    { years: 2, price: hasTier ? point.tier.price_2y : point.price_2y },
-    { years: 3, price: hasTier ? point.tier.price_3y : point.price_3y },
-    { years: 4, price: hasTier ? point.tier.price_4y : point.price_4y },
-    { years: 5, price: hasTier ? point.tier.price_5y : point.price_5y },
+    { years: 1, price: point.price_1y },
+    { years: 2, price: point.price_2y },
+    { years: 3, price: point.price_3y },
+    { years: 4, price: point.price_4y },
+    { years: 5, price: point.price_5y },
   ].filter(option => option.price != null && option.price > 0);
 
   const selectedPrice = priceOptions.find(p => p.years === selectedPeriod)?.price ?? 0;
 
   const handleAddToCartClick = () => {
     onAddToCart(point, selectedPeriod);
-    onClose();
   };
 
   const renderContentByStatus = () => {
@@ -101,7 +96,7 @@ export function PointInfoWindow({ point, onAddToCart, onClose }) {
                     </span>
                   </div>
                   <Button onClick={handleAddToCartClick} className="w-full sm:w-auto">
-                    Adicionar
+                    Adicionar ao Carrinho
                   </Button>
                 </div>
               </>
@@ -116,15 +111,8 @@ export function PointInfoWindow({ point, onAddToCart, onClose }) {
   };
 
   return (
-    <InfoWindow
-      position={{ lat: point.latitude, lng: point.longitude }}
-      onCloseClick={onClose}
-    >
-      <div className="p-1 space-y-2" style={{ width: '280px' }}>
-        <h3 className="font-bold text-base">{point.name}</h3>
-        <p className="text-xs text-gray-600 mb-2">{point.description}</p>
-        {renderContentByStatus()}
-      </div>
-    </InfoWindow>
+    <div className="p-1 space-y-2">
+      {renderContentByStatus()}
+    </div>
   );
 }
