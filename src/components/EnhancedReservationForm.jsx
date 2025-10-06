@@ -52,30 +52,14 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
 
       if (loginError) throw loginError;
 
-      if (data.user) {
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', data.user.id)
-          .single();
-
-        if (profileError) throw profileError;
-
-        switch (profile.role) {
-          case 'admin':
-          case 'operations_manager':
-            navigate('/admin');
-            break;
-          case 'field_technician':
-            navigate('/technician-panel');
-            break;
-          case 'client':
-            navigate('/dashboard');
-            break;
-          default:
-            navigate('/');
-        }
-      }
+      // Após o login, cria a ordem com o usuário logado
+      const orderData = await createOrder(customerData, cartItems);
+      setSuccess(true);
+      onReservationSuccess();
+      
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 2000);
 
     } catch (err) {
       const friendlyMessage =
@@ -111,6 +95,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
 
       if (signUpError) throw signUpError;
 
+      // A sessão é definida automaticamente após o signUp, então a função createOrder a pegará
       const orderData = await createOrder(customerData, cartItems);
       setSuccess(true);
       onReservationSuccess();
@@ -119,10 +104,16 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
         navigate('/dashboard');
       }, 3000);
     } catch (err) {
-      const friendlyMessage =
-        err?.message ??
-        'Não foi possível completar sua reserva. Por favor, tente novamente.';
-      setError(friendlyMessage);
+      if (err.message && err.message.includes('User already registered')) {
+        setError('Este e-mail já está cadastrado. Por favor, faça login para continuar a reserva.');
+        setShowLoginOption(true);
+        setLoginData(prev => ({ ...prev, email: customerData.email }));
+      } else {
+        const friendlyMessage =
+          err?.message ??
+          'Não foi possível completar sua reserva. Por favor, tente novamente.';
+        setError(friendlyMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -155,7 +146,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
         <CheckCircle className="h-4 w-4" />
         <AlertTitle>Reserva Realizada com Sucesso!</AlertTitle>
         <AlertDescription>
-          Sua reserva foi confirmada. Você será redirecionado para sua área de cliente.
+          Sua reserva foi confirmada. Em breve você será redirecionado.
         </AlertDescription>
         <Button onClick={onClose} className="mt-4 w-full">Fechar</Button>
       </Alert>
@@ -211,7 +202,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => setShowLoginOption(false)}
+                onClick={() => { setShowLoginOption(false); setError(null); }}
                 disabled={loading}
               >
                 Criar Conta ou Continuar como Convidado
