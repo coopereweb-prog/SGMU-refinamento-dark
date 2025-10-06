@@ -13,6 +13,8 @@ import UpdatePasswordPage from '@/pages/UpdatePasswordPage';
 import FieldTechnicianPage from '@/pages/FieldTechnicianPage';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import ClientDashboardPage from '@/pages/ClientDashboardPage';
+import { ManageOrdersPage } from '@/pages/ManageOrdersPage';
+import { ManagePricingPage } from '@/pages/ManagePricingPage';
 
 function App() {
   const ADMIN_ROLES = ['admin', 'operations_manager'];
@@ -49,6 +51,16 @@ function App() {
               <Route path="/admin/users" element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <ManageUsersPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/orders" element={
+                <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                  <ManageOrdersPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/pricing" element={
+                <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                  <ManagePricingPage />
                 </ProtectedRoute>
               } />
             </Route>

@@ -169,16 +169,21 @@ export const updateOrderItemPeriod = async (orderId, orderItemId, newPeriod) => 
 
 // Funções para gerenciar usuários
 export const getUsers = async () => {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .in('role', ['admin', 'operations_manager', 'field_technician']);
-  
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("Usuário não autenticado.");
+
+  const { data, error } = await supabase.functions.invoke('get-users', {
+    headers: {
+      Authorization: `Bearer ${session.access_token}`
+    }
+  });
+
   if (error) {
-    console.error('Error fetching users:', error);
+    console.error('Error fetching users via function:', error);
     throw error;
   }
-  return data;
+  
+  return data.users;
 };
 
 export const inviteUser = async (email, name, role) => {

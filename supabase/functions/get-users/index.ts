@@ -20,15 +20,14 @@ Deno.serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Verificação de segurança (semelhante à função de convite)
+    // Verificação de segurança: garante que o chamador é um administrador
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) throw new Error('Cabeçalho de autorização ausente')
     const jwt = authHeader.replace('Bearer ', '')
     const { data: { user } } = await supabaseAdmin.auth.getUser(jwt)
     if (!user) throw new Error('JWT inválido')
+
     const { data: profile } = await supabaseAdmin.from('profiles').select('role').eq('id', user.id).single()
-    
-    // Apenas 'admin' pode excluir usuários
     if (!profile || profile.role !== 'admin') {
       return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -36,22 +35,11 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    const { userIdToDelete } = await req.json()
-    if (!userIdToDelete) {
-      throw new Error('ID do usuário é obrigatório.')
-    }
-    
-    if (userIdToDelete === user.id) {
-      throw new Error('Você não pode excluir a si mesmo.')
-    }
+    // Busca os usuários
+    const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers()
+    if (listError) throw listError
 
-    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userIdToDelete)
-
-    if (deleteError) {
-      throw deleteError
-    }
-
-    return new Response(JSON.stringify({ message: 'Usuário excluído com sucesso.' }), {
+    return new Response(JSON.stringify({ users }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })

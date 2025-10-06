@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { getUsers, supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -19,11 +19,11 @@ export function ManageUsersPage() {
 
   const fetchUsers = async () => {
     setLoading(true);
-    const { data: { users }, error } = await supabase.auth.admin.listUsers();
-    if (error) {
+    try {
+      const usersData = await getUsers();
+      setUsers(usersData);
+    } catch (error) {
       toast.error("Erro ao buscar usuários", { description: error.message });
-    } else {
-      setUsers(users);
     }
     setLoading(false);
   };
