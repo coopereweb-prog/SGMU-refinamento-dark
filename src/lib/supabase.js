@@ -141,6 +141,23 @@ export const updateOrderItemPeriod = async (orderId, orderItemId, newPeriod) => 
   }
 };
 
+// Funções de gerenciamento de pedidos pelo Admin
+export const confirmOrder = async (orderId) => {
+  const { error } = await supabase.rpc('confirm_order_and_update_points', { p_order_id: orderId });
+  if (error) throw error;
+};
+
+export const cancelOrder = async (orderId) => {
+  const { error } = await supabase.rpc('cancel_order_and_release_points', { p_order_id: orderId });
+  if (error) throw error;
+};
+
+export const markOrderAsEditedByAdmin = async (orderId) => {
+  const { error } = await supabase.from('orders').update({ edited_by_admin: true }).eq('id', orderId);
+  if (error) throw error;
+};
+
+
 // Funções para gerenciar usuários
 export const getUsers = async () => {
   const { data: { session } } = await supabase.auth.getSession();

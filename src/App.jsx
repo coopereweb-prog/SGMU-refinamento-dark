@@ -15,6 +15,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import ClientDashboardPage from '@/pages/ClientDashboardPage';
 import { ManageOrdersPage } from '@/pages/ManageOrdersPage';
 import { ManagePricingPage } from '@/pages/ManagePricingPage';
+import OrderDetailPage from '@/pages/OrderDetailPage'; // Nova importação
 
 function App() {
   const ADMIN_ROLES = ['admin', 'operations_manager'];
@@ -56,6 +57,11 @@ function App() {
               <Route path="/admin/orders" element={
                 <ProtectedRoute allowedRoles={ADMIN_ROLES}>
                   <ManageOrdersPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/orders/:orderId" element={
+                <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                  <OrderDetailPage />
                 </ProtectedRoute>
               } />
               <Route path="/admin/pricing" element={
