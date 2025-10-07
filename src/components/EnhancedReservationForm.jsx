@@ -171,7 +171,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="login-password">Senha</Label>
-                  <Button type="button" variant="link" className="h-auto p-0 text-sm" onClick={() => setView('forgot_password')}>Esqueceu?</Button>
+                  <Button type="button" variant="link" className="h-auto p-0 text-sm underline" onClick={() => setView('forgot_password')}>Esqueceu sua senha?</Button>
                 </div>
                 <div className="relative">
                   <Input id="login-password" name="password" type={showLoginPassword ? 'text' : 'password'} required value={loginData.password} onChange={handleLoginInputChange} disabled={loading} className="pr-10" />
