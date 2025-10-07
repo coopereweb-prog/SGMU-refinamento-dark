@@ -4,6 +4,6 @@
 project_id = "kugysamxzumqgxinazds"
 
 [functions.handle-daily-tasks]
-# Agenda a execução da função todos os dias às 8:00 AM UTC.
+# Agenda a execução da função todos os dias às 3:00 AM UTC.
 # Formato Cron: minuto hora dia(mês) mês dia(semana)
-schedule = "0 8 * * *"
+schedule = "0 3 * * *"
