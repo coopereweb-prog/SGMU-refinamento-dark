@@ -62,7 +62,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
     setError(null);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(loginData.email, {
-        redirectTo: 'https://sgmu-piloto-09-2025.vercel.app/update-password',
+        redirectTo: `${import.meta.env.VITE_SITE_URL}/update-password`,
       });
       if (error) throw error;
       toast.success('Verifique seu e-mail', {
