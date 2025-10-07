@@ -15,14 +15,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from 'sonner';
-import { useUser } from '../contexts/UserContext'; // Importa o useUser
-import { ClientProfileForm } from '../components/ClientProfileForm'; // Importa o novo formulário
+import { useUser } from '../contexts/UserContext';
+import { ClientProfileForm } from '../components/ClientProfileForm';
 import { WhatsAppButton } from '../components/WhatsAppButton';
+import { RouteGenerator } from '@/components/RouteGenerator'; // Importação
 
 function ClientDashboardPage() {
-  const { profile, loading: userProfileLoading, session } = useUser(); // Obtém o perfil e o estado de carregamento do contexto
+  const { profile, loading: userProfileLoading, session } = useUser();
   const [orders, setOrders] = useState([]);
-  const [loadingOrders, setLoadingOrders] = useState(true); // Renomeado para evitar conflito
+  const [loadingOrders, setLoadingOrders] = useState(true);
   const [isEditModalOpen, setIsEditModal] = useState(false);
   const [selectedOrderForEdit, setSelectedOrderForEdit] = useState(null);
   const [updatingItemId, setUpdatingItemId] = useState(null);
@@ -37,14 +38,13 @@ function ClientDashboardPage() {
       return;
     }
     
-    // Consulta mais robusta: busca por user_id OU por email (para pedidos de convidados)
     const { data, error } = await supabase
       .from('orders')
       .select(`
         id, created_at, updated_at, customer_name, customer_email, customer_phone, total_amount, payment_receipt_url, reserved_until, status,
         order_items (
           id, price, period_years,
-          points (id, name, installation_photo_url, price_1y, price_2y, price_3y, price_4y, price_5y) 
+          points (id, name, installation_photo_url, price_1y, price_2y, price_3y, price_4y, price_5y, latitude, longitude) 
         )
       `)
       .or(`user_id.eq.${profile.id},and(customer_email.eq.${profile.email},user_id.is.null)`)
@@ -197,6 +197,7 @@ function ClientDashboardPage() {
                           </div>
                         ))}
                       </div>
+                      <RouteGenerator points={order.order_items.map(item => item.points).filter(p => p.latitude && p.longitude)} />
                     </CardContent>
 
                     {order.status === 'pending' && (

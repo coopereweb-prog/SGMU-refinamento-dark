@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { RouteGenerator } from '@/components/RouteGenerator'; // Importação
 
 export function OrderDetailPage() {
   const { orderId } = useParams();
@@ -60,7 +61,7 @@ export function OrderDetailPage() {
       await updateOrderItemPeriod(order.id, itemId, newPeriod);
       await markOrderAsEditedByAdmin(order.id);
       toast.success('Período do item atualizado com sucesso!');
-      fetchOrder(); // Recarrega os dados para refletir o novo total
+      fetchOrder();
     } catch (error) {
       toast.error('Falha ao atualizar o item', { description: error.message });
     } finally {
@@ -106,6 +107,7 @@ export function OrderDetailPage() {
   if (!order) return null;
 
   const statusProps = getOrderStatusProps(order.status);
+  const orderPoints = order.order_items.map(item => item.points).filter(p => p.latitude && p.longitude);
 
   return (
     <div className="container mx-auto p-4 space-y-6 print:p-0">
@@ -209,6 +211,7 @@ export function OrderDetailPage() {
                 ))}
               </TableBody>
             </Table>
+            <RouteGenerator points={orderPoints} />
           </CardContent>
         </Card>
       </div>

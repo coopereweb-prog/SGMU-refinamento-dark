@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { compressImage } from '../lib/image-utils';
@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { LogOut, Camera, UploadCloud, Paperclip, User, Map, Loader2 } from 'lucide-react';
+import { LogOut, Camera, UploadCloud, User, Loader2 } from 'lucide-react';
+import { RouteGenerator } from '@/components/RouteGenerator'; // Importação
 
 function FieldTechnicianPage() {
   const [tasks, setTasks] = useState([]);
@@ -47,6 +48,14 @@ function FieldTechnicianPage() {
 
     fetchTasks();
   }, []);
+
+  const allPendingPoints = useMemo(() => {
+    return tasks
+      .flatMap(order => order.order_items)
+      .filter(item => !item.points.installation_photo_url)
+      .map(item => item.points)
+      .filter(p => p.latitude && p.longitude);
+  }, [tasks]);
 
   const handleFileChange = async (pointId, file) => {
     if (!file) {
@@ -113,34 +122,6 @@ function FieldTechnicianPage() {
     }
   };
 
-  const handleGenerateRoute = () => {
-    const pendingPoints = tasks.flatMap(order => 
-        order.order_items.filter(item => !item.points.installation_photo_url)
-    ).map(item => item.points);
-
-    if (pendingPoints.length < 1) {
-        toast.info("Nenhuma tarefa pendente para gerar rota.");
-        return;
-    }
-    
-    if (pendingPoints.length === 1) {
-        const point = pendingPoints[0];
-        window.open(`https://www.google.com/maps/dir/?api=1&destination=${point.latitude},${point.longitude}`, '_blank');
-        return;
-    }
-
-    const waypoints = pendingPoints
-        .slice(0, -1)
-        .map(p => `${p.latitude},${p.longitude}`)
-        .join('|');
-    
-    const destination = pendingPoints[pendingPoints.length - 1];
-    const destinationStr = `${destination.latitude},${destination.longitude}`;
-
-    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destinationStr}&waypoints=${waypoints}&travelmode=driving`;
-    window.open(mapsUrl, '_blank');
-  };
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/login');
@@ -156,9 +137,6 @@ function FieldTechnicianPage() {
           <p className="text-gray-600">Tarefas de instalação de placas</p>
         </div>
         <div className="flex items-center gap-4">
-          <Button onClick={handleGenerateRoute} variant="outline">
-            <Map className="h-4 w-4 mr-2" /> Gerar Rota Otimizada
-          </Button>
           <Button onClick={handleLogout} variant="outline">
             <LogOut className="h-4 w-4 mr-2" /> Sair
           </Button>
@@ -173,6 +151,7 @@ function FieldTechnicianPage() {
           </div>
         ) : (
           <div className="space-y-6">
+            <RouteGenerator points={allPendingPoints} />
             {tasks.map(order => (
               <Card key={order.id}>
                 <CardHeader>
