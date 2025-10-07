@@ -1,10 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://kugysamxzumqgxinazds.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1Z3lzYW14enVtcWd4aW5hemRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzMDg1NTYsImV4cCI6MjA3MTg4NDU1Nn0.-9ozG-13qb4n48Wh_F-aOOxiOEgWzepMv0'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('As credenciais do Supabase não estão definidas no código.')
+  throw new Error('Supabase credentials are not defined in the .env.local file.')
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
