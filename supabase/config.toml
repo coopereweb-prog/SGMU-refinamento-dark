@@ -1,0 +1,9 @@
+# Arquivo de configuração do Supabase
+# Mais informações: https://supabase.com/docs/reference/cli/config
+
+project_id = "kugysamxzumqgxinazds"
+
+[functions.handle-daily-tasks]
+# Agenda a execução da função todos os dias às 8:00 AM UTC.
+# Formato Cron: minuto hora dia(mês) mês dia(semana)
+schedule = "0 8 * * *"
