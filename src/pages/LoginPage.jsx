@@ -74,7 +74,7 @@ function LoginPage() {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/update-password`,
+        redirectTo: 'https://sgmu-piloto-09-2025.vercel.app/update-password',
       });
       if (error) throw error;
       toast.success('Verifique seu e-mail', {
