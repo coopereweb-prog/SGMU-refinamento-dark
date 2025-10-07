@@ -5,6 +5,7 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
+  const [authEvent, setAuthEvent] = useState(null); // State to track the auth event
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,8 +18,9 @@ export function AuthProvider({ children }) {
     getInitialSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setSession(session);
+        setAuthEvent(event); // Capture the event type (e.g., 'SIGNED_IN', 'PASSWORD_RECOVERY')
       }
     );
 
@@ -30,11 +32,11 @@ export function AuthProvider({ children }) {
   const value = {
     session,
     user: session?.user || null,
+    authEvent, // Expose the event
     signOut: () => supabase.auth.signOut(),
-    loading, // Expondo o estado de loading
+    loading,
   };
 
-  // Renderiza os filhos imediatamente, passando o estado de loading pelo contexto.
   return (
     <AuthContext.Provider value={value}>
       {children}

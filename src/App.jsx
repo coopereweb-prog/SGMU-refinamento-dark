@@ -12,10 +12,11 @@ import LoginPage from '@/pages/LoginPage';
 import UpdatePasswordPage from '@/pages/UpdatePasswordPage';
 import FieldTechnicianPage from '@/pages/FieldTechnicianPage';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { GuestRoute } from '@/components/GuestRoute'; // Import GuestRoute
 import ClientDashboardPage from '@/pages/ClientDashboardPage';
 import { ManageOrdersPage } from '@/pages/ManageOrdersPage';
 import { ManagePricingPage } from '@/pages/ManagePricingPage';
-import OrderDetailPage from '@/pages/OrderDetailPage'; // Nova importação
+import OrderDetailPage from '@/pages/OrderDetailPage';
 
 function App() {
   const ADMIN_ROLES = ['admin', 'operations_manager'];
@@ -72,7 +73,11 @@ function App() {
             </Route>
 
             {/* Rotas de página inteira (sem o layout principal) */}
-            <Route path="/login" element={<LoginPage />} />
+            <Route path="/login" element={
+              <GuestRoute>
+                <LoginPage />
+              </GuestRoute>
+            } />
             <Route path="/update-password" element={<UpdatePasswordPage />} />
             <Route path="/technician-panel" element={
               <ProtectedRoute allowedRoles={TECHNICIAN_ROLES}>
