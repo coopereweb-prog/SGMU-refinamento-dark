@@ -53,6 +53,9 @@ function LoginPage() {
           case 'client':
             navigate('/dashboard');
             break;
+          case 'field_technician':
+            navigate('/technician-panel');
+            break;
           default:
             navigate('/');
         }
