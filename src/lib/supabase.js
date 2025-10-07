@@ -3,13 +3,6 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-// --- CÓDIGO DE DIAGNÓSTICO ---
-console.log("--- INICIANDO VERIFICAÇÃO DE CONEXÃO SGMU ---");
-console.log("URL do Supabase está carregada?", !!supabaseUrl);
-console.log("Chave Anon do Supabase está carregada?", !!supabaseAnonKey);
-console.log("--- FIM DA VERIFICAÇÃO ---");
-// --- FIM DO CÓDIGO DE DIAGNÓSTICO ---
-
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Credenciais do Supabase não estão definidas no arquivo .env.local. Verifique se o arquivo existe e se o servidor foi reiniciado.')
 }
