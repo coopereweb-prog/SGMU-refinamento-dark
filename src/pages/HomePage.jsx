@@ -190,7 +190,7 @@ function HomePage() {
     <div className="flex flex-col flex-grow">
       <main className="flex-grow p-4 lg:p-6 flex flex-col lg:grid lg:grid-cols-[350px_1fr_350px] gap-6 h-full">
         
-        <div className="space-y-6 order-2 lg:order-1 lg:overflow-y-auto">
+        <div className="space-y-6 order-3 lg:order-1 lg:overflow-y-auto">
           {loading ? <Skeleton className="h-48 w-full" /> : <InfoPanel points={points} />}
           <TagFilter onFilterChange={setSelectedTags} />
         </div>
@@ -232,7 +232,7 @@ function HomePage() {
           </div>
         </div>
 
-        <div className="order-3 lg:order-3 lg:overflow-y-auto">
+        <div className="order-2 lg:order-3 lg:overflow-y-auto">
           <Cart
             items={cartItems}
             onRemove={handleRemoveFromCart}
