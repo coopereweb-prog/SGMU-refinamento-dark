@@ -31,6 +31,85 @@ const mapOptions = {
   fullscreenControl: false,
 };
 
+// --- Funções de Estilo para o Mapa ---
+
+const getMarkerIcon = (status) => {
+  const colors = {
+    available: 'oklch(0.75 0.25 145)', // --status-available
+    reserved: 'oklch(0.85 0.2 90)',   // --status-reserved
+    sold: 'oklch(0.65 0.22 25)',      // --status-sold
+  };
+  const color = colors[status] || 'oklch(0.708 0 0)'; // --muted-foreground
+
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
+      <defs>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="black" flood-opacity="0.5"/>
+        </filter>
+      </defs>
+      <path 
+        d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" 
+        fill="${color}" 
+        stroke="oklch(0.145 0 0)" 
+        stroke-width="0.5"
+        filter="url(#shadow)"
+      />
+      <circle cx="12" cy="9" r="2.5" fill="oklch(0.145 0 0 / 50%)"/>
+    </svg>
+  `;
+
+  return {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    scaledSize: new window.google.maps.Size(36, 36),
+    anchor: new window.google.maps.Point(18, 36),
+  };
+};
+
+const createClusterSvg = (size) => `
+  <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="grad1" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+        <stop offset="0%" style="stop-color:oklch(0.269 0 0);stop-opacity:0.9" />
+        <stop offset="100%" style="stop-color:oklch(0.205 0 0);stop-opacity:0.95" />
+      </radialGradient>
+    </defs>
+    <circle cx="${size / 2}" cy="${size / 2}" r="${(size / 2) - 2}" fill="url(#grad1)" stroke="oklch(1 0 0 / 25%)" stroke-width="2"/>
+  </svg>
+`;
+
+const clusterStyles = [
+  {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(createClusterSvg(50))}`,
+    height: 50,
+    width: 50,
+    textColor: 'oklch(0.985 0 0)',
+    textSize: 15,
+    fontFamily: 'sans-serif',
+    fontWeight: 'bold',
+  },
+  {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(createClusterSvg(60))}`,
+    height: 60,
+    width: 60,
+    textColor: 'oklch(0.985 0 0)',
+    textSize: 16,
+    fontFamily: 'sans-serif',
+    fontWeight: 'bold',
+  },
+  {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(createClusterSvg(70))}`,
+    height: 70,
+    width: 70,
+    textColor: 'oklch(0.985 0 0)',
+    textSize: 18,
+    fontFamily: 'sans-serif',
+    fontWeight: 'bold',
+  },
+];
+
+// --- Componente Principal ---
+
 function HomePage() {
   const [points, setPoints] = useState([]);
   const [filteredPoints, setFilteredPoints] = useState([]);
@@ -191,7 +270,14 @@ function HomePage() {
         onZoomChanged={onZoomChanged}
       >
         {activeRule.display_mode === 'cluster' ? (
-          <MarkerClustererF options={{ gridSize: activeRule.cluster_radius, minimumClusterSize: activeRule.min_cluster_size }} calculator={clustererCalculator}>
+          <MarkerClustererF 
+            options={{ 
+              gridSize: activeRule.cluster_radius, 
+              minimumClusterSize: activeRule.min_cluster_size,
+              styles: clusterStyles,
+            }} 
+            calculator={clustererCalculator}
+          >
             {(clusterer) =>
               filteredPoints.map((point) => (
                 <Marker
@@ -199,6 +285,7 @@ function HomePage() {
                   position={{ lat: point.latitude, lng: point.longitude }}
                   onClick={() => handleMarkerClick(point)}
                   clusterer={clusterer}
+                  icon={getMarkerIcon(point.status)}
                   // @ts-ignore
                   point_status={point.status}
                 />
@@ -211,6 +298,7 @@ function HomePage() {
               key={point.id}
               position={{ lat: point.latitude, lng: point.longitude }}
               onClick={() => handleMarkerClick(point)}
+              icon={getMarkerIcon(point.status)}
             />
           ))
         )}
