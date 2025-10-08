@@ -1,125 +1,21 @@
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
-import { AuthProvider, useAuth } from '@/contexts/AuthContext';
-import { UserProvider } from '@/contexts/UserContext';
-import { MapConfigProvider } from '@/contexts/MapConfigContext';
-import { Toaster as SonnerToaster } from "@/components/ui/sonner";
-import { AppLayout } from '@/components/AppLayout';
-import HomePage from '@/pages/HomePage';
-import { AdminPage } from '@/pages/AdminPage';
-import { ManagePointsPage } from '@/pages/ManagePointsPage';
-import { ManageTagsPage } from '@/pages/ManageTagsPage';
-import { ManageUsersPage } from '@/pages/ManageUsersPage';
-import LoginPage from '@/pages/LoginPage';
-import UpdatePasswordPage from '@/pages/UpdatePasswordPage';
-import FieldTechnicianPage from '@/pages/FieldTechnicianPage';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { GuestRoute } from '@/components/GuestRoute';
-import ClientDashboardPage from '@/pages/ClientDashboardPage';
-import { ManageOrdersPage } from '@/pages/ManageOrdersPage';
-import { ManagePricingPage } from '@/pages/ManagePricingPage';
-import OrderDetailPage from '@/pages/OrderDetailPage';
-import { ManageMapSettingsPage } from '@/pages/ManageMapSettingsPage';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import HomePage from './pages/HomePage';
+import AdminPage from './pages/AdminPage';
+import { MapConfigProvider } from './contexts/MapConfigContext';
+import { Toaster } from "@/components/ui/sonner"
 
-// This new component contains the main routing and the redirect effect.
-function AppRoutes() {
-  const { authEvent } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    // If the auth event is PASSWORD_RECOVERY, it means the user has just
-    // clicked the link in their email. We should redirect them to the
-    // update password page, regardless of where they landed.
-    if (authEvent === 'PASSWORD_RECOVERY') {
-      navigate('/update-password', { replace: true });
-    }
-  }, [authEvent, navigate]);
-
-  const ADMIN_ROLES = ['admin', 'operations_manager'];
-  const TECHNICIAN_ROLES = ['admin', 'operations_manager', 'field_technician'];
-
-  return (
-    <>
-      <Routes>
-        {/* Rotas com o layout principal (cabeçalho, etc.) */}
-        <Route element={<AppLayout />}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/dashboard" element={
-            <ProtectedRoute allowedRoles={['client']}>
-              <ClientDashboardPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin" element={
-            <ProtectedRoute allowedRoles={ADMIN_ROLES}>
-              <AdminPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/points" element={
-            <ProtectedRoute allowedRoles={ADMIN_ROLES}>
-              <ManagePointsPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/tags" element={
-            <ProtectedRoute allowedRoles={ADMIN_ROLES}>
-              <ManageTagsPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/users" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <ManageUsersPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/orders" element={
-            <ProtectedRoute allowedRoles={ADMIN_ROLES}>
-              <ManageOrdersPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/orders/:orderId" element={
-            <ProtectedRoute allowedRoles={ADMIN_ROLES}>
-              <OrderDetailPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/pricing" element={
-            <ProtectedRoute allowedRoles={ADMIN_ROLES}>
-              <ManagePricingPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/map-settings" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <ManageMapSettingsPage />
-            </ProtectedRoute>
-          } />
-        </Route>
-
-        {/* Rotas de página inteira (sem o layout principal) */}
-        <Route path="/login" element={
-          <GuestRoute>
-            <LoginPage />
-          </GuestRoute>
-        } />
-        <Route path="/update-password" element={<UpdatePasswordPage />} />
-        <Route path="/technician-panel" element={
-          <ProtectedRoute allowedRoles={TECHNICIAN_ROLES}>
-            <FieldTechnicianPage />
-          </ProtectedRoute>
-        } />
-      </Routes>
-      <SonnerToaster />
-    </>
-  );
-}
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <UserProvider>
-          <MapConfigProvider>
-            <AppRoutes />
-          </MapConfigProvider>
-        </UserProvider>
-      </AuthProvider>
-    </Router>
+    <MapConfigProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/admin" element={<AdminPage />} />
+        </Routes>
+      </Router>
+      <Toaster />
+    </MapConfigProvider>
   );
 }
 

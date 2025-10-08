@@ -10,6 +10,8 @@ import { Modal } from '@/components/Modal';
 import { EnhancedReservationForm } from '@/components/EnhancedReservationForm';
 import { toast } from 'sonner';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 const mapContainerStyle = {
   width: '100%',
@@ -165,8 +167,13 @@ function HomePage() {
 
   return (
     <div className="relative h-screen w-screen">
+      <div className="absolute top-4 right-4 z-20">
+        <Button asChild variant="secondary">
+          <Link to="/admin">Admin</Link>
+        </Button>
+      </div>
       <MapFilter onFilterChange={setFilteredPoints} allPoints={points} />
-      <div className="absolute top-4 right-4 z-10 w-full max-w-sm h-[calc(100%-2rem)]">
+      <div className="absolute top-4 right-4 z-10 w-full max-w-sm h-[calc(100%-2rem)] pt-14">
         <Cart
           items={cartItems}
           onRemove={handleRemoveFromCart}
