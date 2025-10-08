@@ -12,7 +12,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sidebar } from '@/components/Sidebar';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, PanelRight } from 'lucide-react';
+import { Menu } from 'lucide-react';
 
 const mapContainerStyle = {
   width: '100%',
@@ -238,27 +238,6 @@ function HomePage() {
             <Button asChild variant="secondary">
               <Link to="/login">Área Restrita</Link>
             </Button>
-            <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="lg:hidden">
-                  <PanelRight className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-[380px] p-0 border-none">
-                <Sidebar
-                  points={filteredPoints}
-                  onFilterChange={handleFilterChange}
-                  cartItems={cartItems}
-                  onRemoveFromCart={handleRemoveFromCart}
-                  onClearCart={handleClearCart}
-                  onUpdateCartItemPeriod={handleUpdateCartItemPeriod}
-                  onShowReservationForm={() => {
-                    setIsMobileSidebarOpen(false);
-                    setTimeout(() => setIsReservationFormOpen(true), 150);
-                  }}
-                />
-              </SheetContent>
-            </Sheet>
           </div>
         </div>
       </header>
