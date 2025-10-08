@@ -5,9 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { RouteGenerator } from '@/components/RouteGenerator';
 import { PrintablePointsReport } from '@/components/PrintablePointsReport';
-import { FileText, Info } from 'lucide-react';
+import { FileText, Info, Map, Share2, Copy, Mail, MessageSquare } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { generateOptimizedRouteUrl } from '@/lib/maps-utils';
+import { toast } from 'sonner';
 
 export function ContractedPointsView({ orders, profile }) {
   const [selectedPointIds, setSelectedPointIds] = useState(new Set());
@@ -57,6 +59,42 @@ export function ContractedPointsView({ orders, profile }) {
     }, 100);
   };
 
+  const routeUrl = useMemo(() => {
+    return generateOptimizedRouteUrl(selectedPoints);
+  }, [selectedPoints]);
+
+  const handleGenerateRoute = () => {
+    if (routeUrl) {
+      window.open(routeUrl, '_blank');
+    }
+  };
+
+  const handleShare = async (platform) => {
+    if (!routeUrl) return;
+
+    const shareText = `Confira esta rota otimizada: ${routeUrl}`;
+
+    if (platform === 'native' && navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Rota Otimizada',
+          text: 'Confira esta rota para os pontos selecionados.',
+          url: routeUrl,
+        });
+      } catch (error) {
+        console.error('Erro ao compartilhar:', error);
+        toast.error("Não foi possível usar o compartilhamento nativo.");
+      }
+    } else if (platform === 'copy') {
+      navigator.clipboard.writeText(routeUrl);
+      toast.success("Link da rota copiado para a área de transferência!");
+    } else if (platform === 'whatsapp') {
+      window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
+    } else if (platform === 'email') {
+      window.open(`mailto:?subject=Rota Otimizada&body=${encodeURIComponent(shareText)}`);
+    }
+  };
+
   if (contractedPoints.length === 0) {
     return (
       <Card className="mt-6">
@@ -81,8 +119,24 @@ export function ContractedPointsView({ orders, profile }) {
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-2 mb-4">
             <Button onClick={handleGenerateReport} disabled={selectedPoints.length === 0}>
-              <FileText className="h-4 w-4 mr-2" /> Gerar Relatório em PDF
+              <FileText className="h-4 w-4 mr-2" /> Gerar Relatório
             </Button>
+            <Button onClick={handleGenerateRoute} disabled={selectedPoints.length === 0}>
+              <Map className="h-4 w-4 mr-2" /> Gerar Rota
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" disabled={selectedPoints.length === 0}>
+                  <Share2 className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleShare('native')}><Share2 className="h-4 w-4 mr-2" />Compartilhar...</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleShare('copy')}><Copy className="h-4 w-4 mr-2" />Copiar Link</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleShare('whatsapp')}><MessageSquare className="h-4 w-4 mr-2" />WhatsApp</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleShare('email')}><Mail className="h-4 w-4 mr-2" />Email</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <div className="border rounded-lg">
             <Table>
@@ -122,11 +176,6 @@ export function ContractedPointsView({ orders, profile }) {
               </TableBody>
             </Table>
           </div>
-          {selectedPoints.length > 0 && (
-            <div className="mt-6">
-              <RouteGenerator points={selectedPoints} />
-            </div>
-          )}
         </CardContent>
       </Card>
       <div className="hidden print:block">
