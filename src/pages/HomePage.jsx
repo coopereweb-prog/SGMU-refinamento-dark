@@ -200,13 +200,13 @@ function HomePage() {
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-background flex flex-col">
-      <header className="h-20 bg-background/80 backdrop-blur-sm border-b z-20 flex-shrink-0">
+      <header className="h-20 bg-background/70 backdrop-blur-md shadow-lg z-20 flex-shrink-0">
         <div className="container mx-auto px-4 h-full flex justify-between items-center">
           <Link to="/" className="flex items-center gap-3">
-            <img src="/logo.png" alt="SGMU Logo" className="h-14" />
+            <img src="/logo.png" alt="SGMU Logo" className="h-8" />
             <div className="hidden sm:block">
               <span className="font-bold text-xl block">SGMU</span>
-              <p className="text-xs text-muted-foreground">Sistema Gestor de Mobiliário Urbano</p>
+              <p className="text-xs text-muted-foreground">Sistema de Gestão de Mobiliário Urbano</p>
             </div>
           </Link>
           <div className="flex items-center gap-2">
@@ -239,7 +239,10 @@ function HomePage() {
       </header>
 
       <main className="flex-grow grid grid-cols-1 lg:grid-cols-[1fr_400px]">
-        <div className="h-full w-full">
+        <div className="h-full w-full relative">
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-background/80 backdrop-blur-sm py-2 px-4 rounded-full shadow-lg text-sm text-muted-foreground pointer-events-none">
+            Clique nos marcadores para ver detalhes e adicionar ao carrinho.
+          </div>
           <GoogleMap
             mapContainerStyle={mapContainerStyle}
             center={defaultCenter}
