@@ -229,8 +229,10 @@ function HomePage() {
           <Link to="/" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2">
             <img src="/logo.png" alt="SGMU Logo" className="h-10" />
             <div className="text-center">
-              <span className="font-bold text-lg block">SGMU</span>
-              <p className="text-xs text-muted-foreground max-w-[150px] sm:max-w-none">Sistema de Gestão de Mobiliário Urbano</p>
+              <p className="text-xs text-muted-foreground max-w-[150px] sm:max-w-none">
+                <span className="font-bold text-sm">S</span>istema de <span className="font-bold text-sm">G</span>estão de <br className="sm:hidden" />
+                <span className="font-bold text-sm">M</span>obiliário <span className="font-bold text-sm">U</span>rbano
+              </p>
             </div>
           </Link>
 
