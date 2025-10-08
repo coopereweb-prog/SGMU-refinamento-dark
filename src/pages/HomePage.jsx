@@ -200,14 +200,14 @@ function HomePage() {
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-background flex flex-col">
-      <header className="h-20 bg-black/60 z-20 flex-shrink-0">
-        <div className="container mx-auto px-4 h-full grid grid-cols-3 items-center">
+      <header className="h-auto sm:h-20 bg-black/60 z-20 flex-shrink-0 py-2">
+        <div className="container mx-auto px-4 h-full grid grid-cols-3 lg:grid-cols-4 items-center">
           {/* Coluna Esquerda: Menu */}
           <div className="justify-self-start">
             <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-6 w-6" />
+                <Button variant="ghost" className="h-10 w-10 sm:h-12 sm:w-12 p-0 flex items-center justify-center">
+                  <Menu className="h-8 w-8 sm:h-10 sm:w-10" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-[380px] p-0 border-none">
@@ -228,19 +228,19 @@ function HomePage() {
           </div>
           
           {/* Coluna Central: Logo */}
-          <Link to="/" className="flex items-center gap-2 justify-self-center">
-            <img src="/logo.png" alt="SGMU Logo" className="h-10" />
-            <div className="hidden sm:block text-left">
-              <p className="text-xs text-muted-foreground">
+          <Link to="/" className="flex items-center gap-2 justify-self-center col-start-2 lg:col-span-2 flex-col sm:flex-row">
+            <img src="/logo.png" alt="SGMU Logo" className="h-10 sm:h-12 flex-shrink-0" />
+            <div className="text-center sm:text-left">
+              <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight">
                 <span className="font-semibold">Sistema Gestor</span> de Mobiliário Urbano
               </p>
             </div>
           </Link>
 
           {/* Coluna Direita: Botão de Acesso */}
-          <div className="justify-self-end">
+          <div className="justify-self-end col-start-3 lg:col-start-4">
             <div className="flex items-center gap-2">
-              <Button asChild variant="secondary">
+              <Button asChild variant="secondary" className="h-10 sm:h-12 px-3 sm:px-4 text-xs sm:text-sm">
                 <Link to="/login">Área Restrita</Link>
               </Button>
             </div>
