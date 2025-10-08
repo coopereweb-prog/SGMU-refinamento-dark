@@ -12,7 +12,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sidebar } from '@/components/Sidebar';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { PanelLeft } from 'lucide-react';
+import { PanelRight } from 'lucide-react';
 
 const mapContainerStyle = {
   width: '100%',
@@ -193,23 +193,33 @@ function HomePage() {
     return (
       <div className="relative h-screen w-screen">
         <Skeleton className="h-full w-full" />
-        <div className="absolute top-4 left-4 z-10"><Skeleton className="h-12 w-64" /></div>
+        <div className="absolute top-4 left-4 z-10"><Skeleton className="h-16 w-full" /></div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-background">
-      <main className="h-full w-full grid grid-cols-1 lg:grid-cols-[1fr_400px]">
-        <div className="h-full w-full relative">
-          <header className="absolute top-0 left-0 z-20 p-4 w-full flex justify-between items-center">
+    <div className="h-screen w-screen overflow-hidden bg-background flex flex-col">
+      <header className="h-20 bg-background/80 backdrop-blur-sm border-b z-20 flex-shrink-0">
+        <div className="container mx-auto px-4 h-full flex justify-between items-center">
+          <Link to="/" className="flex items-center gap-3">
+            <img src="/logo.png" alt="SGMU Logo" className="h-14" />
+            <div className="hidden sm:block">
+              <span className="font-bold text-xl block">SGMU</span>
+              <p className="text-xs text-muted-foreground">Sistema Gestor de Mobiliário Urbano</p>
+            </div>
+          </Link>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="secondary">
+              <Link to="/login">Área Restrita</Link>
+            </Button>
             <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
               <SheetTrigger asChild>
-                <Button variant="secondary" size="icon" className="lg:hidden shadow-lg">
-                  <PanelLeft className="h-5 w-5" />
+                <Button variant="outline" size="icon" className="lg:hidden">
+                  <PanelRight className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[380px] p-0 border-none">
+              <SheetContent side="right" className="w-[380px] p-0 border-none">
                 <Sidebar
                   points={filteredPoints}
                   onFilterChange={handleFilterChange}
@@ -224,10 +234,12 @@ function HomePage() {
                 />
               </SheetContent>
             </Sheet>
-            <Button asChild variant="secondary" className="shadow-lg">
-              <Link to="/admin">Área Restrita</Link>
-            </Button>
-          </header>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-grow grid grid-cols-1 lg:grid-cols-[1fr_400px]">
+        <div className="h-full w-full">
           <GoogleMap
             mapContainerStyle={mapContainerStyle}
             center={defaultCenter}
@@ -261,6 +273,7 @@ function HomePage() {
           />
         </div>
       </main>
+
       <PointDetailsSheet point={selectedPoint} isOpen={isSheetOpen} onOpenChange={setIsSheetOpen} onAddToCart={handleAddToCart} />
       <Modal isOpen={isReservationFormOpen} onClose={() => setIsReservationFormOpen(false)} title="Finalizar Reserva" description="Preencha seus dados para concluir a reserva dos pontos.">
         <EnhancedReservationForm cartItems={cartItems} onClose={() => setIsReservationFormOpen(false)} onReservationSuccess={handleReservationSuccess} />
