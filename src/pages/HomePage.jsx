@@ -201,32 +201,36 @@ function HomePage() {
   return (
     <div className="h-screen w-screen overflow-hidden bg-background flex flex-col">
       <header className="h-20 bg-black/60 z-20 flex-shrink-0">
-        <div className="container mx-auto px-4 h-full relative flex justify-between items-center">
-          <div className="lg:hidden">
-            <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-6 w-6" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[380px] p-0 border-none">
-                <Sidebar
-                  points={filteredPoints}
-                  onFilterChange={handleFilterChange}
-                  cartItems={cartItems}
-                  onRemoveFromCart={handleRemoveFromCart}
-                  onClearCart={handleClearCart}
-                  onUpdateCartItemPeriod={handleUpdateCartItemPeriod}
-                  onShowReservationForm={() => {
-                    setIsMobileSidebarOpen(false);
-                    setTimeout(() => setIsReservationFormOpen(true), 150);
-                  }}
-                />
-              </SheetContent>
-            </Sheet>
+        <div className="container mx-auto px-4 h-full grid grid-cols-3 items-center">
+          {/* Coluna Esquerda: Menu Mobile */}
+          <div className="justify-self-start">
+            <div className="lg:hidden">
+              <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-6 w-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[380px] p-0 border-none">
+                  <Sidebar
+                    points={filteredPoints}
+                    onFilterChange={handleFilterChange}
+                    cartItems={cartItems}
+                    onRemoveFromCart={handleRemoveFromCart}
+                    onClearCart={handleClearCart}
+                    onUpdateCartItemPeriod={handleUpdateCartItemPeriod}
+                    onShowReservationForm={() => {
+                      setIsMobileSidebarOpen(false);
+                      setTimeout(() => setIsReservationFormOpen(true), 150);
+                    }}
+                  />
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
           
-          <Link to="/" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2">
+          {/* Coluna Central: Logo */}
+          <Link to="/" className="flex items-center gap-2 justify-self-center">
             <img src="/logo.png" alt="SGMU Logo" className="h-10" />
             <div className="text-center">
               <p className="text-xs text-muted-foreground max-w-[150px] sm:max-w-none">
@@ -236,10 +240,13 @@ function HomePage() {
             </div>
           </Link>
 
-          <div className="flex items-center gap-2">
-            <Button asChild variant="secondary">
-              <Link to="/login">Área Restrita</Link>
-            </Button>
+          {/* Coluna Direita: Botão de Acesso */}
+          <div className="justify-self-end">
+            <div className="flex items-center gap-2">
+              <Button asChild variant="secondary">
+                <Link to="/login">Área Restrita</Link>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
