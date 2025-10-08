@@ -1,7 +1,7 @@
 import { AlertTriangle } from 'lucide-react';
 
 export const WhatsAppButton = () => {
-  const whatsappNumber = import.meta.env.VITE_WHAPP_NUMBER;
+  const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER;
 
   if (!whatsappNumber) {
     return (
