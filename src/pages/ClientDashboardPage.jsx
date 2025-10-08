@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Mail, Phone, MapPin, Calendar, LogOut, Loader2 } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, LogOut, Loader2, ShoppingCart, Edit } from 'lucide-react';
 import { EditOrderDialog } from '../components/EditOrderDialog';
 import {
   Select,
@@ -201,9 +201,14 @@ function ClientDashboardPage() {
                     </CardContent>
 
                     {order.status === 'pending' && (
-                      <div className="p-6 pt-0">
-                        <Button className="w-full" onClick={() => openEditModal(order)}>
-                          Remover Itens do Pedido
+                      <div className="p-6 pt-0 flex flex-col sm:flex-row gap-2">
+                        <Button className="flex-1" onClick={() => openEditModal(order)}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Remover Itens
+                        </Button>
+                        <Button variant="outline" className="flex-1" onClick={() => navigate('/')}>
+                          <ShoppingCart className="h-4 w-4 mr-2" />
+                          Continuar Comprando
                         </Button>
                       </div>
                     )}
