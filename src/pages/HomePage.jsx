@@ -1,310 +1,189 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
-import { toast } from 'sonner';
-import { Modal } from '../components/Modal.jsx';
-import { PointDetails } from '../components/PointDetails.jsx';
-import { Cart } from '../components/Cart.jsx';
-import { InfoPanel } from '../components/InfoPanel.jsx';
-import { TagFilter } from '../components/TagFilter.jsx';
-import { getPoints, createOrder } from '../lib/supabase.js';
-import { Skeleton } from '@/components/ui/skeleton.jsx';
-import { EnhancedReservationForm } from '../components/EnhancedReservationForm.jsx';
-import { useUser } from '../contexts/UserContext.jsx';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { WhatsAppButton } from '../components/WhatsAppButton.jsx';
+import { GoogleMap, useJsApiLoader, Marker, MarkerClustererF } from '@react-google-maps/api';
+import { supabase } from '@/lib/supabase';
+import { PointDetailsSheet } from '@/components/PointDetailsSheet';
+import { MapFilter } from '@/components/MapFilter';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useMapConfig } from '@/contexts/MapConfigContext';
 
 const mapContainerStyle = {
   width: '100%',
   height: '100%',
-  borderRadius: '0.5rem',
 };
 
-const center = {
+const defaultCenter = {
   lat: -22.78,
-  lng: -47.30
+  lng: -47.3,
 };
 
-const initialZoom = 14;
-
-const ICONS = {
-  available: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png',
-  reserved: 'http://maps.google.com/mapfiles/ms/icons/yellow-dot.png',
-  sold: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
-  inCart: '/shopping-cart-icon.svg', 
+const mapOptions = {
+  disableDefaultUI: true,
+  zoomControl: true,
+  mapTypeControl: false,
+  streetViewControl: false,
+  fullscreenControl: false,
 };
 
 function HomePage() {
-  const { profile, loading: userLoading } = useUser();
   const [points, setPoints] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [filteredPoints, setFilteredPoints] = useState([]);
   const [selectedPoint, setSelectedPoint] = useState(null);
-  const [cartItems, setCartItems] = useState([]);
-  const [selectedTags, setSelectedTags] = useState([]);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [loadingPoints, setLoadingPoints] = useState(true);
   const [map, setMap] = useState(null);
-  const [showReservationForm, setShowReservationForm] = useState(false);
+  const [currentZoom, setCurrentZoom] = useState(12);
+
+  const { rules, settings, loading: loadingConfig } = useMapConfig();
 
   const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
+    id: 'google-map-script-main',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    libraries: ['marker'],
   });
 
-  const onLoad = useCallback((mapInstance) => {
+  useEffect(() => {
+    const fetchPoints = async () => {
+      setLoadingPoints(true);
+      const { data, error } = await supabase
+        .from('points')
+        .select(`
+          *,
+          tags (id, name),
+          pricing (id, name, color)
+        `);
+
+      if (error) {
+        console.error('Error fetching points:', error);
+      } else {
+        const validPoints = data.filter(p => p.latitude && p.longitude);
+        setPoints(validPoints);
+        setFilteredPoints(validPoints);
+      }
+      setLoadingPoints(false);
+    };
+
+    fetchPoints();
+  }, []);
+
+  const handleMarkerClick = (point) => {
+    setSelectedPoint(point);
+    setIsSheetOpen(true);
+  };
+
+  const onMapLoad = useCallback((mapInstance) => {
     setMap(mapInstance);
   }, []);
 
-  const onUnmount = useCallback(() => {
-    setMap(null);
-  }, []);
-
-  const loadPoints = async () => {
-    const pointsData = await getPoints();
-    const validPoints = pointsData.filter(p => 
-      typeof p.latitude === 'number' && typeof p.longitude === 'number'
-    );
-    setPoints(validPoints);
-  };
-
-  useEffect(() => {
-    setLoading(true);
-    loadPoints().finally(() => setLoading(false));
-  }, []);
-
-  const filteredPoints = useMemo(() => {
-    if (selectedTags.length === 0) {
-      return points;
+  const onZoomChanged = useCallback(() => {
+    if (map) {
+      const newZoom = map.getZoom();
+      if (newZoom !== currentZoom) {
+        setCurrentZoom(newZoom);
+      }
     }
-    return points.filter(point =>
-      point.tags && point.tags.some(tag => selectedTags.includes(tag.id))
-    );
-  }, [points, selectedTags]);
+  }, [map, currentZoom]);
 
-  useEffect(() => {
-    if (!map || !isLoaded || points.length === 0) return;
-
-    if (filteredPoints.length === 0) {
-      map.setCenter(center);
-      map.setZoom(initialZoom);
-      return;
+  const activeRule = useMemo(() => {
+    if (loadingConfig || rules.length === 0) {
+      return {
+        zoom_level: currentZoom,
+        display_mode: currentZoom > 14 ? 'individual' : 'cluster',
+        cluster_radius: 60,
+        min_cluster_size: 2,
+      };
     }
+    return rules.find(r => r.zoom_level === currentZoom) || rules[rules.length - 1];
+  }, [currentZoom, rules, loadingConfig]);
 
-    if (filteredPoints.length === 1) {
-      map.setCenter({ lat: filteredPoints[0].latitude, lng: filteredPoints[0].longitude });
-      map.setZoom(16);
-      return;
-    }
+  const clustererCalculator = useCallback((markers, numStyles) => {
+    if (!settings) return { text: String(markers.length), index: 1, title: '' };
 
-    const bounds = new window.google.maps.LatLngBounds();
-    filteredPoints.forEach(point => {
-      bounds.extend({ lat: point.latitude, lng: point.longitude });
-    });
-    map.fitBounds(bounds);
-
-  }, [map, filteredPoints, points, isLoaded]);
-
-  const cartPointIds = useMemo(() => new Set(cartItems.map(item => item.point_id)), [cartItems]);
-
-  useEffect(() => {
-    if (selectedPoint && cartPointIds.has(selectedPoint.id)) {
-      setSelectedPoint(null);
-    }
-  }, [cartItems, selectedPoint, cartPointIds]);
-
-  const handleMarkerClick = (point) => {
-    if (cartPointIds.has(point.id)) {
-      toast.info("Este ponto já está no seu carrinho.");
-      return;
-    }
-    // Abre o modal para qualquer status, pois o componente PointDetails lida com a exibição
-    setSelectedPoint(point);
-  };
-
-  const handleAddToCart = (point, periodYears) => {
-    let price;
-    switch (periodYears) {
-      case 1: price = point.price_1y; break;
-      case 2: price = point.price_2y; break;
-      case 3: price = point.price_3y; break;
-      case 4: price = point.price_4y; break;
-      case 5: price = point.price_5y; break;
-      default: price = 0;
-    }
-
-    const cartItem = {
-      point: point,
-      point_id: point.id,
-      name: point.name,
-      period_years: periodYears,
-      price: price
+    const count = settings.cluster_count_logic === 'available_only'
+      ? markers.filter(m => m.point_status === 'available').length
+      : markers.length;
+    
+    const index = Math.min(String(count).length, numStyles);
+    return {
+      text: String(count),
+      index,
+      title: `${count} pontos ${settings.cluster_count_logic === 'available_only' ? 'disponíveis' : 'totais'}`,
     };
-    
-    setCartItems(prev => [...prev, cartItem]);
-    setSelectedPoint(null); // Fecha o modal
-    toast.success(`${point.name} foi adicionado ao carrinho!`);
+  }, [settings]);
+
+  const getMarkerIcon = (point) => {
+    const color = point.pricing?.color || '#4285F4'; // Default Google Maps blue
+    return {
+      path: window.google.maps.SymbolPath.CIRCLE,
+      fillColor: color,
+      fillOpacity: 1,
+      strokeColor: 'white',
+      strokeWeight: 1.5,
+      scale: 8,
+    };
   };
 
-  const handleUpdateCartItemPeriod = (itemIndex, newPeriod) => {
-    setCartItems(prevCartItems => {
-      const newCartItems = [...prevCartItems];
-      const itemToUpdate = newCartItems[itemIndex];
-      const point = itemToUpdate.point;
-
-      let newPrice;
-      switch (newPeriod) {
-        case 1: newPrice = point.price_1y; break;
-        case 2: newPrice = point.price_2y; break;
-        case 3: newPrice = point.price_3y; break;
-        case 4: newPrice = point.price_4y; break;
-        case 5: newPrice = point.price_5y; break;
-        default: newPrice = 0;
-      }
-
-      newCartItems[itemIndex] = {
-        ...itemToUpdate,
-        period_years: newPeriod,
-        price: newPrice,
-      };
-
-      return newCartItems;
-    });
-  };
-
-  const handleRemoveFromCart = (index) => {
-    setCartItems(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const handleClearCart = () => {
-    setCartItems([]);
-  };
-
-  const handleReservationSuccess = () => {
-    toast.success("Reserva criada com sucesso!", {
-      description: "Em breve nossa equipe entrará em contato.",
-    });
-    
-    setCartItems([]);
-    loadPoints();
-    setShowReservationForm(false);
-  };
-
-  const handleFinalizeReservation = async () => {
-    if (cartItems.length === 0) {
-      toast.info("Seu carrinho está vazio.");
-      return;
-    }
-
-    // Se o usuário estiver logado, cria o pedido diretamente
-    if (profile) {
-      const toastId = toast.loading("Criando sua reserva...");
-      
-      const customerData = {
-        name: profile.name,
-        email: profile.email,
-        phone: profile.phone || '', // Garante que o telefone seja uma string
-      };
-
-      try {
-        await createOrder(customerData, cartItems);
-        toast.dismiss(toastId);
-        handleReservationSuccess();
-      } catch (error) {
-        toast.dismiss(toastId);
-        toast.error("Erro ao criar reserva", { description: error.message });
-      }
-    } else {
-      // Se for um visitante, abre o formulário
-      setShowReservationForm(true);
-    }
-  };
+  if (!isLoaded || loadingPoints || loadingConfig) {
+    return (
+      <div className="relative h-screen w-screen">
+        <Skeleton className="h-full w-full" />
+        <div className="absolute top-4 left-4">
+          <Skeleton className="h-12 w-64" />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col flex-grow">
-      <main className="flex-grow p-4 lg:p-6 flex flex-col lg:grid lg:grid-cols-[350px_1fr_350px] gap-6 h-full">
-        
-        <div className="space-y-6 order-3 lg:order-1 lg:overflow-y-auto">
-          {loading ? <Skeleton className="h-48 w-full" /> : <InfoPanel points={points} />}
-          <TagFilter onFilterChange={setSelectedTags} />
-        </div>
-
-        <div className="order-1 lg:order-2 flex flex-col h-96 lg:h-auto">
-          <div className="mb-4 text-center">
-            <h2 className="text-xl font-bold text-gray-700">Mapa Interativo - Pontos de Instalação</h2>
-            <p className="text-sm text-gray-500">Clique nos marcadores para ver detalhes e adicionar ao carrinho</p>
-          </div>
-          <div className="flex-grow rounded-lg shadow-md overflow-hidden">
-            {isLoaded ? (
-              <GoogleMap
-                mapContainerStyle={mapContainerStyle}
-                center={center}
-                zoom={initialZoom}
-                onLoad={onLoad}
-                onUnmount={onUnmount}
-              >
-                {filteredPoints.map((point) => {
-                  const isInCart = cartPointIds.has(point.id);
-                  const iconUrl = isInCart ? ICONS.inCart : ICONS[point.status] || ICONS.available;
-
-                  return (
-                    <Marker
-                      key={point.id}
-                      position={{ lat: point.latitude, lng: point.longitude }}
-                      onClick={() => handleMarkerClick(point)}
-                      icon={{
-                        url: iconUrl,
-                        scaledSize: new window.google.maps.Size(32, 32),
-                      }}
-                    />
-                  );
-                })}
-              </GoogleMap>
-            ) : (
-              <Skeleton className="w-full h-full" />
-            )}
-          </div>
-        </div>
-
-        <div className="order-2 lg:order-3 lg:overflow-y-auto">
-          <Cart
-            items={cartItems}
-            onRemove={handleRemoveFromCart}
-            onClear={handleClearCart}
-            onUpdatePeriod={handleUpdateCartItemPeriod}
-            onShowReservationForm={handleFinalizeReservation}
-          />
-        </div>
-      </main>
-
-      {showReservationForm && (
-        <Modal
-          isOpen={showReservationForm}
-          onClose={() => setShowReservationForm(false)}
-          title="Finalizar Reserva"
-          description="Preencha seus dados para confirmar a reserva"
-          className="border-4 border-yellow-400 shadow-lg"
-        >
-          <EnhancedReservationForm
-            cartItems={cartItems}
-            onClose={() => setShowReservationForm(false)}
-            onReservationSuccess={handleReservationSuccess}
-          />
-        </Modal>
-      )}
-
+    <div className="relative h-screen w-screen">
+      <MapFilter onFilterChange={setFilteredPoints} allPoints={points} />
+      <GoogleMap
+        mapContainerStyle={mapContainerStyle}
+        center={defaultCenter}
+        zoom={currentZoom}
+        options={mapOptions}
+        onLoad={onMapLoad}
+        onZoomChanged={onZoomChanged}
+      >
+        {activeRule.display_mode === 'cluster' ? (
+          <MarkerClustererF
+            options={{
+              gridSize: activeRule.cluster_radius,
+              minimumClusterSize: activeRule.min_cluster_size,
+            }}
+            calculator={clustererCalculator}
+          >
+            {(clusterer) =>
+              filteredPoints.map((point) => (
+                <Marker
+                  key={point.id}
+                  position={{ lat: point.latitude, lng: point.longitude }}
+                  onClick={() => handleMarkerClick(point)}
+                  clusterer={clusterer}
+                  icon={getMarkerIcon(point)}
+                  // @ts-ignore
+                  point_status={point.status}
+                />
+              ))
+            }
+          </MarkerClustererF>
+        ) : (
+          filteredPoints.map((point) => (
+            <Marker
+              key={point.id}
+              position={{ lat: point.latitude, lng: point.longitude }}
+              onClick={() => handleMarkerClick(point)}
+              icon={getMarkerIcon(point)}
+            />
+          ))
+        )}
+      </GoogleMap>
       {selectedPoint && (
-        <Modal
-          isOpen={!!selectedPoint}
-          onClose={() => setSelectedPoint(null)}
-          title={selectedPoint.name}
-          description={selectedPoint.description}
-          className="border-4 border-yellow-400 shadow-lg"
-        >
-          <PointDetails
-            point={selectedPoint}
-            onAddToCart={handleAddToCart}
-          />
-        </Modal>
+        <PointDetailsSheet
+          point={selectedPoint}
+          isOpen={isSheetOpen}
+          onOpenChange={setIsSheetOpen}
+        />
       )}
-
-      <WhatsAppButton />
     </div>
   );
 }

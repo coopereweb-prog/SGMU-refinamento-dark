@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-route
 import { useEffect } from 'react';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { UserProvider } from '@/contexts/UserContext';
+import { MapConfigProvider } from '@/contexts/MapConfigContext';
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { AppLayout } from '@/components/AppLayout';
 import HomePage from '@/pages/HomePage';
@@ -113,7 +114,9 @@ function App() {
     <Router>
       <AuthProvider>
         <UserProvider>
-          <AppRoutes />
+          <MapConfigProvider>
+            <AppRoutes />
+          </MapConfigProvider>
         </UserProvider>
       </AuthProvider>
     </Router>
