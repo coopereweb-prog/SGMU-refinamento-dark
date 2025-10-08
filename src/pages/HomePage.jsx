@@ -12,7 +12,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sidebar } from '@/components/Sidebar';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from 'lucide-react';
+import { Menu, PanelRight } from 'lucide-react';
 
 const mapContainerStyle = {
   width: '100%',
