@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase, updateOrderItemPeriod } from '../lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,8 @@ import { toast } from 'sonner';
 import { useUser } from '../contexts/UserContext';
 import { ClientProfileForm } from '../components/ClientProfileForm';
 import { WhatsAppButton } from '../components/WhatsAppButton';
-import { RouteGenerator } from '@/components/RouteGenerator'; // Importação
+import { RouteGenerator } from '@/components/RouteGenerator';
+import { ContractedPointsView } from '../components/ContractedPointsView';
 
 function ClientDashboardPage() {
   const { profile, loading: userProfileLoading, session } = useUser();
@@ -104,6 +105,10 @@ function ClientDashboardPage() {
     // O UserContext já lida com a atualização do perfil.
   };
 
+  const completedOrders = useMemo(() => {
+    return orders.filter(order => order.status === 'completed');
+  }, [orders]);
+
   if (userProfileLoading || loadingOrders) return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
 
   return (
@@ -122,8 +127,9 @@ function ClientDashboardPage() {
 
       <main>
         <Tabs defaultValue="orders" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="orders">Meus Pedidos</TabsTrigger>
+            <TabsTrigger value="points">Meus Pontos Contratados</TabsTrigger>
             <TabsTrigger value="profile">Meu Perfil</TabsTrigger>
           </TabsList>
 
@@ -216,6 +222,10 @@ function ClientDashboardPage() {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="points">
+            <ContractedPointsView orders={completedOrders} profile={profile} />
           </TabsContent>
 
           <TabsContent value="profile">
