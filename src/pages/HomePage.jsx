@@ -93,7 +93,7 @@ function HomePage() {
   const [currentZoom, setCurrentZoom] = useState(12);
   const [cartItems, setCartItems] = useState([]);
   const [isReservationFormOpen, setIsReservationFormOpen] = useState(false);
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const { rules, settings, loading: loadingConfig } = useMapConfig();
 
@@ -202,31 +202,29 @@ function HomePage() {
     <div className="h-screen w-screen overflow-hidden bg-background flex flex-col">
       <header className="h-20 bg-black/60 z-20 flex-shrink-0">
         <div className="container mx-auto px-4 h-full grid grid-cols-3 items-center">
-          {/* Coluna Esquerda: Menu Mobile */}
+          {/* Coluna Esquerda: Menu */}
           <div className="justify-self-start">
-            <div className="lg:hidden">
-              <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Menu className="h-6 w-6" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[380px] p-0 border-none">
-                  <Sidebar
-                    points={filteredPoints}
-                    onFilterChange={handleFilterChange}
-                    cartItems={cartItems}
-                    onRemoveFromCart={handleRemoveFromCart}
-                    onClearCart={handleClearCart}
-                    onUpdateCartItemPeriod={handleUpdateCartItemPeriod}
-                    onShowReservationForm={() => {
-                      setIsMobileSidebarOpen(false);
-                      setTimeout(() => setIsReservationFormOpen(true), 150);
-                    }}
-                  />
-                </SheetContent>
-              </Sheet>
-            </div>
+            <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[380px] p-0 border-none">
+                <Sidebar
+                  points={filteredPoints}
+                  onFilterChange={handleFilterChange}
+                  cartItems={cartItems}
+                  onRemoveFromCart={handleRemoveFromCart}
+                  onClearCart={handleClearCart}
+                  onUpdateCartItemPeriod={handleUpdateCartItemPeriod}
+                  onShowReservationForm={() => {
+                    setIsSidebarOpen(false);
+                    setTimeout(() => setIsReservationFormOpen(true), 150);
+                  }}
+                />
+              </SheetContent>
+            </Sheet>
           </div>
           
           {/* Coluna Central: Logo */}
@@ -250,7 +248,7 @@ function HomePage() {
         </div>
       </header>
 
-      <main className="flex-grow grid grid-cols-1 lg:grid-cols-[1fr_400px]">
+      <main className="flex-grow grid grid-cols-1">
         <div className="h-full w-full relative">
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-background/80 backdrop-blur-sm py-2 px-4 rounded-full shadow-lg text-sm text-muted-foreground pointer-events-none">
             Clique nos marcadores para ver detalhes e adicionar ao carrinho.
@@ -275,17 +273,6 @@ function HomePage() {
               ))
             )}
           </GoogleMap>
-        </div>
-        <div className="hidden lg:flex h-full">
-          <Sidebar
-            points={filteredPoints}
-            onFilterChange={handleFilterChange}
-            cartItems={cartItems}
-            onRemoveFromCart={handleRemoveFromCart}
-            onClearCart={handleClearCart}
-            onUpdateCartItemPeriod={handleUpdateCartItemPeriod}
-            onShowReservationForm={() => setIsReservationFormOpen(true)}
-          />
         </div>
       </main>
 
