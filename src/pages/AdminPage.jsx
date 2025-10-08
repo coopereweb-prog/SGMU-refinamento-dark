@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, MapPin, Tag, ShoppingCart, ArrowRight, DollarSign } from 'lucide-react';
+import { Users, MapPin, Tag, ShoppingCart, ArrowRight, DollarSign, SlidersHorizontal } from 'lucide-react';
 
 export function AdminPage() {
   const navItems = [
@@ -33,6 +33,12 @@ export function AdminPage() {
       href: '/admin/users',
       icon: <Users className="h-6 w-6 text-gray-500" />,
       description: 'Convide, edite e remova usuários do sistema.'
+    },
+    {
+      title: 'Ajustes do Mapa',
+      href: '/admin/map-settings',
+      icon: <SlidersHorizontal className="h-6 w-6 text-gray-500" />,
+      description: 'Configure o agrupamento de pontos e o comportamento do zoom.'
     }
   ];
 

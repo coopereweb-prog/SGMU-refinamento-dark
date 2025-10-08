@@ -18,6 +18,7 @@ import ClientDashboardPage from '@/pages/ClientDashboardPage';
 import { ManageOrdersPage } from '@/pages/ManageOrdersPage';
 import { ManagePricingPage } from '@/pages/ManagePricingPage';
 import OrderDetailPage from '@/pages/OrderDetailPage';
+import { ManageMapSettingsPage } from '@/pages/ManageMapSettingsPage';
 
 // This new component contains the main routing and the redirect effect.
 function AppRoutes() {
@@ -80,6 +81,11 @@ function AppRoutes() {
           <Route path="/admin/pricing" element={
             <ProtectedRoute allowedRoles={ADMIN_ROLES}>
               <ManagePricingPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/map-settings" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <ManageMapSettingsPage />
             </ProtectedRoute>
           } />
         </Route>
