@@ -96,7 +96,7 @@ export function PointDetails({ point, onAddToCart }) {
                       {Number(selectedPrice).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
                   </div>
-                  <Button onClick={handleAddToCartClick} className="w-full sm:w-auto">
+                  <Button variant="default" onClick={handleAddToCartClick} className="w-full sm:w-auto">
                     Adicionar ao Carrinho
                   </Button>
                 </div>

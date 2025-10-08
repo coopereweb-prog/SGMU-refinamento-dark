@@ -29,24 +29,24 @@ export function InfoPanel({ points }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-600">Total de Pontos</span>
+          <span className="text-sm text-muted-foreground">Total de Pontos</span>
           <Badge variant="secondary">{stats.total}</Badge>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-600">Disponíveis</span>
-          <Badge className="bg-green-100 text-green-800">{stats.available}</Badge>
+          <span className="text-sm text-muted-foreground">Disponíveis</span>
+          <Badge className="bg-status-available text-primary-foreground hover:bg-status-available/90">{stats.available}</Badge>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-600">Reservados</span>
-          <Badge className="bg-yellow-100 text-yellow-800">{stats.reserved}</Badge>
+          <span className="text-sm text-muted-foreground">Reservados</span>
+          <Badge className="bg-status-reserved text-primary-foreground hover:bg-status-reserved/90">{stats.reserved}</Badge>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-600">Contratados</span>
+          <span className="text-sm text-muted-foreground">Contratados</span>
           <Badge variant="destructive">{stats.sold}</Badge>
         </div>
         <div className="pt-4 border-t">
           <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-800">Taxa de Ocupação</span>
+            <span className="text-sm font-medium">Taxa de Ocupação</span>
             <Badge variant={stats.occupationRate > 80 ? "destructive" : "default"}>
               {stats.occupationRate}%
             </Badge>

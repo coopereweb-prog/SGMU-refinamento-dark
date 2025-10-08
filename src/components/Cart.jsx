@@ -30,10 +30,10 @@ export function Cart({ items, onRemove, onClear, onUpdatePeriod, onShowReservati
         {totalItems > 0 ? (
           <ul className="space-y-4">
             {items.map((item, index) => (
-              <li key={index} className="flex items-start justify-between p-3 bg-gray-50 rounded-lg">
+              <li key={index} className="flex items-start justify-between p-3 bg-muted/50 rounded-lg">
                 <div className="flex-grow">
                   <p className="font-semibold">{item.name}</p>
-                  <p className="text-sm text-green-600 font-bold">
+                  <p className="text-sm text-status-available font-bold">
                     {item.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   </p>
                   <div className="mt-2">
@@ -54,7 +54,7 @@ export function Cart({ items, onRemove, onClear, onUpdatePeriod, onShowReservati
                     </Select>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => onRemove(index)} className="text-gray-500 hover:text-red-500 ml-2">
+                <Button variant="ghost" size="icon" onClick={() => onRemove(index)} className="text-muted-foreground hover:text-destructive ml-2">
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </li>
@@ -62,7 +62,7 @@ export function Cart({ items, onRemove, onClear, onUpdatePeriod, onShowReservati
           </ul>
         ) : (
           <div className="flex-grow flex flex-col items-center justify-center text-center h-full">
-             <p className="text-gray-500">Seu carrinho está vazio.</p>
+             <p className="text-muted-foreground">Seu carrinho está vazio.</p>
           </div>
         )}
       </CardContent>
@@ -79,7 +79,7 @@ export function Cart({ items, onRemove, onClear, onUpdatePeriod, onShowReservati
             <Button variant="outline" onClick={onClear} className="flex-1">
               <X className="mr-2 h-4 w-4" /> Limpar Carrinho
             </Button>
-            <Button onClick={handleShowReservationForm} className="flex-1">
+            <Button variant="default" onClick={handleShowReservationForm} className="flex-1">
               Finalizar Reserva
             </Button>
           </div>
