@@ -94,6 +94,7 @@ function HomePage() {
   const [cartItems, setCartItems] = useState([]);
   const [isReservationFormOpen, setIsReservationFormOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [markerAnimation, setMarkerAnimation] = useState(null);
 
   const { rules, settings, loading: loadingConfig } = useMapConfig();
 
@@ -118,6 +119,14 @@ function HomePage() {
     };
     fetchPoints();
   }, []);
+
+  useEffect(() => {
+    if (points.length > 0 && window.google?.maps?.Animation) {
+      setMarkerAnimation(window.google.maps.Animation.BOUNCE);
+      const timer = setTimeout(() => setMarkerAnimation(null), 2000); // Animação por 2 segundos
+      return () => clearTimeout(timer);
+    }
+  }, [points]);
 
   const handleFilterChange = (selectedTagIds) => {
     if (selectedTagIds.length === 0) {
@@ -264,12 +273,12 @@ function HomePage() {
             {activeRule.display_mode === 'cluster' ? (
               <MarkerClustererF options={{ gridSize: activeRule.cluster_radius, minimumClusterSize: activeRule.min_cluster_size, styles: clusterStyles }} calculator={clustererCalculator}>
                 {(clusterer) => filteredPoints.map((point) => (
-                  <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} onClick={() => handleMarkerClick(point)} clusterer={clusterer} icon={getMarkerIcon(point.status)} {...{point_status: point.status}} />
+                  <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} onClick={() => handleMarkerClick(point)} clusterer={clusterer} icon={getMarkerIcon(point.status)} animation={markerAnimation} {...{point_status: point.status}} />
                 ))}
               </MarkerClustererF>
             ) : (
               filteredPoints.map((point) => (
-                <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} onClick={() => handleMarkerClick(point)} icon={getMarkerIcon(point.status)} />
+                <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} onClick={() => handleMarkerClick(point)} icon={getMarkerIcon(point.status)} animation={markerAnimation} />
               ))
             )}
           </GoogleMap>
