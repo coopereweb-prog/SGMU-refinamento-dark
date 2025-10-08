@@ -50,66 +50,77 @@ export function Header() {
 
   return (
     <header className="bg-background/80 backdrop-blur-sm shadow-lg sticky top-0 z-50">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-16 md:h-20 lg:h-20">
-          <Link to={user && profile ? getDashboardPath() : '/'} className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-shrink-0">
+      <div className="container mx-auto px-4">
+        <div className="grid grid-cols-3 items-center h-16 sm:h-20">
+          {/* Coluna Esquerda: E-mail do usuário ou Vazio */}
+          <div className="justify-self-start">
+            {authLoading ? (
+              <Skeleton className="h-6 w-32 rounded-md hidden sm:block" />
+            ) : user ? (
+              <p className="text-sm text-muted-foreground hidden sm:block truncate" title={user.email}>
+                {user.email}
+              </p>
+            ) : (
+              <div /> // Espaço reservado para manter o alinhamento
+            )}
+          </div>
+
+          {/* Coluna Central: Logo e Título */}
+          <Link to={user && profile ? getDashboardPath() : '/'} className="flex items-center space-x-2 sm:space-x-3 justify-self-center">
             <img 
-              className="h-10 sm:h-12 md:h-14 lg:h-16 w-auto transition-all duration-200 ease-in-out self-center mt-1" 
+              className="h-10 sm:h-12 md:h-14 w-auto" 
               src="/logo.png" 
               alt="SGMU Logo" 
             />
-            <div className="min-w-0 self-center">
+            <div className="hidden sm:block">
               <span className="font-bold text-lg sm:text-xl md:text-2xl text-foreground tracking-tight block">
                 SGMU
               </span>
-              <p className="text-xs sm:text-sm text-muted-foreground leading-tight whitespace-normal">
-                Sistema Gestor de Mobiliário Urbano
+              <p className="text-xs text-muted-foreground leading-tight">
+                <span className="font-semibold">Sistema Gestor</span> de Mobiliário Urbano
               </p>
             </div>
           </Link>
-          <nav className="flex items-center flex-shrink-0 ml-2 self-center">
+
+          {/* Coluna Direita: Ações do Usuário */}
+          <nav className="flex items-center justify-self-end">
             {authLoading ? (
-              <Skeleton className="h-8 w-20 rounded-md" />
+              <Skeleton className="h-9 w-9 rounded-full" />
             ) : user ? (
-              <>
-                <p className="text-sm text-muted-foreground mr-4 hidden sm:block truncate" title={user.email}>
-                  {user.email}
-                </p>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-8 w-8 rounded-full sm:h-9 sm:w-9">
-                      <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
-                        <AvatarImage src={profile?.avatar_url} alt={profile?.name || 'User'} />
-                        <AvatarFallback>{getInitials(profile?.name)}</AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{profile?.name}</p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          {user.email}
-                        </p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate(getDashboardPath())}>
-                      <LayoutDashboard className="mr-2 h-4 w-4" />
-                      <span>Dashboard</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate(getDashboardPath())}>
-                      <UserIcon className="mr-2 h-4 w-4" />
-                      <span>Perfil</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Sair</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full sm:h-9 sm:w-9">
+                    <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
+                      <AvatarImage src={profile?.avatar_url} alt={profile?.name || 'User'} />
+                      <AvatarFallback>{getInitials(profile?.name)}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{profile?.name}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user.email}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate(getDashboardPath())}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate(getDashboardPath())}>
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    <span>Perfil</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sair</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <Button variant="default" size="sm" asChild>
                 <Link to="/login">

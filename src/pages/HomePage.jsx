@@ -232,10 +232,9 @@ function HomePage() {
           {/* Coluna Central: Logo */}
           <Link to="/" className="flex items-center gap-2 justify-self-center">
             <img src="/logo.png" alt="SGMU Logo" className="h-10" />
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground max-w-[150px] sm:max-w-none">
-                <span className="font-semibold">Sistema Gestor</span>
-                <br className="sm:hidden" /> de Mobiliário Urbano
+            <div className="hidden sm:block text-left">
+              <p className="text-xs text-muted-foreground">
+                <span className="font-semibold">Sistema Gestor</span> de Mobiliário Urbano
               </p>
             </div>
           </Link>
