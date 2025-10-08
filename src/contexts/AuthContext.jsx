@@ -19,8 +19,15 @@ export function AuthProvider({ children }) {
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        // When the user signs in via a recovery link, the URL hash contains `type=recovery`.
+        // We can use this to distinguish it from a normal login.
+        if (event === 'SIGNED_IN' && window.location.hash.includes('type=recovery')) {
+          // By setting a specific event type, we can prevent GuestRoute from redirecting.
+          setAuthEvent('PASSWORD_RECOVERY');
+        } else {
+          setAuthEvent(event);
+        }
         setSession(session);
-        setAuthEvent(event); // Capture the event type (e.g., 'SIGNED_IN', 'PASSWORD_RECOVERY')
       }
     );
 
