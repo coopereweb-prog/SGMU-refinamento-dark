@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, MarkerClustererF } from '@react-google-maps/api';
 import { supabase } from '@/lib/supabase';
-import { PointDetailsSheet } from '@/components/PointDetailsSheet';
+import { PointDetailSheet } from '@/components/PointDetailSheet';
 import { MapFilter } from '@/components/MapFilter';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMapConfig } from '@/contexts/MapConfigContext';
@@ -178,7 +178,7 @@ function HomePage() {
         )}
       </GoogleMap>
       {selectedPoint && (
-        <PointDetailsSheet
+        <PointDetailSheet
           point={selectedPoint}
           isOpen={isSheetOpen}
           onOpenChange={setIsSheetOpen}
