@@ -18,7 +18,7 @@ export function Cart({ items, onRemove, onClear, onUpdatePeriod, onShowReservati
   };
 
   return (
-    <Card className="flex flex-col flex-grow h-full">
+    <Card className="flex flex-col flex-grow h-full bg-card/80 backdrop-blur-sm">
       <CardHeader>
         <CardTitle>Seu Carrinho</CardTitle>
         <CardDescription>

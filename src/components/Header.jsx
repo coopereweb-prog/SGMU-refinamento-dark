@@ -49,7 +49,7 @@ export function Header() {
   };
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50">
+    <header className="bg-background/80 backdrop-blur-sm shadow-lg sticky top-0 z-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-16 md:h-20 lg:h-20">
           <Link to={user && profile ? getDashboardPath() : '/'} className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-shrink-0">
@@ -59,11 +59,11 @@ export function Header() {
               alt="SGMU Logo" 
             />
             <div className="min-w-0 self-center">
-              <span className="font-bold text-lg sm:text-xl md:text-2xl text-gray-800 tracking-tight block">
+              <span className="font-bold text-lg sm:text-xl md:text-2xl text-foreground tracking-tight block">
                 SGMU
               </span>
-              <p className="text-xs sm:text-sm text-gray-500 leading-tight whitespace-normal">
-                Sistema de Gestão de <br className="sm:hidden" /> Mobiliário Urbano
+              <p className="text-xs sm:text-sm text-muted-foreground leading-tight whitespace-normal">
+                Sistema Gestor de Mobiliário Urbano
               </p>
             </div>
           </Link>
@@ -111,7 +111,7 @@ export function Header() {
                 </DropdownMenu>
               </>
             ) : (
-              <Button variant="outline" size="sm" asChild>
+              <Button variant="default" size="sm" asChild>
                 <Link to="/login">
                   <LogIn className="mr-2 h-4 w-4" />
                   Área Restrita

@@ -35,7 +35,7 @@ export function TagFilter({ onFilterChange }) {
   };
 
   return (
-    <Card>
+    <Card className="bg-card/80 backdrop-blur-sm">
       <CardHeader>
         <CardTitle>Filtrar por Característica</CardTitle>
       </CardHeader>

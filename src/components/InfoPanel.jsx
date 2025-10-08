@@ -20,7 +20,7 @@ export function InfoPanel({ points }) {
   }, [points]);
 
   return (
-    <Card>
+    <Card className="bg-card/80 backdrop-blur-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MapPin className="h-5 w-5" />
