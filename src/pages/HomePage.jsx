@@ -230,8 +230,8 @@ function HomePage() {
             <img src="/logo.png" alt="SGMU Logo" className="h-10" />
             <div className="text-center">
               <p className="text-xs text-muted-foreground max-w-[150px] sm:max-w-none">
-                Sistema de Gestão de <br className="sm:hidden" />
-                Mobiliário Urbano
+                <span className="font-semibold">Sistema Gestor</span>
+                <br className="sm:hidden" /> de Mobiliário Urbano
               </p>
             </div>
           </Link>
