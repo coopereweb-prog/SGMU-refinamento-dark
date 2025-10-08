@@ -6,7 +6,7 @@ import { PointDetails } from '../components/PointDetails.jsx';
 import { Cart } from '../components/Cart.jsx';
 import { InfoPanel } from '../components/InfoPanel.jsx';
 import { TagFilter } from '../components/TagFilter.jsx';
-import { getPoints } from '../lib/supabase.js';
+import { getPoints, createOrder } from '../lib/supabase.js';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { EnhancedReservationForm } from '../components/EnhancedReservationForm.jsx';
 import { useUser } from '../contexts/UserContext.jsx';
@@ -186,6 +186,36 @@ function HomePage() {
     setShowReservationForm(false);
   };
 
+  const handleFinalizeReservation = async () => {
+    if (cartItems.length === 0) {
+      toast.info("Seu carrinho está vazio.");
+      return;
+    }
+
+    // Se o usuário estiver logado, cria o pedido diretamente
+    if (profile) {
+      const toastId = toast.loading("Criando sua reserva...");
+      
+      const customerData = {
+        name: profile.name,
+        email: profile.email,
+        phone: profile.phone || '', // Garante que o telefone seja uma string
+      };
+
+      try {
+        await createOrder(customerData, cartItems);
+        toast.dismiss(toastId);
+        handleReservationSuccess();
+      } catch (error) {
+        toast.dismiss(toastId);
+        toast.error("Erro ao criar reserva", { description: error.message });
+      }
+    } else {
+      // Se for um visitante, abre o formulário
+      setShowReservationForm(true);
+    }
+  };
+
   return (
     <div className="flex flex-col flex-grow">
       <main className="flex-grow p-4 lg:p-6 flex flex-col lg:grid lg:grid-cols-[350px_1fr_350px] gap-6 h-full">
@@ -238,7 +268,7 @@ function HomePage() {
             onRemove={handleRemoveFromCart}
             onClear={handleClearCart}
             onUpdatePeriod={handleUpdateCartItemPeriod}
-            onShowReservationForm={() => setShowReservationForm(true)}
+            onShowReservationForm={handleFinalizeReservation}
           />
         </div>
       </main>
