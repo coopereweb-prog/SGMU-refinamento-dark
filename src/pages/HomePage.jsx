@@ -12,7 +12,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sidebar } from '@/components/Sidebar';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { PanelRight } from 'lucide-react';
+import { Menu } from 'lucide-react';
 
 const mapContainerStyle = {
   width: '100%',
@@ -200,15 +200,40 @@ function HomePage() {
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-background flex flex-col">
-      <header className="h-20 bg-background/70 backdrop-blur-md shadow-lg z-20 flex-shrink-0">
-        <div className="container mx-auto px-4 h-full flex justify-between items-center">
-          <Link to="/" className="flex items-center gap-3">
-            <img src="/logo.png" alt="SGMU Logo" className="h-8" />
-            <div className="hidden sm:block">
-              <span className="font-bold text-xl block">SGMU</span>
-              <p className="text-xs text-muted-foreground">Sistema de Gestão de Mobiliário Urbano</p>
+      <header className="h-20 bg-black/60 z-20 flex-shrink-0">
+        <div className="container mx-auto px-4 h-full relative flex justify-between items-center">
+          <div className="lg:hidden">
+            <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[380px] p-0 border-none">
+                <Sidebar
+                  points={filteredPoints}
+                  onFilterChange={handleFilterChange}
+                  cartItems={cartItems}
+                  onRemoveFromCart={handleRemoveFromCart}
+                  onClearCart={handleClearCart}
+                  onUpdateCartItemPeriod={handleUpdateCartItemPeriod}
+                  onShowReservationForm={() => {
+                    setIsMobileSidebarOpen(false);
+                    setTimeout(() => setIsReservationFormOpen(true), 150);
+                  }}
+                />
+              </SheetContent>
+            </Sheet>
+          </div>
+          
+          <Link to="/" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2">
+            <img src="/logo.png" alt="SGMU Logo" className="h-10" />
+            <div className="text-center">
+              <span className="font-bold text-lg block">SGMU</span>
+              <p className="text-xs text-muted-foreground max-w-[150px] sm:max-w-none">Sistema de Gestão de Mobiliário Urbano</p>
             </div>
           </Link>
+
           <div className="flex items-center gap-2">
             <Button asChild variant="secondary">
               <Link to="/login">Área Restrita</Link>
