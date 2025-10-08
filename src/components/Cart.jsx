@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Trash2, X } from 'lucide-react';
@@ -18,15 +17,15 @@ export function Cart({ items, onRemove, onClear, onUpdatePeriod, onShowReservati
   };
 
   return (
-    <Card className="flex flex-col flex-grow h-full bg-card/80 backdrop-blur-sm">
-      <CardHeader>
-        <CardTitle>Seu Carrinho</CardTitle>
-        <CardDescription>
+    <div className="flex flex-col flex-grow h-full bg-background">
+      <div className="p-4">
+        <h3 className="text-lg font-semibold">Seu Carrinho</h3>
+        <p className="text-sm text-muted-foreground">
           {totalItems > 0 ? `Você tem ${totalItems} item(ns) no carrinho.` : 'Adicione pontos do mapa para reservá-los.'}
-        </CardDescription>
-      </CardHeader>
+        </p>
+      </div>
 
-      <CardContent className="flex-grow p-4 overflow-y-auto">
+      <div className="flex-grow p-4 pt-0 overflow-y-auto">
         {totalItems > 0 ? (
           <ul className="space-y-4">
             {items.map((item, index) => (
@@ -65,7 +64,7 @@ export function Cart({ items, onRemove, onClear, onUpdatePeriod, onShowReservati
              <p className="text-muted-foreground">Seu carrinho está vazio.</p>
           </div>
         )}
-      </CardContent>
+      </div>
 
       {totalItems > 0 && (
         <div className="p-4 border-t mt-auto">
@@ -85,6 +84,6 @@ export function Cart({ items, onRemove, onClear, onUpdatePeriod, onShowReservati
           </div>
         </div>
       )}
-    </Card>
+    </div>
   );
 }

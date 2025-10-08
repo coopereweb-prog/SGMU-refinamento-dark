@@ -2,16 +2,17 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, MarkerClustererF } from '@react-google-maps/api';
 import { supabase } from '@/lib/supabase';
 import { PointDetailsSheet } from '@/components/PointDetailsSheet';
-import { MapFilter } from '@/components/MapFilter';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMapConfig } from '@/contexts/MapConfigContext';
-import { Cart } from '@/components/Cart';
 import { Modal } from '@/components/Modal';
 import { EnhancedReservationForm } from '@/components/EnhancedReservationForm';
 import { toast } from 'sonner';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Sidebar } from '@/components/Sidebar';
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { PanelLeft } from 'lucide-react';
 
 const mapContainerStyle = {
   width: '100%',
@@ -31,15 +32,13 @@ const mapOptions = {
   fullscreenControl: false,
 };
 
-// --- Funções de Estilo para o Mapa ---
-
 const getMarkerIcon = (status) => {
   const colors = {
-    available: 'oklch(0.75 0.25 145)', // --status-available
-    reserved: 'oklch(0.85 0.2 90)',   // --status-reserved
-    sold: 'oklch(0.65 0.22 25)',      // --status-sold
+    available: 'oklch(0.75 0.25 145)',
+    reserved: 'oklch(0.85 0.2 90)',
+    sold: 'oklch(0.65 0.22 25)',
   };
-  const color = colors[status] || 'oklch(0.708 0 0)'; // --muted-foreground
+  const color = colors[status] || 'oklch(0.708 0 0)';
 
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
@@ -79,36 +78,10 @@ const createClusterSvg = (size) => `
 `;
 
 const clusterStyles = [
-  {
-    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(createClusterSvg(50))}`,
-    height: 50,
-    width: 50,
-    textColor: 'oklch(0.985 0 0)',
-    textSize: 15,
-    fontFamily: 'sans-serif',
-    fontWeight: 'bold',
-  },
-  {
-    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(createClusterSvg(60))}`,
-    height: 60,
-    width: 60,
-    textColor: 'oklch(0.985 0 0)',
-    textSize: 16,
-    fontFamily: 'sans-serif',
-    fontWeight: 'bold',
-  },
-  {
-    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(createClusterSvg(70))}`,
-    height: 70,
-    width: 70,
-    textColor: 'oklch(0.985 0 0)',
-    textSize: 18,
-    fontFamily: 'sans-serif',
-    fontWeight: 'bold',
-  },
+  { url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(createClusterSvg(50))}`, height: 50, width: 50, textColor: 'oklch(0.985 0 0)', textSize: 15, fontFamily: 'sans-serif', fontWeight: 'bold' },
+  { url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(createClusterSvg(60))}`, height: 60, width: 60, textColor: 'oklch(0.985 0 0)', textSize: 16, fontFamily: 'sans-serif', fontWeight: 'bold' },
+  { url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(createClusterSvg(70))}`, height: 70, width: 70, textColor: 'oklch(0.985 0 0)', textSize: 18, fontFamily: 'sans-serif', fontWeight: 'bold' },
 ];
-
-// --- Componente Principal ---
 
 function HomePage() {
   const [points, setPoints] = useState([]);
@@ -120,6 +93,7 @@ function HomePage() {
   const [currentZoom, setCurrentZoom] = useState(12);
   const [cartItems, setCartItems] = useState([]);
   const [isReservationFormOpen, setIsReservationFormOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const { rules, settings, loading: loadingConfig } = useMapConfig();
 
@@ -132,10 +106,7 @@ function HomePage() {
   useEffect(() => {
     const fetchPoints = async () => {
       setLoadingPoints(true);
-      const { data, error } = await supabase
-        .from('points')
-        .select(`*, tags(id, name)`);
-
+      const { data, error } = await supabase.from('points').select(`*, tags(id, name)`);
       if (error) {
         console.error('Error fetching points:', error);
       } else {
@@ -145,9 +116,19 @@ function HomePage() {
       }
       setLoadingPoints(false);
     };
-
     fetchPoints();
   }, []);
+
+  const handleFilterChange = (selectedTagIds) => {
+    if (selectedTagIds.length === 0) {
+      setFilteredPoints(points);
+    } else {
+      const newFilteredPoints = points.filter(point =>
+        point.tags.some(tag => selectedTagIds.includes(tag.id))
+      );
+      setFilteredPoints(newFilteredPoints);
+    }
+  };
 
   const handleMarkerClick = (point) => {
     setSelectedPoint(point);
@@ -160,53 +141,32 @@ function HomePage() {
       toast.warning("Este ponto já está no seu carrinho.");
       return;
     }
-
     const priceKey = `price_${period}y`;
     const price = point[priceKey];
-
     if (typeof price !== 'number' || price <= 0) {
       toast.error("Preço inválido para o período selecionado.");
       return;
     }
-
-    const newItem = {
-      point_id: point.id,
-      name: point.name,
-      price: price,
-      period_years: period,
-    };
-
+    const newItem = { point_id: point.id, name: point.name, price: price, period_years: period };
     setCartItems(prevItems => [...prevItems, newItem]);
     toast.success(`${point.name} adicionado ao carrinho!`);
     setIsSheetOpen(false);
   };
 
-  const handleRemoveFromCart = (index) => {
-    setCartItems(prevItems => prevItems.filter((_, i) => i !== index));
-  };
-
-  const handleClearCart = () => {
-    setCartItems([]);
-  };
+  const handleRemoveFromCart = (index) => setCartItems(prev => prev.filter((_, i) => i !== index));
+  const handleClearCart = () => setCartItems([]);
 
   const handleUpdateCartItemPeriod = (index, newPeriod) => {
     const itemToUpdate = cartItems[index];
     const point = points.find(p => p.id === itemToUpdate.point_id);
     if (!point) return;
-
     const priceKey = `price_${newPeriod}y`;
     const newPrice = point[priceKey];
-
     if (typeof newPrice !== 'number' || newPrice <= 0) {
       toast.error("Período indisponível para este ponto.");
       return;
     }
-
-    setCartItems(prevItems =>
-      prevItems.map((item, i) =>
-        i === index ? { ...item, period_years: newPeriod, price: newPrice } : item
-      )
-    );
+    setCartItems(prev => prev.map((item, i) => i === index ? { ...item, period_years: newPeriod, price: newPrice } : item));
   };
 
   const handleReservationSuccess = () => {
@@ -215,22 +175,16 @@ function HomePage() {
   };
 
   const onMapLoad = useCallback((mapInstance) => setMap(mapInstance), []);
-  const onZoomChanged = useCallback(() => {
-    if (map) setCurrentZoom(map.getZoom());
-  }, [map]);
+  const onZoomChanged = useCallback(() => { if (map) setCurrentZoom(map.getZoom()); }, [map]);
 
   const activeRule = useMemo(() => {
-    if (loadingConfig || !rules.length) {
-      return { display_mode: currentZoom > 14 ? 'individual' : 'cluster', cluster_radius: 60, min_cluster_size: 2 };
-    }
+    if (loadingConfig || !rules.length) return { display_mode: currentZoom > 14 ? 'individual' : 'cluster', cluster_radius: 60, min_cluster_size: 2 };
     return rules.find(r => r.zoom_level === currentZoom) || rules[rules.length - 1];
   }, [currentZoom, rules, loadingConfig]);
 
   const clustererCalculator = useCallback((markers) => {
     if (!settings) return { text: String(markers.length), index: 1, title: '' };
-    const count = settings.cluster_count_logic === 'available_only'
-      ? markers.filter(m => m.point_status === 'available').length
-      : markers.length;
+    const count = settings.cluster_count_logic === 'available_only' ? markers.filter(m => m.point_status === 'available').length : markers.length;
     const index = Math.min(String(count).length, 5);
     return { text: String(count), index, title: `${count} pontos` };
   }, [settings]);
@@ -245,81 +199,71 @@ function HomePage() {
   }
 
   return (
-    <div className="relative h-screen w-screen">
-      <div className="absolute top-4 right-4 z-20">
-        <Button asChild variant="secondary">
-          <Link to="/admin">Admin</Link>
-        </Button>
-      </div>
-      <MapFilter onFilterChange={setFilteredPoints} allPoints={points} />
-      <div className="absolute top-4 right-4 z-10 w-full max-w-sm h-[calc(100%-2rem)] pt-14">
-        <Cart
-          items={cartItems}
-          onRemove={handleRemoveFromCart}
-          onClear={handleClearCart}
-          onUpdatePeriod={handleUpdateCartItemPeriod}
-          onShowReservationForm={() => setIsReservationFormOpen(true)}
-        />
-      </div>
-      <GoogleMap
-        mapContainerStyle={mapContainerStyle}
-        center={defaultCenter}
-        zoom={currentZoom}
-        options={mapOptions}
-        onLoad={onMapLoad}
-        onZoomChanged={onZoomChanged}
-      >
-        {activeRule.display_mode === 'cluster' ? (
-          <MarkerClustererF 
-            options={{ 
-              gridSize: activeRule.cluster_radius, 
-              minimumClusterSize: activeRule.min_cluster_size,
-              styles: clusterStyles,
-            }} 
-            calculator={clustererCalculator}
-          >
-            {(clusterer) =>
-              filteredPoints.map((point) => (
-                <Marker
-                  key={point.id}
-                  position={{ lat: point.latitude, lng: point.longitude }}
-                  onClick={() => handleMarkerClick(point)}
-                  clusterer={clusterer}
-                  icon={getMarkerIcon(point.status)}
-                  // @ts-ignore
-                  point_status={point.status}
+    <div className="h-screen w-screen overflow-hidden bg-background">
+      <main className="h-full w-full grid grid-cols-1 lg:grid-cols-[1fr_400px]">
+        <div className="h-full w-full relative">
+          <header className="absolute top-0 left-0 z-20 p-4 w-full flex justify-between items-center">
+            <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
+              <SheetTrigger asChild>
+                <Button variant="secondary" size="icon" className="lg:hidden shadow-lg">
+                  <PanelLeft className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[380px] p-0 border-none">
+                <Sidebar
+                  points={filteredPoints}
+                  onFilterChange={handleFilterChange}
+                  cartItems={cartItems}
+                  onRemoveFromCart={handleRemoveFromCart}
+                  onClearCart={handleClearCart}
+                  onUpdateCartItemPeriod={handleUpdateCartItemPeriod}
+                  onShowReservationForm={() => {
+                    setIsMobileSidebarOpen(false);
+                    setTimeout(() => setIsReservationFormOpen(true), 150);
+                  }}
                 />
+              </SheetContent>
+            </Sheet>
+            <Button asChild variant="secondary" className="shadow-lg">
+              <Link to="/admin">Área Restrita</Link>
+            </Button>
+          </header>
+          <GoogleMap
+            mapContainerStyle={mapContainerStyle}
+            center={defaultCenter}
+            zoom={currentZoom}
+            options={mapOptions}
+            onLoad={onMapLoad}
+            onZoomChanged={onZoomChanged}
+          >
+            {activeRule.display_mode === 'cluster' ? (
+              <MarkerClustererF options={{ gridSize: activeRule.cluster_radius, minimumClusterSize: activeRule.min_cluster_size, styles: clusterStyles }} calculator={clustererCalculator}>
+                {(clusterer) => filteredPoints.map((point) => (
+                  <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} onClick={() => handleMarkerClick(point)} clusterer={clusterer} icon={getMarkerIcon(point.status)} {...{point_status: point.status}} />
+                ))}
+              </MarkerClustererF>
+            ) : (
+              filteredPoints.map((point) => (
+                <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} onClick={() => handleMarkerClick(point)} icon={getMarkerIcon(point.status)} />
               ))
-            }
-          </MarkerClustererF>
-        ) : (
-          filteredPoints.map((point) => (
-            <Marker
-              key={point.id}
-              position={{ lat: point.latitude, lng: point.longitude }}
-              onClick={() => handleMarkerClick(point)}
-              icon={getMarkerIcon(point.status)}
-            />
-          ))
-        )}
-      </GoogleMap>
-      <PointDetailsSheet
-        point={selectedPoint}
-        isOpen={isSheetOpen}
-        onOpenChange={setIsSheetOpen}
-        onAddToCart={handleAddToCart}
-      />
-      <Modal
-        isOpen={isReservationFormOpen}
-        onClose={() => setIsReservationFormOpen(false)}
-        title="Finalizar Reserva"
-        description="Preencha seus dados para concluir a reserva dos pontos."
-      >
-        <EnhancedReservationForm
-          cartItems={cartItems}
-          onClose={() => setIsReservationFormOpen(false)}
-          onReservationSuccess={handleReservationSuccess}
-        />
+            )}
+          </GoogleMap>
+        </div>
+        <div className="hidden lg:flex h-full">
+          <Sidebar
+            points={filteredPoints}
+            onFilterChange={handleFilterChange}
+            cartItems={cartItems}
+            onRemoveFromCart={handleRemoveFromCart}
+            onClearCart={handleClearCart}
+            onUpdateCartItemPeriod={handleUpdateCartItemPeriod}
+            onShowReservationForm={() => setIsReservationFormOpen(true)}
+          />
+        </div>
+      </main>
+      <PointDetailsSheet point={selectedPoint} isOpen={isSheetOpen} onOpenChange={setIsSheetOpen} onAddToCart={handleAddToCart} />
+      <Modal isOpen={isReservationFormOpen} onClose={() => setIsReservationFormOpen(false)} title="Finalizar Reserva" description="Preencha seus dados para concluir a reserva dos pontos.">
+        <EnhancedReservationForm cartItems={cartItems} onClose={() => setIsReservationFormOpen(false)} onReservationSuccess={handleReservationSuccess} />
       </Modal>
       <WhatsAppButton />
     </div>
