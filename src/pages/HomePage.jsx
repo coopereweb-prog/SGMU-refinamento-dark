@@ -5,6 +5,11 @@ import { PointDetailsSheet } from '@/components/PointDetailsSheet';
 import { MapFilter } from '@/components/MapFilter';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMapConfig } from '@/contexts/MapConfigContext';
+import { Cart } from '@/components/Cart';
+import { Modal } from '@/components/Modal';
+import { EnhancedReservationForm } from '@/components/EnhancedReservationForm';
+import { toast } from 'sonner';
+import { WhatsAppButton } from '@/components/WhatsAppButton';
 
 const mapContainerStyle = {
   width: '100%',
@@ -32,6 +37,8 @@ function HomePage() {
   const [loadingPoints, setLoadingPoints] = useState(true);
   const [map, setMap] = useState(null);
   const [currentZoom, setCurrentZoom] = useState(12);
+  const [cartItems, setCartItems] = useState([]);
+  const [isReservationFormOpen, setIsReservationFormOpen] = useState(false);
 
   const { rules, settings, loading: loadingConfig } = useMapConfig();
 
@@ -46,11 +53,7 @@ function HomePage() {
       setLoadingPoints(true);
       const { data, error } = await supabase
         .from('points')
-        .select(`
-          *,
-          tags (id, name),
-          pricing (id, name, color)
-        `);
+        .select(`*, tags(id, name)`);
 
       if (error) {
         console.error('Error fetching points:', error);
@@ -70,65 +73,92 @@ function HomePage() {
     setIsSheetOpen(true);
   };
 
-  const onMapLoad = useCallback((mapInstance) => {
-    setMap(mapInstance);
-  }, []);
-
-  const onZoomChanged = useCallback(() => {
-    if (map) {
-      const newZoom = map.getZoom();
-      if (newZoom !== currentZoom) {
-        setCurrentZoom(newZoom);
-      }
+  const handleAddToCart = (point, period) => {
+    const isAlreadyInCart = cartItems.some(item => item.point_id === point.id);
+    if (isAlreadyInCart) {
+      toast.warning("Este ponto já está no seu carrinho.");
+      return;
     }
-  }, [map, currentZoom]);
+
+    const priceKey = `price_${period}y`;
+    const price = point[priceKey];
+
+    if (typeof price !== 'number' || price <= 0) {
+      toast.error("Preço inválido para o período selecionado.");
+      return;
+    }
+
+    const newItem = {
+      point_id: point.id,
+      name: point.name,
+      price: price,
+      period_years: period,
+    };
+
+    setCartItems(prevItems => [...prevItems, newItem]);
+    toast.success(`${point.name} adicionado ao carrinho!`);
+    setIsSheetOpen(false);
+  };
+
+  const handleRemoveFromCart = (index) => {
+    setCartItems(prevItems => prevItems.filter((_, i) => i !== index));
+  };
+
+  const handleClearCart = () => {
+    setCartItems([]);
+  };
+
+  const handleUpdateCartItemPeriod = (index, newPeriod) => {
+    const itemToUpdate = cartItems[index];
+    const point = points.find(p => p.id === itemToUpdate.point_id);
+    if (!point) return;
+
+    const priceKey = `price_${newPeriod}y`;
+    const newPrice = point[priceKey];
+
+    if (typeof newPrice !== 'number' || newPrice <= 0) {
+      toast.error("Período indisponível para este ponto.");
+      return;
+    }
+
+    setCartItems(prevItems =>
+      prevItems.map((item, i) =>
+        i === index ? { ...item, period_years: newPeriod, price: newPrice } : item
+      )
+    );
+  };
+
+  const handleReservationSuccess = () => {
+    setIsReservationFormOpen(false);
+    setCartItems([]);
+  };
+
+  const onMapLoad = useCallback((mapInstance) => setMap(mapInstance), []);
+  const onZoomChanged = useCallback(() => {
+    if (map) setCurrentZoom(map.getZoom());
+  }, [map]);
 
   const activeRule = useMemo(() => {
-    if (loadingConfig || rules.length === 0) {
-      return {
-        zoom_level: currentZoom,
-        display_mode: currentZoom > 14 ? 'individual' : 'cluster',
-        cluster_radius: 60,
-        min_cluster_size: 2,
-      };
+    if (loadingConfig || !rules.length) {
+      return { display_mode: currentZoom > 14 ? 'individual' : 'cluster', cluster_radius: 60, min_cluster_size: 2 };
     }
     return rules.find(r => r.zoom_level === currentZoom) || rules[rules.length - 1];
   }, [currentZoom, rules, loadingConfig]);
 
-  const clustererCalculator = useCallback((markers, numStyles) => {
+  const clustererCalculator = useCallback((markers) => {
     if (!settings) return { text: String(markers.length), index: 1, title: '' };
-
     const count = settings.cluster_count_logic === 'available_only'
       ? markers.filter(m => m.point_status === 'available').length
       : markers.length;
-    
-    const index = Math.min(String(count).length, numStyles);
-    return {
-      text: String(count),
-      index,
-      title: `${count} pontos ${settings.cluster_count_logic === 'available_only' ? 'disponíveis' : 'totais'}`,
-    };
+    const index = Math.min(String(count).length, 5);
+    return { text: String(count), index, title: `${count} pontos` };
   }, [settings]);
-
-  const getMarkerIcon = (point) => {
-    const color = point.pricing?.color || '#4285F4'; // Default Google Maps blue
-    return {
-      path: window.google.maps.SymbolPath.CIRCLE,
-      fillColor: color,
-      fillOpacity: 1,
-      strokeColor: 'white',
-      strokeWeight: 1.5,
-      scale: 8,
-    };
-  };
 
   if (!isLoaded || loadingPoints || loadingConfig) {
     return (
       <div className="relative h-screen w-screen">
         <Skeleton className="h-full w-full" />
-        <div className="absolute top-4 left-4">
-          <Skeleton className="h-12 w-64" />
-        </div>
+        <div className="absolute top-4 left-4 z-10"><Skeleton className="h-12 w-64" /></div>
       </div>
     );
   }
@@ -136,6 +166,15 @@ function HomePage() {
   return (
     <div className="relative h-screen w-screen">
       <MapFilter onFilterChange={setFilteredPoints} allPoints={points} />
+      <div className="absolute top-4 right-4 z-10 w-full max-w-sm h-[calc(100%-2rem)]">
+        <Cart
+          items={cartItems}
+          onRemove={handleRemoveFromCart}
+          onClear={handleClearCart}
+          onUpdatePeriod={handleUpdateCartItemPeriod}
+          onShowReservationForm={() => setIsReservationFormOpen(true)}
+        />
+      </div>
       <GoogleMap
         mapContainerStyle={mapContainerStyle}
         center={defaultCenter}
@@ -145,13 +184,7 @@ function HomePage() {
         onZoomChanged={onZoomChanged}
       >
         {activeRule.display_mode === 'cluster' ? (
-          <MarkerClustererF
-            options={{
-              gridSize: activeRule.cluster_radius,
-              minimumClusterSize: activeRule.min_cluster_size,
-            }}
-            calculator={clustererCalculator}
-          >
+          <MarkerClustererF options={{ gridSize: activeRule.cluster_radius, minimumClusterSize: activeRule.min_cluster_size }} calculator={clustererCalculator}>
             {(clusterer) =>
               filteredPoints.map((point) => (
                 <Marker
@@ -159,7 +192,6 @@ function HomePage() {
                   position={{ lat: point.latitude, lng: point.longitude }}
                   onClick={() => handleMarkerClick(point)}
                   clusterer={clusterer}
-                  icon={getMarkerIcon(point)}
                   // @ts-ignore
                   point_status={point.status}
                 />
@@ -172,18 +204,29 @@ function HomePage() {
               key={point.id}
               position={{ lat: point.latitude, lng: point.longitude }}
               onClick={() => handleMarkerClick(point)}
-              icon={getMarkerIcon(point)}
             />
           ))
         )}
       </GoogleMap>
-      {selectedPoint && (
-        <PointDetailsSheet
-          point={selectedPoint}
-          isOpen={isSheetOpen}
-          onOpenChange={setIsSheetOpen}
+      <PointDetailsSheet
+        point={selectedPoint}
+        isOpen={isSheetOpen}
+        onOpenChange={setIsSheetOpen}
+        onAddToCart={handleAddToCart}
+      />
+      <Modal
+        isOpen={isReservationFormOpen}
+        onClose={() => setIsReservationFormOpen(false)}
+        title="Finalizar Reserva"
+        description="Preencha seus dados para concluir a reserva dos pontos."
+      >
+        <EnhancedReservationForm
+          cartItems={cartItems}
+          onClose={() => setIsReservationFormOpen(false)}
+          onReservationSuccess={handleReservationSuccess}
         />
-      )}
+      </Modal>
+      <WhatsAppButton />
     </div>
   );
 }
