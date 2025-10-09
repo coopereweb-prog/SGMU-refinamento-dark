@@ -178,8 +178,8 @@ function HomePage() {
     const newItem = { point_id: point.id, name: point.name, price: price, period_years: period };
     setCartItems(prevItems => {
       if (prevItems.length === 0) {
-        setIsCartModalOpen(true);
-        setIsCartMinimized(false);
+        setIsCartMinimized(true); // Mostra o botão flutuante
+        setIsCartModalOpen(false); // Garante que o modal não abra
       }
       return [...prevItems, newItem];
     });
