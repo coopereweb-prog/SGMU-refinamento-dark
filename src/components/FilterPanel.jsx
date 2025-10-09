@@ -17,6 +17,7 @@ export function FilterPanel({ points, onFilterChange }) {
   const [selectedTiers, setSelectedTiers] = useState(new Set());
   const [loadingTags, setLoadingTags] = useState(true);
   const [loadingTiers, setLoadingTiers] = useState(true);
+  const [tiersError, setTiersError] = useState(null);
 
   // useMemo para calcular as contagens de status e tiers
   const { statusCounts, tierCounts } = useMemo(() => {
@@ -52,13 +53,24 @@ export function FilterPanel({ points, onFilterChange }) {
   useEffect(() => {
     const fetchTiers = async () => {
       setLoadingTiers(true);
-      const { data, error } = await supabase.from('pricing_tiers').select('*').order('name');
-      if (error) {
-        console.error('Error fetching tiers:', error);
-      } else {
-        setAllTiers(data || []);
+      setTiersError(null);
+      try {
+        const { data: tiersData, error } = await supabase.from('pricing_tiers').select('*').order('name');
+        if (error) {
+          console.error('Erro ao buscar tiers:', error);
+          setTiersError(error.message);
+          setAllTiers([]);
+        } else {
+          console.log('Tiers carregados:', tiersData);
+          setAllTiers(tiersData || []);
+        }
+      } catch (err) {
+        console.error('Erro inesperado ao buscar tiers:', err);
+        setTiersError('Erro inesperado ao carregar classificações.');
+        setAllTiers([]);
+      } finally {
+        setLoadingTiers(false);
       }
-      setLoadingTiers(false);
     };
     fetchTiers();
   }, []);
@@ -121,6 +133,10 @@ export function FilterPanel({ points, onFilterChange }) {
           <div className="space-y-3">
             {loadingTiers ? (
               Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)
+            ) : tiersError ? (
+              <p className="text-sm text-red-500">Erro ao carregar classificações: {tiersError}</p>
+            ) : allTiers.length === 0 ? (
+              <p className="text-sm text-gray-500">Nenhuma classificação disponível.</p>
             ) : (
               allTiers.map(tier => (
                 <div key={tier.id} className="flex items-center justify-between">
