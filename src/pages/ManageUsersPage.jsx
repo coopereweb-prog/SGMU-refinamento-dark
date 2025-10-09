@@ -1,15 +1,4 @@
-import { useState, useEffect } from "react";
-import { getUsers, supabase } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { UserForm } from "@/components/UserForm";
-import { Modal } from "@/components/Modal";
-import { toast } from "sonner";
-import { Mail, Edit, Trash2, Loader2 } from "lucide-react";
-
-export function ManageUsersPage() {
+export default function ManageUsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
