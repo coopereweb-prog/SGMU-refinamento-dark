@@ -16,6 +16,9 @@ import { Menu } from 'lucide-react';
 import { CartModal } from '@/components/CartModal';
 import { FloatingCartButton } from '@/components/FloatingCartButton';
 
+// Mover libraries para fora do componente para evitar reloads
+const GOOGLE_MAPS_LIBRARIES = ['marker'];
+
 const mapContainerStyle = {
   width: '100%',
   height: '100%',
@@ -105,7 +108,7 @@ function HomePage() {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script-main',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries: ['marker'],
+    libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
   useEffect(() => {
