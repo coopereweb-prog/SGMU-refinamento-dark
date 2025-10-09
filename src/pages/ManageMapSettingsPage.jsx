@@ -1,23 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, MarkerClustererF } from '@react-google-maps/api';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { toast } from "sonner";
-import { Save, Loader2 } from 'lucide-react';
-import { ZoomTimeline } from '@/components/ZoomTimeline';
-import { MapSettingsForm } from '@/components/MapSettingsForm';
-import { Skeleton } from '@/components/ui/skeleton';
-import { GOOGLE_MAPS_LIBRARIES } from '@/config/googleMaps';
-
-const mapContainerStyle = {
-  width: '100%',
-  height: '100%',
-  borderRadius: '0.5rem',
-};
-
-const center = { lat: -22.78, lng: -47.3 };
-
-export function ManageMapSettingsPage() {
+export default function ManageMapSettingsPage() {
   const [points, setPoints] = useState([]);
   const [rules, setRules] = useState([]);
   const [globalSettings, setGlobalSettings] = useState({ cluster_count_logic: 'available_only' });
@@ -106,20 +87,14 @@ export function ManageMapSettingsPage() {
   };
 
   const onMapLoad = useCallback((mapInstance) => setMap(mapInstance), []);
-  const onZoomChanged = () => {
-    if (map) {
-      setSelectedZoom(map.getZoom());
-    }
-  };
+  const onZoomChanged = useCallback(() => { if (map) setCurrentZoom(map.getZoom()); }, [map]);
 
-  const clustererCalculator = (markers, numStyles) => {
-    const count = globalSettings.cluster_count_logic === 'available_only'
-      ? markers.filter(m => m.point_status === 'available').length
-      : markers.length;
-    
-    const index = Math.min(String(count).length, numStyles);
+  const clustererCalculator = useCallback((markers) => {
+    if (!settings) return { text: String(markers.length), index: 1, title: '' };
+    const count = settings.cluster_count_logic === 'available_only' ? markers.filter(m => m.point_status === 'available').length : markers.length;
+    const index = Math.min(String(count).length, 5);
     return { text: String(count), index, title: `${count} pontos` };
-  };
+  }, [settings]);
 
   if (loading) {
     return <div className="p-8"><Skeleton className="w-full h-64" /></div>;
@@ -158,31 +133,16 @@ export function ManageMapSettingsPage() {
               onZoomChanged={onZoomChanged}
             >
               {activeRule.display_mode === 'cluster' ? (
-                <MarkerClustererF
-                  options={{
-                    gridSize: activeRule.cluster_radius,
-                    minimumClusterSize: activeRule.min_cluster_size,
-                  }}
-                  calculator={clustererCalculator}
-                >
+                <MarkerClustererF options={{ gridSize: activeRule.cluster_radius, minimumClusterSize: activeRule.min_cluster_size, styles: clusterStyles }} calculator={clustererCalculator}>
                   {(clusterer) =>
                     points.map((point) => (
-                      <Marker
-                        key={point.id}
-                        position={{ lat: point.latitude, lng: point.longitude }}
-                        clusterer={clusterer}
-                        // @ts-ignore
-                        point_status={point.status}
-                      />
+                      <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} clusterer={clusterer} icon={getMarkerIcon(point.status)} animation={markerAnimation} {...{point_status: point.status}} />
                     ))
                   }
                 </MarkerClustererF>
               ) : (
                 points.map((point) => (
-                  <Marker
-                    key={point.id}
-                    position={{ lat: point.latitude, lng: point.longitude }}
-                  />
+                  <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} icon={getMarkerIcon(point.status)} animation={markerAnimation} />
                 ))
               )}
             </GoogleMap>
