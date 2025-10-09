@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { GoogleMap, useJsApiLoader, AdvancedMarkerElement, MarkerClustererF } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, MarkerClustererF } from '@react-google-maps/api';
 import { supabase } from '@/lib/supabase';
 import { PointDetailsSheet } from '@/components/PointDetailsSheet';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -61,7 +61,11 @@ const getMarkerIcon = (status) => {
     </svg>
   `;
 
-  return svg;
+  return {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    scaledSize: new window.google.maps.Size(36, 36),
+    anchor: new window.google.maps.Point(18, 36),
+  };
 };
 
 const createClusterSvg = (size) => `
@@ -338,24 +342,12 @@ function HomePage() {
             {activeRule.display_mode === 'cluster' ? (
               <MarkerClustererF options={{ gridSize: activeRule.cluster_radius, minimumClusterSize: activeRule.min_cluster_size, styles: clusterStyles }} calculator={clustererCalculator}>
                 {(clusterer) => filteredPoints.map((point) => (
-                  <AdvancedMarkerElement
-                    key={point.id}
-                    position={{ lat: point.latitude, lng: point.longitude }}
-                    onClick={() => handleMarkerClick(point)}
-                  >
-                    <div dangerouslySetInnerHTML={{ __html: getMarkerIcon(point.status) }} />
-                  </AdvancedMarkerElement>
+                  <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} onClick={() => handleMarkerClick(point)} clusterer={clusterer} icon={getMarkerIcon(point.status)} animation={markerAnimation} {...{point_status: point.status}} />
                 ))}
               </MarkerClustererF>
             ) : (
               filteredPoints.map((point) => (
-                <AdvancedMarkerElement
-                  key={point.id}
-                  position={{ lat: point.latitude, lng: point.longitude }}
-                  onClick={() => handleMarkerClick(point)}
-                >
-                  <div dangerouslySetInnerHTML={{ __html: getMarkerIcon(point.status) }} />
-                </AdvancedMarkerElement>
+                <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} onClick={() => handleMarkerClick(point)} icon={getMarkerIcon(point.status)} animation={markerAnimation} />
               ))
             )}
           </GoogleMap>
