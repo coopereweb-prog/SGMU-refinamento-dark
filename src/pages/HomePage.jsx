@@ -8,11 +8,10 @@ import { Modal } from '@/components/Modal';
 import { EnhancedReservationForm } from '@/components/EnhancedReservationForm';
 import { toast } from 'sonner';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { Sidebar } from '@/components/Sidebar';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from 'lucide-react';
+import Header from '@/components/Header'; // Importando o cabeçalho correto
 
 const mapContainerStyle = {
   width: '100%',
@@ -225,53 +224,31 @@ function HomePage() {
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-background flex flex-col">
-      <header className="h-auto sm:h-20 bg-black/30 backdrop-blur-sm z-20 flex-shrink-0 py-2">
-        <div className="container mx-auto px-4 h-full grid grid-cols-3 lg:grid-cols-4 items-center">
-          {/* Coluna Esquerda: Menu */}
-          <div className="justify-self-start">
-            <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" className="h-10 w-10 sm:h-12 sm:w-12 p-0 flex items-center justify-center">
-                  <Menu className="h-8 w-8 sm:h-10 sm:w-10" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[380px] p-0 border-none">
-                <Sidebar
-                  points={filteredPoints}
-                  onFilterChange={handleFilterChange}
-                  cartItems={cartItems}
-                  onRemoveFromCart={handleRemoveFromCart}
-                  onClearCart={handleClearCart}
-                  onUpdateCartItemPeriod={handleUpdateCartItemPeriod}
-                  onShowReservationForm={() => {
-                    setIsSidebarOpen(false);
-                    setTimeout(() => setIsReservationFormOpen(true), 150);
-                  }}
-                />
-              </SheetContent>
-            </Sheet>
-          </div>
-          
-          {/* Coluna Central: Logo */}
-          <Link to="/" className="flex items-center gap-2 justify-self-center col-start-2 lg:col-span-2 flex-col sm:flex-row">
-            <img src="/logo.png" alt="SGMU Logo" className="h-10 sm:h-12 flex-shrink-0" />
-            <div className="text-center sm:text-left">
-              <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight">
-                <span className="font-semibold">Sistema Gestor</span> de Mobiliário Urbano
-              </p>
-            </div>
-          </Link>
-
-          {/* Coluna Direita: Botão de Acesso */}
-          <div className="justify-self-end col-start-3 lg:col-start-4">
-            <div className="flex items-center gap-2">
-              <Button asChild variant="outline" className="h-10 sm:h-12 px-3 sm:px-4 text-xs sm:text-sm">
-                <Link to="/login">Área Restrita</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
+      
+      <div className="absolute top-4 left-4 z-20">
+        <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+          <SheetTrigger asChild>
+            <Button variant="outline" className="h-12 w-12 p-0 flex items-center justify-center">
+              <Menu className="h-6 w-6" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-[380px] p-0 border-none">
+            <Sidebar
+              points={filteredPoints}
+              onFilterChange={handleFilterChange}
+              cartItems={cartItems}
+              onRemoveFromCart={handleRemoveFromCart}
+              onClearCart={handleClearCart}
+              onUpdateCartItemPeriod={handleUpdateCartItemPeriod}
+              onShowReservationForm={() => {
+                setIsSidebarOpen(false);
+                setTimeout(() => setIsReservationFormOpen(true), 150);
+              }}
+            />
+          </SheetContent>
+        </Sheet>
+      </div>
 
       <main className="flex-grow grid grid-cols-1">
         <div className="h-full w-full relative">

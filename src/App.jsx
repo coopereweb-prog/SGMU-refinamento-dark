@@ -34,13 +34,13 @@ function App() {
         <MapConfigProvider>
           <Router>
             <Routes>
-              {/* Rotas Públicas sem o layout principal completo */}
+              {/* Rotas Públicas e de Tela Cheia */}
+              <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
               <Route path="/update-password" element={<UpdatePasswordPage />} />
 
-              {/* Rotas que usam o AppLayout (com header transparente) */}
+              {/* Rotas de Conteúdo que usam o AppLayout (com header e container) */}
               <Route element={<AppLayout />}>
-                <Route path="/" element={<HomePage />} />
                 <Route 
                   path="/dashboard" 
                   element={<ProtectedRoute allowedRoles={CLIENT_ROLES}><ClientDashboardPage /></ProtectedRoute>} 
