@@ -112,16 +112,20 @@ function HomePage() {
     const fetchPoints = async () => {
       setLoadingPoints(true);
       try {
+        // Buscar pontos e seus dados relacionados em uma única consulta
         const { data, error } = await supabase
           .from('points')
-          .select('*, tags(id, name), pricing_tiers(id, name)');
+          .select(`
+            *,
+            tags(id, name),
+            pricing_tiers(id, name)
+          `);
 
         if (error) throw error;
 
         const validPoints = data.filter(p => p.latitude && p.longitude);
         
-        console.log("HomePage - Fetched validPoints:", validPoints); // Log para depuração
-        
+        console.log("Pontos carregados com pricing_tiers:", validPoints);
         setPoints(validPoints);
         setFilteredPoints(validPoints);
 

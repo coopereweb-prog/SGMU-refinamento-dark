@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getTags } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -10,16 +11,17 @@ import { Separator } from '@/components/ui/separator';
 
 export function FilterPanel({ points, onFilterChange }) {
   const [tags, setTags] = useState([]);
+  const [allTiers, setAllTiers] = useState([]);
   const [selectedStatuses, setSelectedStatuses] = useState(new Set());
   const [selectedTags, setSelectedTags] = useState(new Set());
   const [selectedTiers, setSelectedTiers] = useState(new Set());
   const [loadingTags, setLoadingTags] = useState(true);
+  const [loadingTiers, setLoadingTiers] = useState(true);
 
-  // useMemo para calcular as contagens e extrair os tiers únicos dos pontos
-  const { statusCounts, tierCounts, availableTiers } = useMemo(() => {
+  // useMemo para calcular as contagens de status e tiers
+  const { statusCounts, tierCounts } = useMemo(() => {
     const statusCounts = { available: 0, reserved: 0, sold: 0 };
     const tierCounts = {};
-    const tiersMap = new Map();
 
     points.forEach(p => {
       // Contagem de status
@@ -27,27 +29,14 @@ export function FilterPanel({ points, onFilterChange }) {
         statusCounts[p.status]++;
       }
 
-      // Contagem e extração de tiers
+      // Contagem de tiers
       if (p.pricing_tiers) {
         const tierId = p.pricing_tiers.id;
-        const tierName = p.pricing_tiers.name;
-
-        if (!tiersMap.has(tierId)) {
-          tiersMap.set(tierId, tierName);
-        }
-        
         tierCounts[tierId] = (tierCounts[tierId] || 0) + 1;
       }
     });
 
-    // Converte o mapa de tiers para um array de objetos
-    const availableTiers = Array.from(tiersMap, ([id, name]) => ({ id, name }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-
-    console.log("FilterPanel - availableTiers:", availableTiers); // Log para depuração
-    console.log("FilterPanel - tierCounts:", tierCounts); // Log para depuração
-
-    return { statusCounts, tierCounts, availableTiers };
+    return { statusCounts, tierCounts };
   }, [points]);
 
   useEffect(() => {
@@ -58,6 +47,20 @@ export function FilterPanel({ points, onFilterChange }) {
       setLoadingTags(false);
     };
     fetchTags();
+  }, []);
+
+  useEffect(() => {
+    const fetchTiers = async () => {
+      setLoadingTiers(true);
+      const { data, error } = await supabase.from('pricing_tiers').select('*').order('name');
+      if (error) {
+        console.error('Error fetching tiers:', error);
+      } else {
+        setAllTiers(data || []);
+      }
+      setLoadingTiers(false);
+    };
+    fetchTiers();
   }, []);
 
   useEffect(() => {
@@ -116,22 +119,15 @@ export function FilterPanel({ points, onFilterChange }) {
 
           <h4 className="font-semibold text-sm">Classificação</h4>
           <div className="space-y-3">
-            {availableTiers.length > 0 ? (
-              availableTiers.map(tier => (
+            {loadingTiers ? (
+              Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)
+            ) : (
+              allTiers.map(tier => (
                 <div key={tier.id} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`tier-${tier.id}`} 
-                      checked={selectedTiers.has(tier.id)} 
-                      onCheckedChange={() => handleTierChange(tier.id)} 
-                    />
-                    <Label htmlFor={`tier-${tier.id}`} className="cursor-pointer">{tier.name}</Label>
-                  </div>
+                  <div className="flex items-center space-x-2"><Checkbox id={`tier-${tier.id}`} checked={selectedTiers.has(tier.id)} onCheckedChange={() => handleTierChange(tier.id)} /><Label htmlFor={`tier-${tier.id}`} className="cursor-pointer">{tier.name}</Label></div>
                   <Badge variant="secondary">{tierCounts[tier.id] || 0}</Badge>
                 </div>
               ))
-            ) : (
-              <p className="text-sm text-muted-foreground">Nenhuma classificação encontrada.</p>
             )}
           </div>
 
