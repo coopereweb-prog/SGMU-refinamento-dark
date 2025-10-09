@@ -105,13 +105,13 @@
 
 @keyframes slow-scale-pulse {
   0%, 100% {
-    transform: scale(1);
+    transform: scale(0.95);
   }
   50% {
-    transform: scale(1.05);
+    transform: scale(1.15);
   }
 }
 
 .animate-slow-scale-pulse {
-  animation: slow-scale-pulse 4s ease-in-out infinite;
+  animation: slow-scale-pulse 2s ease-in-out infinite;
 }
