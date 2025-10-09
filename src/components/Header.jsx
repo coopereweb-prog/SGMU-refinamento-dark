@@ -1,135 +1,57 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { useUser } from '@/contexts/UserContext';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { LayoutDashboard, LogOut, User as UserIcon, LogIn } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { supabase } from '../lib/supabase';
+import { Button } from './ui/button';
+import { toast } from 'sonner';
 
-export function Header() {
-  const { user, signOut, loading: authLoading } = useAuth();
-  const { profile } = useUser();
+export default function Header() {
   const navigate = useNavigate();
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/login');
-  };
-
-  const getDashboardPath = () => {
-    if (!profile) return '/';
-    const role = profile.role;
-    if (role === 'admin' || role === 'operations_manager') {
-      return '/admin';
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error("Erro ao sair", { description: error.message });
+    } else {
+      toast.success("Logout realizado com sucesso!");
+      navigate('/login');
     }
-    if (role === 'client') {
-      return '/dashboard';
-    }
-    if (role === 'field_technician') {
-      return '/technician-panel';
-    }
-    return '/';
-  };
-
-  const getInitials = (name) => {
-    if (!name) return 'U';
-    const names = name.split(' ');
-    if (names.length > 1) {
-      return `${names[0][0]}${names[names.length - 1][0]}`;
-    }
-    return name.substring(0, 2);
   };
 
   return (
-    <header className="bg-black/40 shadow-lg sticky top-0 z-50">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-3 items-center h-16 sm:h-20">
-          {/* Coluna Esquerda: E-mail do usuário ou Vazio */}
-          <div className="justify-self-start">
-            {authLoading ? (
-              <Skeleton className="h-6 w-32 rounded-md hidden sm:block" />
-            ) : user ? (
-              <p className="text-sm text-muted-foreground hidden sm:block truncate" title={user.email}>
-                {user.email}
-              </p>
-            ) : (
-              <div /> // Espaço reservado para manter o alinhamento
-            )}
-          </div>
-
-          {/* Coluna Central: Logo e Título */}
-          <Link to={user && profile ? getDashboardPath() : '/'} className="flex items-center space-x-2 sm:space-x-3 justify-self-center">
-            <img 
-              className="h-10 sm:h-12 md:h-14 w-auto" 
-              src="/logo.png" 
-              alt="SGMU Logo" 
-            />
-            <div className="hidden sm:block">
-              <span className="font-bold text-lg sm:text-xl md:text-2xl text-foreground tracking-tight block">
-                SGMU
-              </span>
-              <p className="text-xs text-muted-foreground leading-tight">
-                <span className="font-semibold">Sistema Gestor</span> de Mobiliário Urbano
-              </p>
+    <header className="bg-white shadow">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex">
+            <div className="flex-shrink-0 flex items-center">
+              <Link to="/dashboard" className="text-xl font-bold text-gray-900">
+                Admin Dashboard
+              </Link>
             </div>
-          </Link>
-
-          {/* Coluna Direita: Ações do Usuário */}
-          <nav className="flex items-center justify-self-end">
-            {authLoading ? (
-              <Skeleton className="h-9 w-9 rounded-full" />
-            ) : user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full sm:h-9 sm:w-9">
-                    <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
-                      <AvatarImage src={profile?.avatar_url} alt={profile?.name || 'User'} />
-                      <AvatarFallback>{getInitials(profile?.name)}</AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{profile?.name}</p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {user.email}
-                      </p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate(getDashboardPath())}>
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    <span>Dashboard</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate(getDashboardPath())}>
-                    <UserIcon className="mr-2 h-4 w-4" />
-                    <span>Perfil</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Sair</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button variant="default" size="sm" asChild>
-                <Link to="/login">
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Área Restrita
-                </Link>
-              </Button>
-            )}
-          </nav>
+            <nav className="hidden md:ml-6 md:flex md:space-x-8">
+              <Link
+                to="/dashboard"
+                className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+              >
+                Dashboard
+              </Link>
+              <Link
+                to="/manage-users"
+                className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+              >
+                Gerenciar Usuários
+              </Link>
+              <Link
+                to="/profile"
+                className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+              >
+                Perfil
+              </Link>
+            </nav>
+          </div>
+          <div className="hidden md:ml-6 md:flex md:items-center">
+            <Button onClick={handleLogout} variant="outline">
+              Sair
+            </Button>
+          </div>
         </div>
       </div>
     </header>
