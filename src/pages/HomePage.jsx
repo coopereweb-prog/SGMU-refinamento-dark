@@ -13,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Sidebar } from '@/components/Sidebar';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from 'lucide-react';
+import { CartModal } from '@/components/CartModal';
+import { FloatingCartButton } from '@/components/FloatingCartButton';
 
 const mapContainerStyle = {
   width: '100%',
@@ -95,6 +97,8 @@ function HomePage() {
   const [isReservationFormOpen, setIsReservationFormOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [markerAnimation, setMarkerAnimation] = useState(null);
+  const [isCartModalOpen, setIsCartModalOpen] = useState(false);
+  const [isCartMinimized, setIsCartMinimized] = useState(false);
 
   const { rules, settings, loading: loadingConfig } = useMapConfig();
 
@@ -123,12 +127,11 @@ function HomePage() {
   useEffect(() => {
     if (points.length > 0 && window.google?.maps?.Animation) {
       setMarkerAnimation(window.google.maps.Animation.BOUNCE);
-      const timer = setTimeout(() => setMarkerAnimation(null), 2000); // Animação por 2 segundos
+      const timer = setTimeout(() => setMarkerAnimation(null), 2000);
       return () => clearTimeout(timer);
     }
   }, [points]);
 
-  // Efeito para ajustar o mapa aos pontos carregados
   useEffect(() => {
     if (map && points.length > 0) {
       if (points.length === 1) {
@@ -173,13 +176,23 @@ function HomePage() {
       return;
     }
     const newItem = { point_id: point.id, name: point.name, price: price, period_years: period };
-    setCartItems(prevItems => [...prevItems, newItem]);
+    setCartItems(prevItems => {
+      if (prevItems.length === 0) {
+        setIsCartModalOpen(true);
+        setIsCartMinimized(false);
+      }
+      return [...prevItems, newItem];
+    });
     toast.success(`${point.name} adicionado ao carrinho!`);
     setIsSheetOpen(false);
   };
 
   const handleRemoveFromCart = (index) => setCartItems(prev => prev.filter((_, i) => i !== index));
-  const handleClearCart = () => setCartItems([]);
+  const handleClearCart = () => {
+    setCartItems([]);
+    setIsCartModalOpen(false);
+    setIsCartMinimized(false);
+  };
 
   const handleUpdateCartItemPeriod = (index, newPeriod) => {
     const itemToUpdate = cartItems[index];
@@ -197,6 +210,24 @@ function HomePage() {
   const handleReservationSuccess = () => {
     setIsReservationFormOpen(false);
     setCartItems([]);
+    setIsCartMinimized(false);
+  };
+
+  const handleCloseCartModal = () => {
+    setIsCartModalOpen(false);
+    if (cartItems.length > 0) {
+      setIsCartMinimized(true);
+    }
+  };
+
+  const handleOpenCartModal = () => {
+    setIsCartMinimized(false);
+    setIsCartModalOpen(true);
+  };
+
+  const handleShowReservationForm = () => {
+    setIsCartModalOpen(false);
+    setIsReservationFormOpen(true);
   };
 
   const onMapLoad = useCallback((mapInstance) => setMap(mapInstance), []);
@@ -227,7 +258,6 @@ function HomePage() {
     <div className="h-screen w-screen overflow-hidden bg-background flex flex-col">
       <header className="h-auto sm:h-20 bg-black/30 backdrop-blur-sm z-20 flex-shrink-0 py-2">
         <div className="container mx-auto px-4 h-full grid grid-cols-3 lg:grid-cols-4 items-center">
-          {/* Coluna Esquerda: Menu */}
           <div className="justify-self-start">
             <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
               <SheetTrigger asChild>
@@ -239,20 +269,11 @@ function HomePage() {
                 <Sidebar
                   points={filteredPoints}
                   onFilterChange={handleFilterChange}
-                  cartItems={cartItems}
-                  onRemoveFromCart={handleRemoveFromCart}
-                  onClearCart={handleClearCart}
-                  onUpdateCartItemPeriod={handleUpdateCartItemPeriod}
-                  onShowReservationForm={() => {
-                    setIsSidebarOpen(false);
-                    setTimeout(() => setIsReservationFormOpen(true), 150);
-                  }}
                 />
               </SheetContent>
             </Sheet>
           </div>
           
-          {/* Coluna Central: Logo */}
           <Link to="/" className="flex items-center gap-2 justify-self-center col-start-2 lg:col-span-2 flex-col sm:flex-row">
             <img src="/logo.png" alt="SGMU Logo" className="h-10 sm:h-12 flex-shrink-0" />
             <div className="text-center sm:text-left">
@@ -262,7 +283,6 @@ function HomePage() {
             </div>
           </Link>
 
-          {/* Coluna Direita: Botão de Acesso */}
           <div className="justify-self-end col-start-3 lg:col-start-4">
             <div className="flex items-center gap-2">
               <Button asChild variant="outline" className="h-10 sm:h-12 px-3 sm:px-4 text-xs sm:text-sm">
@@ -302,9 +322,25 @@ function HomePage() {
       </main>
 
       <PointDetailsSheet point={selectedPoint} isOpen={isSheetOpen} onOpenChange={setIsSheetOpen} onAddToCart={handleAddToCart} />
+      
+      <CartModal
+        isOpen={isCartModalOpen}
+        onClose={handleCloseCartModal}
+        cartItems={cartItems}
+        onRemoveFromCart={handleRemoveFromCart}
+        onClearCart={handleClearCart}
+        onUpdateCartItemPeriod={handleUpdateCartItemPeriod}
+        onShowReservationForm={handleShowReservationForm}
+      />
+
+      {isCartMinimized && (
+        <FloatingCartButton itemCount={cartItems.length} onClick={handleOpenCartModal} />
+      )}
+
       <Modal isOpen={isReservationFormOpen} onClose={() => setIsReservationFormOpen(false)} title="Finalizar Reserva" description="Preencha seus dados para concluir a reserva dos pontos.">
         <EnhancedReservationForm cartItems={cartItems} onClose={() => setIsReservationFormOpen(false)} onReservationSuccess={handleReservationSuccess} />
       </Modal>
+      
       <WhatsAppButton />
     </div>
   );
