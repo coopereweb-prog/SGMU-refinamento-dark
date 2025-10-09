@@ -30,31 +30,41 @@ function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex h-20 items-center justify-between px-4 md:px-6 bg-black/75 backdrop-blur-sm text-white">
-      <Link to="/" className="text-2xl font-bold">
-        Publicidade em <span className="text-primary">Saquinhos de Pão</span>
+      <Link to="/" className="flex items-center gap-2">
+        <img src="/logo.png" alt="SGMU Logo" className="h-12" />
+        <span className="text-xl font-bold hidden sm:inline">SGMU</span>
       </Link>
-      <nav className="hidden md:flex items-center space-x-4">
-        <NavLink to="/" className={({ isActive }) => isActive ? "text-primary" : "hover:text-primary"}>Início</NavLink>
-        {session && (
-          <NavLink to={getDashboardPath()} className={({ isActive }) => isActive ? "text-primary" : "hover:text-primary"}>
-            Meu Painel
+      
+      <div className="flex-1 flex justify-center">
+        <nav className="hidden md:flex items-center space-x-6 text-lg">
+          <NavLink to="/" className={({ isActive }) => isActive ? "text-primary font-semibold" : "hover:text-primary transition-colors"}>
+            Mapa Interativo
           </NavLink>
-        )}
-      </nav>
+          {session && (
+            <NavLink to={getDashboardPath()} className={({ isActive }) => isActive ? "text-primary font-semibold" : "hover:text-primary transition-colors"}>
+              Meu Painel
+            </NavLink>
+          )}
+        </nav>
+      </div>
+
       <div className="flex items-center space-x-2">
         {session ? (
           <>
-            <Button onClick={() => navigate(getDashboardPath())} variant="ghost" size="icon" className="hover:bg-white/20">
+            <span className="hidden lg:inline text-sm text-gray-300">
+              Olá, {profile?.name?.split(' ')[0] || 'Usuário'}
+            </span>
+            <Button onClick={() => navigate(getDashboardPath())} variant="ghost" size="icon" className="hover:bg-white/20" aria-label="Painel">
               <LayoutDashboard className="h-5 w-5" />
             </Button>
-            <Button onClick={handleSignOut} variant="ghost" size="icon" className="hover:bg-white/20">
+            <Button onClick={handleSignOut} variant="ghost" size="icon" className="hover:bg-white/20" aria-label="Sair">
               <LogOut className="h-5 w-5" />
             </Button>
           </>
         ) : (
-          <Button onClick={() => navigate('/login')} variant="ghost" className="hover:bg-white/20">
+          <Button onClick={() => navigate('/login')} variant="outline" className="bg-transparent border-primary text-primary hover:bg-primary hover:text-black">
             <User className="mr-2 h-4 w-4" />
-            Entrar
+            Área Restrita
           </Button>
         )}
       </div>
