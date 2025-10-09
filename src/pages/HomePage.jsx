@@ -111,15 +111,29 @@ function HomePage() {
   useEffect(() => {
     const fetchPoints = async () => {
       setLoadingPoints(true);
-      const { data, error } = await supabase.from('points').select(`*, tags(id, name), pricing_tiers(id, name)`);
-      if (error) {
+      try {
+        const [pointsRes, tiersRes] = await Promise.all([
+          supabase.from('points').select(`*, tags(id, name)`),
+          supabase.from('pricing_tiers').select('id, name')
+        ]);
+
+        if (pointsRes.error) throw pointsRes.error;
+        if (tiersRes.error) throw tiersRes.error;
+
+        const tiersMap = new Map(tiersRes.data.map(tier => [tier.id, tier]));
+
+        const pointsWithTiers = pointsRes.data.map(point => ({
+          ...point,
+          pricing_tiers: tiersMap.get(point.pricing_tier_id) || null
+        })).filter(p => p.latitude && p.longitude);
+
+        setPoints(pointsWithTiers);
+        setFilteredPoints(pointsWithTiers);
+      } catch (error) {
         console.error('Error fetching points:', error);
-      } else {
-        const validPoints = data.filter(p => p.latitude && p.longitude);
-        setPoints(validPoints);
-        setFilteredPoints(validPoints);
+      } finally {
+        setLoadingPoints(false);
       }
-      setLoadingPoints(false);
     };
     fetchPoints();
   }, []);
