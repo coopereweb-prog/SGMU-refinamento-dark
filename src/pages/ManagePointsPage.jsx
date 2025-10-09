@@ -1,4 +1,34 @@
-export default function ManagePointsPage() {
+import { useState, useEffect, useCallback } from 'react';
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { PointForm } from '@/components/PointForm';
+import { Modal } from '@/components/Modal';
+import { toast } from "sonner";
+import { PlusCircle, Edit, Trash2, XCircle } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { GOOGLE_MAPS_LIBRARIES } from '@/config/googleMaps';
+
+const mapContainerStyle = {
+  width: '100%',
+  height: '100%',
+  borderRadius: '0.5rem',
+};
+
+const center = {
+  lat: -22.78,
+  lng: -47.30
+};
+
+export function ManagePointsPage() {
   const [points, setPoints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);

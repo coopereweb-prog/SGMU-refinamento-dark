@@ -1,7 +1,13 @@
-export default function GuestRoute({ children }) {
-  const { user, session, loading: authLoading } = useAuth();
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
+import { Loader2 } from 'lucide-react';
+
+export function GuestRoute({ children }) {
+  const { user, authEvent, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useUser();
-  const isLoading = authLoading || profileLoading;
+
+  const isLoading = authLoading || (user && profileLoading);
 
   if (isLoading) {
     return (

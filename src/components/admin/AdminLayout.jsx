@@ -1,4 +1,7 @@
-export default function AdminLayout({ children }) {
+import { Outlet } from 'react-router-dom';
+import { AdminNav } from './AdminNav';
+
+export function AdminLayout() {
   return (
     <div className="min-h-screen bg-background">
       <div className="grid min-h-screen w-full md:grid-cols-[280px_1fr] lg:grid-cols-[320px_1fr]">
