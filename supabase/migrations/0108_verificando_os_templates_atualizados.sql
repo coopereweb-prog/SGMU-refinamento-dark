@@ -1,0 +1,1 @@
+SELECT name, description_template FROM public.pricing_tiers;
