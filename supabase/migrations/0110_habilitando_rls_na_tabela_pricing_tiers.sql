@@ -1,0 +1,1 @@
+ALTER TABLE public.pricing_tiers ENABLE ROW LEVEL SECURITY;
