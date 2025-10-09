@@ -1,0 +1,1 @@
+ALTER TABLE public.pricing_tiers ADD CONSTRAINT pricing_tiers_name_unique UNIQUE (name);
