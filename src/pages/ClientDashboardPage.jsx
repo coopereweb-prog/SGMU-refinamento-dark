@@ -104,7 +104,13 @@ function ClientDashboardPage() {
     return orders.filter(order => order.status === 'completed');
   }, [orders]);
 
-  if (userProfileLoading || loadingOrders) return <div className="flex items-center justify-center h-full">Carregando...</div>;
+  if (userProfileLoading || loadingOrders) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-5rem)]">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+      </div>
+    );
+  }
 
   return (
     <>
