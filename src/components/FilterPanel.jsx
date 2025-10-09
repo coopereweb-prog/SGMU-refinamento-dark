@@ -15,27 +15,39 @@ export function FilterPanel({ points, onFilterChange }) {
   const [selectedTiers, setSelectedTiers] = useState(new Set());
   const [loadingTags, setLoadingTags] = useState(true);
 
-  const { statusCounts, availableTiers, tierCounts } = useMemo(() => {
+  // useMemo para calcular as contagens e extrair os tiers únicos dos pontos
+  const { statusCounts, tierCounts, availableTiers } = useMemo(() => {
     const statusCounts = { available: 0, reserved: 0, sold: 0 };
-    const tiersMap = new Map();
     const tierCounts = {};
+    const tiersMap = new Map();
 
     points.forEach(p => {
+      // Contagem de status
       if (statusCounts[p.status] !== undefined) {
         statusCounts[p.status]++;
       }
+
+      // Contagem e extração de tiers
       if (p.pricing_tiers) {
-        if (!tiersMap.has(p.pricing_tiers.id)) {
-          tiersMap.set(p.pricing_tiers.id, p.pricing_tiers.name);
+        const tierId = p.pricing_tiers.id;
+        const tierName = p.pricing_tiers.name;
+
+        if (!tiersMap.has(tierId)) {
+          tiersMap.set(tierId, tierName);
         }
-        tierCounts[p.pricing_tiers.id] = (tierCounts[p.pricing_tiers.id] || 0) + 1;
+        
+        tierCounts[tierId] = (tierCounts[tierId] || 0) + 1;
       }
     });
 
+    // Converte o mapa de tiers para um array de objetos
     const availableTiers = Array.from(tiersMap, ([id, name]) => ({ id, name }))
       .sort((a, b) => a.name.localeCompare(b.name));
 
-    return { statusCounts, availableTiers, tierCounts };
+    console.log("FilterPanel - availableTiers:", availableTiers); // Log para depuração
+    console.log("FilterPanel - tierCounts:", tierCounts); // Log para depuração
+
+    return { statusCounts, tierCounts, availableTiers };
   }, [points]);
 
   useEffect(() => {
@@ -104,12 +116,23 @@ export function FilterPanel({ points, onFilterChange }) {
 
           <h4 className="font-semibold text-sm">Classificação</h4>
           <div className="space-y-3">
-            {availableTiers.map(tier => (
-              <div key={tier.id} className="flex items-center justify-between">
-                <div className="flex items-center space-x-2"><Checkbox id={`tier-${tier.id}`} checked={selectedTiers.has(tier.id)} onCheckedChange={() => handleTierChange(tier.id)} /><Label htmlFor={`tier-${tier.id}`} className="cursor-pointer">{tier.name}</Label></div>
-                <Badge variant="secondary">{tierCounts[tier.id] || 0}</Badge>
-              </div>
-            ))}
+            {availableTiers.length > 0 ? (
+              availableTiers.map(tier => (
+                <div key={tier.id} className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`tier-${tier.id}`} 
+                      checked={selectedTiers.has(tier.id)} 
+                      onCheckedChange={() => handleTierChange(tier.id)} 
+                    />
+                    <Label htmlFor={`tier-${tier.id}`} className="cursor-pointer">{tier.name}</Label>
+                  </div>
+                  <Badge variant="secondary">{tierCounts[tier.id] || 0}</Badge>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">Nenhuma classificação encontrada.</p>
+            )}
           </div>
 
           <Separator className="my-4" />

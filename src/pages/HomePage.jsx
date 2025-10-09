@@ -120,6 +120,8 @@ function HomePage() {
 
         const validPoints = data.filter(p => p.latitude && p.longitude);
         
+        console.log("HomePage - Fetched validPoints:", validPoints); // Log para depuração
+        
         setPoints(validPoints);
         setFilteredPoints(validPoints);
 
@@ -165,7 +167,7 @@ function HomePage() {
 
     if (tags.length > 0) {
       newFilteredPoints = newFilteredPoints.filter(point =>
-        point.tags.some(tag => tags.includes(tag.id))
+        point.tags && point.tags.some(tag => tags.includes(tag.id))
       );
     }
 
