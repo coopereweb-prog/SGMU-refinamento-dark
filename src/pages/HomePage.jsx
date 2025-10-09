@@ -251,9 +251,9 @@ function HomePage() {
         </Sheet>
       </div>
 
-      <main className="flex-grow grid grid-cols-1">
+      <main className="flex-grow grid grid-cols-1 pt-16"> {/* Adiciona pt-16 aqui */}
         <div className="h-full w-full relative">
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-background/80 backdrop-blur-sm py-2 px-4 rounded-full shadow-lg text-sm text-muted-foreground pointer-events-none">
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 bg-background/80 backdrop-blur-sm py-2 px-4 rounded-full shadow-lg text-sm text-muted-foreground pointer-events-none">
             Clique nos marcadores para ver detalhes e adicionar ao carrinho.
           </div>
           <GoogleMap
