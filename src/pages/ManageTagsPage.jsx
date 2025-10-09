@@ -1,20 +1,4 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { TagForm } from '@/components/TagForm';
-import { Modal } from '@/components/Modal';
-import { toast } from "sonner";
-import { PlusCircle, Edit, Trash2 } from 'lucide-react';
-
-export function ManageTagsPage() {
+export default function ManageTagsPage() {
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
