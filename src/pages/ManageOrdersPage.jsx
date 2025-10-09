@@ -104,7 +104,14 @@ function generatePrintableHTML(order) {
         .bg-gray-100 { background-color: #f5f5f5; }
         footer { margin-top: 25px; text-align: center; color: #666; font-size: 12px; }
         @media print { 
-          body { margin: 20mm; } 
+          @page {
+            margin: 20mm;
+            @top-left { content: none; }
+            @top-right { content: none; }
+            @bottom-left { content: none; }
+            @bottom-right { content: none; }
+          }
+          body { margin: 0; }
           .page-break { page-break-after: always; }
         }
       </style>
