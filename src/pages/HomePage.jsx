@@ -11,7 +11,8 @@ import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { Sidebar } from '@/components/Sidebar';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from 'lucide-react';
-import Header from '@/components/Header'; // Importando o cabeçalho correto
+import Header from '@/components/Header';
+import { Button } from '@/components/ui/button';
 
 const mapContainerStyle = {
   width: '100%',
