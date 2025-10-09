@@ -30,9 +30,9 @@ function generatePrintableHTML(order) {
 
   const orderItemsHTML = order.order_items.map(item => `
     <tr>
-      <td style="padding: 4px; border: 1px solid #ddd; font-size: 10px;">${item.points.name}</td>
-      <td style="padding: 4px; border: 1px solid #ddd; text-align: center; font-size: 10px;">${item.period_years} ano(s)</td>
-      <td style="padding: 4px; border: 1px solid #ddd; text-align: right; font-family: monospace; font-size: 10px;">${Number(item.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+      <td style="padding: 6px; border: 1px solid #ddd; font-size: 12px;">${item.points.name}</td>
+      <td style="padding: 6px; border: 1px solid #ddd; text-align: center; font-size: 12px;">${item.period_years} ano(s)</td>
+      <td style="padding: 6px; border: 1px solid #ddd; text-align: right; font-family: monospace; font-size: 12px;">${Number(item.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
     </tr>
   `).join('');
 
@@ -47,28 +47,28 @@ function generatePrintableHTML(order) {
 
   const firstPageHTML = firstPageItems.map(item => `
     <tr>
-      <td style="padding: 4px; border: 1px solid #ddd; font-size: 10px;">${item.points.name}</td>
-      <td style="padding: 4px; border: 1px solid #ddd; text-align: center; font-size: 10px;">${item.period_years} ano(s)</td>
-      <td style="padding: 4px; border: 1px solid #ddd; text-align: right; font-family: monospace; font-size: 10px;">${Number(item.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+      <td style="padding: 6px; border: 1px solid #ddd; font-size: 12px;">${item.points.name}</td>
+      <td style="padding: 6px; border: 1px solid #ddd; text-align: center; font-size: 12px;">${item.period_years} ano(s)</td>
+      <td style="padding: 6px; border: 1px solid #ddd; text-align: right; font-family: monospace; font-size: 12px;">${Number(item.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
     </tr>
   `).join('');
 
   const subsequentPagesHTML = pages.map(page => `
     <div style="page-break-before: always;">
-      <table style="width: 100%; border-collapse: collapse; margin-top: 0; font-size: 10px;">
+      <table style="width: 100%; border-collapse: collapse; margin-top: 0; font-size: 12px;">
         <thead>
           <tr class="bg-gray-100">
-            <th style="padding: 4px; border: 1px solid #ddd; text-align: left; font-size: 10px;">Ponto de Instalação</th>
-            <th style="padding: 4px; border: 1px solid #ddd; text-align: center; font-size: 10px;">Período Contratado</th>
-            <th style="padding: 4px; border: 1px solid #ddd; text-align: right; font-size: 10px;">Valor</th>
+            <th style="padding: 6px; border: 1px solid #ddd; text-align: left; font-size: 12px;">Ponto de Instalação</th>
+            <th style="padding: 6px; border: 1px solid #ddd; text-align: center; font-size: 12px;">Período Contratado</th>
+            <th style="padding: 6px; border: 1px solid #ddd; text-align: right; font-size: 12px;">Valor</th>
           </tr>
         </thead>
         <tbody>
           ${page.map(item => `
             <tr>
-              <td style="padding: 4px; border: 1px solid #ddd; font-size: 10px;">${item.points.name}</td>
-              <td style="padding: 4px; border: 1px solid #ddd; text-align: center; font-size: 10px;">${item.period_years} ano(s)</td>
-              <td style="padding: 4px; border: 1px solid #ddd; text-align: right; font-family: monospace; font-size: 10px;">${Number(item.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+              <td style="padding: 6px; border: 1px solid #ddd; font-size: 12px;">${item.points.name}</td>
+              <td style="padding: 6px; border: 1px solid #ddd; text-align: center; font-size: 12px;">${item.period_years} ano(s)</td>
+              <td style="padding: 6px; border: 1px solid #ddd; text-align: right; font-family: monospace; font-size: 12px;">${Number(item.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
             </tr>
           `).join('')}
         </tbody>
@@ -84,27 +84,27 @@ function generatePrintableHTML(order) {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Anexo de Contrato - Pedido ${order.id.substring(0, 8)}</title>
       <style>
-        body { font-family: Arial, sans-serif; margin: 10px; color: #333; font-size: 12px; line-height: 1.2; }
+        body { font-family: Arial, sans-serif; margin: 12px; color: #333; font-size: 14px; line-height: 1.3; }
         .container { max-width: 800px; margin: 0 auto; }
-        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 8px; margin-bottom: 16px; }
-        .logo-section { display: flex; align-items: center; gap: 8px; }
-        .logo { height: 40px; }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; }
+        .logo-section { display: flex; align-items: center; gap: 10px; }
+        .logo { height: 50px; }
         .title-section { text-align: right; }
-        h1 { font-size: 20px; font-weight: bold; margin: 0; }
-        h2 { font-size: 18px; font-weight: 600; margin: 0; }
-        h3 { font-size: 14px; font-weight: 600; border-bottom: 1px solid #ddd; padding-bottom: 4px; margin-bottom: 8px; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 10px; }
-        th, td { padding: 4px; border: 1px solid #ddd; }
-        th { background-color: #f5f5f5; text-align: left; font-size: 10px; }
+        h1 { font-size: 22px; font-weight: bold; margin: 0; }
+        h2 { font-size: 20px; font-weight: 600; margin: 0; }
+        h3 { font-size: 16px; font-weight: 600; border-bottom: 1px solid #ddd; padding-bottom: 6px; margin-bottom: 10px; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+        th, td { padding: 6px; border: 1px solid #ddd; }
+        th { background-color: #f5f5f5; text-align: left; font-size: 12px; }
         .text-center { text-align: center; }
         .text-right { text-align: right; }
         .font-mono { font-family: monospace; }
         .font-bold { font-weight: bold; }
         .bg-gray-100 { background-color: #f5f5f5; }
-        footer { margin-top: 20px; text-align: center; color: #666; font-size: 10px; }
+        footer { margin-top: 25px; text-align: center; color: #666; font-size: 12px; }
         @media print { 
-          body { margin: 5mm; } 
+          body { margin: 7mm; } 
           .page-break { page-break-after: always; }
         }
       </style>
@@ -116,17 +116,17 @@ function generatePrintableHTML(order) {
             <img src="/logo.png" alt="SGMU Logo" class="logo" />
             <div>
               <h1>SGMU</h1>
-              <p style="color: #666; font-size: 10px; margin: 0;">Sistema de Gestão de Mobiliário Urbano</p>
+              <p style="color: #666; font-size: 12px; margin: 0;">Sistema de Gestão de Mobiliário Urbano</p>
             </div>
           </div>
           <div class="title-section">
             <h2>Anexo de Contrato</h2>
-            <p style="color: #666; font-size: 10px;">Pedido #${order.id.substring(0, 8)}</p>
+            <p style="color: #666; font-size: 12px;">Pedido #${order.id.substring(0, 8)}</p>
           </div>
         </header>
 
         <main>
-          <section style="margin-bottom: 16px;">
+          <section style="margin-bottom: 20px;">
             <h3>Informações do Cliente</h3>
             <div class="info-grid">
               <p><strong>Nome:</strong> ${order.customer_name}</p>
