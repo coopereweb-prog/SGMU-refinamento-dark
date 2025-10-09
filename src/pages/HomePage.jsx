@@ -111,7 +111,7 @@ function HomePage() {
   useEffect(() => {
     const fetchPoints = async () => {
       setLoadingPoints(true);
-      const { data, error } = await supabase.from('points').select(`*, tags(id, name)`);
+      const { data, error } = await supabase.from('points').select(`*, tags(id, name), pricing_tiers(id, name)`);
       if (error) {
         console.error('Error fetching points:', error);
       } else {
@@ -147,7 +147,7 @@ function HomePage() {
     }
   }, [map, points]);
 
-  const handleFilterChange = useCallback(({ statuses, tags }) => {
+  const handleFilterChange = useCallback(({ statuses, tags, tiers }) => {
     let newFilteredPoints = points;
 
     if (statuses.length > 0) {
@@ -157,6 +157,12 @@ function HomePage() {
     if (tags.length > 0) {
       newFilteredPoints = newFilteredPoints.filter(point =>
         point.tags.some(tag => tags.includes(tag.id))
+      );
+    }
+
+    if (tiers.length > 0) {
+      newFilteredPoints = newFilteredPoints.filter(point =>
+        point.pricing_tiers && tiers.includes(point.pricing_tiers.id)
       );
     }
 
