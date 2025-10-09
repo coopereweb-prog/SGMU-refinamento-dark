@@ -1,0 +1,1 @@
+DROP TRIGGER IF EXISTS update_pricing_tiers_updated_at ON public.pricing_tiers;
