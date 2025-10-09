@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getTags } from '../lib/supabase';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -81,12 +81,8 @@ export function FilterPanel({ points, onFilterChange }) {
   };
 
   return (
-    <Card className="bg-card/80 backdrop-blur-sm w-full h-full flex flex-col border-none shadow-none">
-      <CardHeader>
-        <CardTitle>Filtrar Pontos</CardTitle>
-        <CardDescription>Selecione um ou mais filtros para refinar a busca no mapa.</CardDescription>
-      </CardHeader>
-      <CardContent className="flex-grow flex flex-col overflow-y-auto">
+    <div className="flex flex-col h-full">
+      <CardContent className="flex-grow overflow-y-auto p-6">
         <div className="space-y-4">
           <h4 className="font-semibold text-sm">Status</h4>
           <div className="space-y-3">
@@ -138,6 +134,6 @@ export function FilterPanel({ points, onFilterChange }) {
           Limpar Filtros
         </Button>
       </div>
-    </Card>
+    </div>
   );
 }

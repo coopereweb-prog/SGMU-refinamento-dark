@@ -11,7 +11,7 @@ import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { FilterPanel } from '@/components/FilterPanel';
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Menu } from 'lucide-react';
 import { CartModal } from '@/components/CartModal';
 import { FloatingCartButton } from '@/components/FloatingCartButton';
@@ -290,7 +290,13 @@ function HomePage() {
                   <Menu className="h-8 w-8 sm:h-10 sm:w-10" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[380px] p-0 border-none">
+              <SheetContent side="left" className="w-[380px] p-0 border-none flex flex-col">
+                <SheetHeader className="p-6 pb-4 border-b">
+                  <SheetTitle>Filtrar Pontos</SheetTitle>
+                  <SheetDescription>
+                    Selecione um ou mais filtros para refinar a busca no mapa.
+                  </SheetDescription>
+                </SheetHeader>
                 <FilterPanel
                   points={points}
                   onFilterChange={handleFilterChange}
