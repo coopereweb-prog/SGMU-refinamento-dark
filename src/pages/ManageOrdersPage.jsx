@@ -113,7 +113,6 @@ function generatePrintableHTML(order) {
       <div class="container">
         <header>
           <div class="logo-section">
-            <img src="/lightsquare-logo.png" alt="Lightsquare Logo" class="logo" />
             <img src="/logo.png" alt="SGMU Logo" class="logo" />
             <div>
               <h1>SGMU</h1>
