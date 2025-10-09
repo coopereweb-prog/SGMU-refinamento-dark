@@ -265,7 +265,7 @@ function HomePage() {
           {/* Coluna Direita: Botão de Acesso */}
           <div className="justify-self-end col-start-3 lg:col-start-4">
             <div className="flex items-center gap-2">
-              <Button asChild variant="secondary" className="h-10 sm:h-12 px-3 sm:px-4 text-xs sm:text-sm">
+              <Button asChild variant="outline" className="h-10 sm:h-12 px-3 sm:px-4 text-xs sm:text-sm">
                 <Link to="/login">Área Restrita</Link>
               </Button>
             </div>
