@@ -49,7 +49,7 @@ export function Header() {
   };
 
   return (
-    <header className="bg-background/80 backdrop-blur-sm shadow-lg sticky top-0 z-50">
+    <header className="bg-black/40 shadow-lg sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-3 items-center h-16 sm:h-20">
           {/* Coluna Esquerda: E-mail do usuário ou Vazio */}
