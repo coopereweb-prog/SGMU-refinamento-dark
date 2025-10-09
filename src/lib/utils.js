@@ -34,3 +34,15 @@ export function getOrderStatusProps(status) {
       };
   }
 }
+
+/**
+ * Formata um número como moeda brasileira (BRL).
+ * @param {number} value O valor numérico a ser formatado.
+ * @returns {string} O valor formatado (ex.: "R$ 1.500,00").
+ */
+export function formatCurrencyBRL(value) {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(value);
+}

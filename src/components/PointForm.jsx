@@ -10,6 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from '@/lib/supabase';
 import { compressImage } from '@/lib/image-utils';
+import { formatCurrencyBRL } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -96,11 +97,11 @@ export function PointForm({ point, onSave, onCancel }) {
         newDescription = newDescription
           .replace(/{{tier_name}}/g, selectedTier.name)
           .replace(/{{point_name}}/g, baseName)
-          .replace(/{{price_1y}}/g, Number(selectedTier.price_1y).toFixed(2))
-          .replace(/{{price_2y}}/g, Number(selectedTier.price_2y).toFixed(2))
-          .replace(/{{price_3y}}/g, Number(selectedTier.price_3y).toFixed(2))
-          .replace(/{{price_4y}}/g, Number(selectedTier.price_4y).toFixed(2))
-          .replace(/{{price_5y}}/g, Number(selectedTier.price_5y).toFixed(2));
+          .replace(/{{price_1y}}/g, formatCurrencyBRL(selectedTier.price_1y))
+          .replace(/{{price_2y}}/g, formatCurrencyBRL(selectedTier.price_2y))
+          .replace(/{{price_3y}}/g, formatCurrencyBRL(selectedTier.price_3y))
+          .replace(/{{price_4y}}/g, formatCurrencyBRL(selectedTier.price_4y))
+          .replace(/{{price_5y}}/g, formatCurrencyBRL(selectedTier.price_5y));
         form.setValue('description', newDescription);
       }
     }
@@ -168,11 +169,11 @@ export function PointForm({ point, onSave, onCancel }) {
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
             <p className="text-sm font-semibold text-blue-700 mb-2">Preços automáticos baseados na classificação:</p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-              <div>1 ano: R$ {Number(selectedTier.price_1y).toFixed(2)}</div>
-              <div>2 anos: R$ {Number(selectedTier.price_2y).toFixed(2)}</div>
-              <div>3 anos: R$ {Number(selectedTier.price_3y).toFixed(2)}</div>
-              <div>4 anos: R$ {Number(selectedTier.price_4y).toFixed(2)}</div>
-              <div>5 anos: R$ {Number(selectedTier.price_5y).toFixed(2)}</div>
+              <div>1 ano: {formatCurrencyBRL(selectedTier.price_1y)}</div>
+              <div>2 anos: {formatCurrencyBRL(selectedTier.price_2y)}</div>
+              <div>3 anos: {formatCurrencyBRL(selectedTier.price_3y)}</div>
+              <div>4 anos: {formatCurrencyBRL(selectedTier.price_4y)}</div>
+              <div>5 anos: {formatCurrencyBRL(selectedTier.price_5y)}</div>
             </div>
           </div>
         )}
