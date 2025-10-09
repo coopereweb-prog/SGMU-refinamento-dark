@@ -225,7 +225,7 @@ function HomePage() {
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-background flex flex-col">
-      <header className="h-auto sm:h-20 bg-black/60 z-20 flex-shrink-0 py-2">
+      <header className="h-auto sm:h-20 bg-black/30 backdrop-blur-sm z-20 flex-shrink-0 py-2">
         <div className="container mx-auto px-4 h-full grid grid-cols-3 lg:grid-cols-4 items-center">
           {/* Coluna Esquerda: Menu */}
           <div className="justify-self-start">
