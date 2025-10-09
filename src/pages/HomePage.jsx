@@ -112,25 +112,20 @@ function HomePage() {
     const fetchPoints = async () => {
       setLoadingPoints(true);
       try {
-        const [pointsRes, tiersRes] = await Promise.all([
-          supabase.from('points').select(`*, tags(id, name)`),
-          supabase.from('pricing_tiers').select('id, name')
-        ]);
+        const { data, error } = await supabase
+          .from('points')
+          .select('*, tags(id, name), pricing_tiers(id, name)');
 
-        if (pointsRes.error) throw pointsRes.error;
-        if (tiersRes.error) throw tiersRes.error;
+        if (error) throw error;
 
-        const tiersMap = new Map(tiersRes.data.map(tier => [tier.id, tier]));
+        const validPoints = data.filter(p => p.latitude && p.longitude);
+        
+        setPoints(validPoints);
+        setFilteredPoints(validPoints);
 
-        const pointsWithTiers = pointsRes.data.map(point => ({
-          ...point,
-          pricing_tiers: tiersMap.get(point.pricing_tier_id) || null
-        })).filter(p => p.latitude && p.longitude);
-
-        setPoints(pointsWithTiers);
-        setFilteredPoints(pointsWithTiers);
       } catch (error) {
         console.error('Error fetching points:', error);
+        toast.error("Falha ao carregar os pontos do mapa.", { description: error.message });
       } finally {
         setLoadingPoints(false);
       }
