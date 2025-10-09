@@ -74,7 +74,7 @@ function LoginPage() {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${import.meta.env.VITE_SITE_URL}/update-password`,
+        redirectTo: `${window.location.origin}/update-password`,
       });
       if (error) throw error;
       toast.success('Verifique seu e-mail', {
