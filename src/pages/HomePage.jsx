@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Sidebar } from '@/components/Sidebar';
+import { FilterPanel } from '@/components/FilterPanel';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from 'lucide-react';
 import { CartModal } from '@/components/CartModal';
@@ -147,16 +147,21 @@ function HomePage() {
     }
   }, [map, points]);
 
-  const handleFilterChange = (selectedTagIds) => {
-    if (selectedTagIds.length === 0) {
-      setFilteredPoints(points);
-    } else {
-      const newFilteredPoints = points.filter(point =>
-        point.tags.some(tag => selectedTagIds.includes(tag.id))
-      );
-      setFilteredPoints(newFilteredPoints);
+  const handleFilterChange = useCallback(({ statuses, tags }) => {
+    let newFilteredPoints = points;
+
+    if (statuses.length > 0) {
+      newFilteredPoints = newFilteredPoints.filter(point => statuses.includes(point.status));
     }
-  };
+
+    if (tags.length > 0) {
+      newFilteredPoints = newFilteredPoints.filter(point =>
+        point.tags.some(tag => tags.includes(tag.id))
+      );
+    }
+
+    setFilteredPoints(newFilteredPoints);
+  }, [points]);
 
   const handleMarkerClick = (point) => {
     setSelectedPoint(point);
@@ -266,8 +271,8 @@ function HomePage() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-[380px] p-0 border-none">
-                <Sidebar
-                  points={filteredPoints}
+                <FilterPanel
+                  points={points}
                   onFilterChange={handleFilterChange}
                 />
               </SheetContent>
