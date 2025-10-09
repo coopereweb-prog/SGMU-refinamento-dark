@@ -3,9 +3,13 @@ import { Header } from './Header';
 
 export function AppLayout() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="min-h-screen">
       <Header />
-      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
+      {/* 
+        A classe `pt-16 sm:pt-20` adiciona um espaçamento no topo do conteúdo 
+        equivalente à altura do cabeçalho, para que o conteúdo não comece escondido atrás dele.
+      */}
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50 pt-16 sm:pt-20">
         <Outlet />
       </main>
     </div>
