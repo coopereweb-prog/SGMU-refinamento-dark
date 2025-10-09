@@ -1,0 +1,2 @@
+CREATE POLICY "Leitura pública de pricing_tiers" ON public.pricing_tiers FOR SELECT USING (true);
+CREATE POLICY "Admins podem gerenciar pricing_tiers" ON public.pricing_tiers FOR ALL USING (get_current_user_role() = 'admin'::text);
