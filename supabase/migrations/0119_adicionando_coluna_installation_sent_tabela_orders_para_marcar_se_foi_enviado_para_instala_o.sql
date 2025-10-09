@@ -1,0 +1,1 @@
+ALTER TABLE public.orders ADD COLUMN installation_sent BOOLEAN DEFAULT FALSE;
