@@ -62,7 +62,12 @@ export function FilterPanel({ points, onFilterChange }) {
           setAllTiers([]);
         } else {
           console.log('Tiers carregados:', tiersData);
-          setAllTiers(tiersData || []);
+          // Ordenar os tiers na ordem desejada: Ouro, Prata, Bronze
+          const sortedTiers = tiersData.sort((a, b) => {
+            const order = ['Ouro', 'Prata', 'Bronze'];
+            return order.indexOf(a.name) - order.indexOf(b.name);
+          });
+          setAllTiers(sortedTiers);
         }
       } catch (err) {
         console.error('Erro inesperado ao buscar tiers:', err);
