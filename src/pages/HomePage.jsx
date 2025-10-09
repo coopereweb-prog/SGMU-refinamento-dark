@@ -128,6 +128,22 @@ function HomePage() {
     }
   }, [points]);
 
+  // Efeito para ajustar o mapa aos pontos carregados
+  useEffect(() => {
+    if (map && points.length > 0) {
+      if (points.length === 1) {
+        map.setCenter({ lat: points[0].latitude, lng: points[0].longitude });
+        map.setZoom(15);
+      } else {
+        const bounds = new window.google.maps.LatLngBounds();
+        points.forEach(point => {
+          bounds.extend({ lat: point.latitude, lng: point.longitude });
+        });
+        map.fitBounds(bounds);
+      }
+    }
+  }, [map, points]);
+
   const handleFilterChange = (selectedTagIds) => {
     if (selectedTagIds.length === 0) {
       setFilteredPoints(points);
