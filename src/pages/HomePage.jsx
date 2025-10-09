@@ -15,9 +15,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescri
 import { Menu } from 'lucide-react';
 import { CartModal } from '@/components/CartModal';
 import { FloatingCartButton } from '@/components/FloatingCartButton';
-
-// Mover libraries para fora do componente para evitar reloads
-const GOOGLE_MAPS_LIBRARIES = ['marker'];
+import { GOOGLE_MAPS_LIBRARIES } from '@/config/googleMaps';
 
 const mapContainerStyle = {
   width: '100%',

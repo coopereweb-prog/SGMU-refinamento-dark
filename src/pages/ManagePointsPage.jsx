@@ -15,6 +15,7 @@ import { Modal } from '@/components/Modal';
 import { toast } from "sonner";
 import { PlusCircle, Edit, Trash2, XCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { GOOGLE_MAPS_LIBRARIES } from '@/config/googleMaps';
 
 const mapContainerStyle = {
   width: '100%',
@@ -38,8 +39,9 @@ export function ManagePointsPage() {
   const [newPointCoords, setNewPointCoords] = useState(null);
 
   const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
+    id: 'google-map-script-admin',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
   const fetchPoints = async () => {
