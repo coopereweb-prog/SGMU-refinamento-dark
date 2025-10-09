@@ -1,91 +1,137 @@
-import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
 import { Button } from '@/components/ui/button';
-import { Menu, X, User } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { useUser } from '../contexts/UserContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { LayoutDashboard, LogOut, User as UserIcon, LogIn } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
-function Header() {
-  const { session } = useAuth();
+export function Header() {
+  const { user, signOut, loading: authLoading } = useAuth();
   const { profile } = useUser();
   const navigate = useNavigate();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
+
+  const getDashboardPath = () => {
+    if (!profile) return '/';
+    const role = profile.role;
+    if (role === 'admin' || role === 'operations_manager') {
+      return '/admin';
+    }
+    if (role === 'client') {
+      return '/dashboard';
+    }
+    if (role === 'field_technician') {
+      return '/technician-panel';
+    }
+    return '/';
+  };
+
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    const names = name.split(' ');
+    if (names.length > 1) {
+      return `${names[0][0]}${names[names.length - 1][0]}`;
+    }
+    return name.substring(0, 2);
+  };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 bg-black/90 backdrop-blur-sm text-white h-16">
-      {/* Menu (à esquerda em telas pequenas) */}
-      <div className="flex items-center">
-        <button 
-          onClick={toggleMenu}
-          className="md:hidden mr-3 p-1 rounded-md hover:bg-white/10"
-          aria-label="Abrir menu"
-        >
-          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-        
-        {/* Menu de navegação para mobile */}
-        {isMenuOpen && (
-          <nav className="absolute top-full left-0 right-0 bg-black/95 backdrop-blur-md p-4 md:hidden">
-            <ul className="space-y-3">
-              <li><Link to="/" className="block py-2 hover:text-primary" onClick={toggleMenu}>Mapa Interativo</Link></li>
-              {session && (
-                <li><Link to="/dashboard" className="block py-2 hover:text-primary" onClick={toggleMenu}>Meu Painel</Link></li>
-              )}
-            </ul>
-          </nav>
-        )}
-        
-        {/* Menu de navegação para desktop */}
-        <nav className="hidden md:flex items-center space-x-6">
-          <Link to="/" className="hover:text-primary transition-colors">Mapa Interativo</Link>
-          {session && (
-            <Link to="/dashboard" className="hover:text-primary transition-colors">Meu Painel</Link>
-          )}
-        </nav>
-      </div>
-
-      {/* Logo e Frase (centro) */}
-      <div className="flex flex-col items-center absolute left-1/2 transform -translate-x-1/2">
-        <Link to="/" className="flex items-center gap-2">
-          <img src="/logo.png" alt="SGMU Logo" className="h-10" />
-          <span className="text-lg font-bold hidden sm:inline">SGMU</span>
-        </Link>
-        <p className="text-xs text-gray-300 mt-1 hidden sm:block">Publicidade em Saquinhos de Pão</p>
-      </div>
-
-      {/* Botão de Área Restrita (à direita) */}
-      <div className="flex items-center">
-        {session ? (
-          <div className="flex items-center space-x-2">
-            <span className="hidden sm:inline text-sm text-gray-300">
-              Olá, {profile?.name?.split(' ')[0] || 'Usuário'}
-            </span>
-            <Button 
-              onClick={() => navigate('/dashboard')} 
-              variant="outline" 
-              size="sm"
-              className="bg-transparent border-primary text-primary hover:bg-primary hover:text-black text-xs h-8"
-            >
-              <User className="h-3 w-3 sm:mr-1" />
-              <span className="hidden sm:inline">Painel</span>
-            </Button>
+    <header className="bg-black/40 shadow-lg sticky top-0 z-50">
+      <div className="container mx-auto px-4">
+        <div className="grid grid-cols-3 items-center h-16 sm:h-20">
+          {/* Coluna Esquerda: E-mail do usuário ou Vazio */}
+          <div className="justify-self-start">
+            {authLoading ? (
+              <Skeleton className="h-6 w-32 rounded-md hidden sm:block" />
+            ) : user ? (
+              <p className="text-sm text-muted-foreground hidden sm:block truncate" title={user.email}>
+                {user.email}
+              </p>
+            ) : (
+              <div /> // Espaço reservado para manter o alinhamento
+            )}
           </div>
-        ) : (
-          <Button 
-            onClick={() => navigate('/login')} 
-            variant="outline" 
-            size="sm"
-            className="bg-transparent border-primary text-primary hover:bg-primary hover:text-black text-xs h-8"
-          >
-            <User className="h-3 w-3 sm:mr-1" />
-            <span className="hidden sm:inline">Área Restrita</span>
-          </Button>
-        )}
+
+          {/* Coluna Central: Logo e Título */}
+          <Link to={user && profile ? getDashboardPath() : '/'} className="flex items-center space-x-2 sm:space-x-3 justify-self-center">
+            <img 
+              className="h-10 sm:h-12 md:h-14 w-auto" 
+              src="/logo.png" 
+              alt="SGMU Logo" 
+            />
+            <div className="hidden sm:block">
+              <span className="font-bold text-lg sm:text-xl md:text-2xl text-foreground tracking-tight block">
+                SGMU
+              </span>
+              <p className="text-xs text-muted-foreground leading-tight">
+                <span className="font-semibold">Sistema Gestor</span> de Mobiliário Urbano
+              </p>
+            </div>
+          </Link>
+
+          {/* Coluna Direita: Ações do Usuário */}
+          <nav className="flex items-center justify-self-end">
+            {authLoading ? (
+              <Skeleton className="h-9 w-9 rounded-full" />
+            ) : user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full sm:h-9 sm:w-9">
+                    <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
+                      <AvatarImage src={profile?.avatar_url} alt={profile?.name || 'User'} />
+                      <AvatarFallback>{getInitials(profile?.name)}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{profile?.name}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user.email}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate(getDashboardPath())}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate(getDashboardPath())}>
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    <span>Perfil</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sair</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button variant="default" size="sm" asChild>
+                <Link to="/login">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Área Restrita
+                </Link>
+              </Button>
+            )}
+          </nav>
+        </div>
       </div>
     </header>
   );
 }
-
-export default Header;
