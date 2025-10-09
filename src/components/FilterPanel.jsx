@@ -19,6 +19,36 @@ export function FilterPanel({ points, onFilterChange }) {
   const [loadingTiers, setLoadingTiers] = useState(true);
   const [tiersError, setTiersError] = useState(null);
 
+  // Carregar filtros do localStorage
+  useEffect(() => {
+    const savedStatuses = localStorage.getItem('filterStatuses');
+    const savedTags = localStorage.getItem('filterTags');
+    const savedTiers = localStorage.getItem('filterTiers');
+
+    if (savedStatuses) {
+      setSelectedStatuses(new Set(JSON.parse(savedStatuses)));
+    }
+    if (savedTags) {
+      setSelectedTags(new Set(JSON.parse(savedTags)));
+    }
+    if (savedTiers) {
+      setSelectedTiers(new Set(JSON.parse(savedTiers)));
+    }
+  }, []);
+
+  // Salvar filtros no localStorage sempre que mudarem
+  useEffect(() => {
+    localStorage.setItem('filterStatuses', JSON.stringify(Array.from(selectedStatuses)));
+  }, [selectedStatuses]);
+
+  useEffect(() => {
+    localStorage.setItem('filterTags', JSON.stringify(Array.from(selectedTags)));
+  }, [selectedTags]);
+
+  useEffect(() => {
+    localStorage.setItem('filterTiers', JSON.stringify(Array.from(selectedTiers)));
+  }, [selectedTiers]);
+
   // useMemo para calcular as contagens de status e tiers
   const { statusCounts, tierCounts } = useMemo(() => {
     const statusCounts = { available: 0, reserved: 0, sold: 0 };
