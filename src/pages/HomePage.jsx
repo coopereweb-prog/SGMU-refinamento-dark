@@ -12,7 +12,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { FilterPanel } from '@/components/FilterPanel';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Menu, User } from 'lucide-react';
 import { CartModal } from '@/components/CartModal';
 import { FloatingCartButton } from '@/components/FloatingCartButton';
@@ -298,24 +298,42 @@ function HomePage() {
     );
   }
 
+  const menuItems = [
+    { to: '/', label: 'Início' },
+    { to: '/quem-somos', label: 'Quem Somos' },
+    { to: '/nossos-servicos', label: 'Nossos Serviços' },
+    { to: '/como-adquirir', label: 'Como Adquirir' },
+    { to: '/trabalhe-conosco', label: 'Trabalhe conosco' },
+    { to: '/fale-conosco', label: 'Fale conosco' },
+  ];
+
   return (
     <div className="h-screen w-screen overflow-hidden bg-background flex flex-col">
       <header className="h-auto sm:h-20 bg-black/30 backdrop-blur-sm z-20 flex-shrink-0 py-2">
         <div className="container mx-auto px-4 h-full grid grid-cols-3 items-center">
-          {/* Botão de Menu para Mobile */}
-          <div className="justify-self-start md:hidden">
-            <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+          {/* Botão de Menu Principal */}
+          <div className="justify-self-start">
+            <Sheet>
               <SheetTrigger asChild>
                 <Button variant="outline" className="h-10 w-10 p-0 flex items-center justify-center">
-                  <Menu className="h-8 w-8" />
+                  <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[380px] p-0 border-none flex flex-col">
-                <SheetHeader className="p-4 pb-2 border-b">
-                  <SheetTitle>Filtrar Pontos</SheetTitle>
-                  <SheetDescription>Selecione um ou mais filtros para refinar a busca no mapa.</SheetDescription>
+              <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+                <SheetHeader>
+                  <SheetTitle>Menu</SheetTitle>
                 </SheetHeader>
-                <FilterPanel points={points} onFilterChange={handleFilterChange} />
+                <nav className="flex flex-col gap-4 mt-6">
+                  {menuItems.map((item) => (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      className="text-lg font-medium hover:text-primary transition-colors"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </nav>
               </SheetContent>
             </Sheet>
           </div>
