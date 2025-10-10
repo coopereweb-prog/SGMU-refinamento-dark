@@ -107,35 +107,6 @@ const clusterStyles = [
   fontWeight: 'bold',
 }));
 
-const clustererCalculator = (markers) => {
-  const statuses = new Set(markers.map(m => m.point_status));
-  const count = markers.length;
-  let statusType;
-
-  if (statuses.size === 1) {
-    statusType = statuses.values().next().value;
-  } else {
-    statusType = 'mixed';
-  }
-
-  let baseIndex;
-  switch (statusType) {
-    case 'available': baseIndex = 0; break;
-    case 'reserved': baseIndex = 3; break;
-    case 'sold': baseIndex = 6; break;
-    case 'mixed': default: baseIndex = 9; break;
-  }
-
-  const sizeIndex = count < 10 ? 0 : (count < 100 ? 1 : 2);
-  const finalIndex = baseIndex + sizeIndex + 1; // MarkerClustererF indices are 1-based
-
-  return {
-    text: String(count),
-    index: finalIndex,
-    title: `${count} pontos (${statusType})`,
-  };
-};
-
 function HomePage() {
   const [points, setPoints] = useState([]);
   const [filteredPoints, setFilteredPoints] = useState([]);
@@ -150,6 +121,7 @@ function HomePage() {
   const [markerAnimation, setMarkerAnimation] = useState(null);
   const [isCartModalOpen, setIsCartModalOpen] = useState(false);
   const [isCartMinimized, setIsCartMinimized] = useState(false);
+  const [activeFilters, setActiveFilters] = useState({ statuses: ['available'], tags: [], tiers: [] });
 
   const { rules, settings, loading: loadingConfig } = useMapConfig();
 
@@ -203,6 +175,7 @@ function HomePage() {
   }, [map, points]);
 
   const handleFilterChange = useCallback((filters) => {
+    setActiveFilters(filters);
     let newFilteredPoints = points;
     if (filters.statuses.length > 0) newFilteredPoints = newFilteredPoints.filter(point => filters.statuses.includes(point.status));
     if (filters.tags.length > 0) newFilteredPoints = newFilteredPoints.filter(point => point.tags && point.tags.some(tag => filters.tags.includes(tag.id)));
@@ -284,6 +257,37 @@ function HomePage() {
     if (loadingConfig || !rules.length) return { display_mode: currentZoom > 14 ? 'individual' : 'cluster', cluster_radius: 60, min_cluster_size: 2 };
     return rules.find(r => r.zoom_level === currentZoom) || rules[rules.length - 1];
   }, [currentZoom, rules, loadingConfig]);
+
+  const clustererCalculator = useMemo(() => {
+    return (markers) => {
+      const count = markers.length;
+      let statusType;
+      let baseIndex;
+
+      if (activeFilters.statuses.length === 1) {
+        statusType = activeFilters.statuses[0];
+      } else {
+        const statusesInCluster = new Set(markers.map(m => m.point_status));
+        statusType = statusesInCluster.size === 1 ? statusesInCluster.values().next().value : 'mixed';
+      }
+
+      switch (statusType) {
+        case 'available': baseIndex = 0; break;
+        case 'reserved': baseIndex = 3; break;
+        case 'sold': baseIndex = 6; break;
+        case 'mixed': default: baseIndex = 9; break;
+      }
+
+      const sizeIndex = count < 10 ? 0 : (count < 100 ? 1 : 2);
+      const finalIndex = baseIndex + sizeIndex + 1;
+
+      return {
+        text: String(count),
+        index: finalIndex,
+        title: `${count} pontos (${statusType})`,
+      };
+    };
+  }, [activeFilters.statuses]);
 
   if (!isLoaded || loadingPoints || loadingConfig) {
     return (

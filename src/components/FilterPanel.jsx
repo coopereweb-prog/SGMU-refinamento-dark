@@ -28,18 +28,14 @@ export function FilterPanel({ points, onFilterChange }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [tags, setTags] = useState([]);
   const [allTiers, setAllTiers] = useState([]);
-  const [selectedStatuses, setSelectedStatuses] = useState(() => getInitialFilterState('filterStatuses', ['available']));
+  const [selectedStatuses, setSelectedStatuses] = useState(new Set(['available']));
   const [selectedTags, setSelectedTags] = useState(() => getInitialFilterState('filterTags', []));
   const [selectedTiers, setSelectedTiers] = useState(() => getInitialFilterState('filterTiers', []));
   const [loadingTags, setLoadingTags] = useState(true);
   const [loadingTiers, setLoadingTiers] = useState(true);
   const [tiersError, setTiersError] = useState(null);
 
-  // Salvar filtros no localStorage sempre que mudarem
-  useEffect(() => {
-    localStorage.setItem('filterStatuses', JSON.stringify(Array.from(selectedStatuses)));
-  }, [selectedStatuses]);
-
+  // Salvar filtros (exceto status) no localStorage sempre que mudarem
   useEffect(() => {
     localStorage.setItem('filterTags', JSON.stringify(Array.from(selectedTags)));
   }, [selectedTags]);
