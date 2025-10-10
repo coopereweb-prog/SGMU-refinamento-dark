@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LayoutDashboard, LogOut, User as UserIcon, LogIn, Menu } from 'lucide-react';
+import { LayoutDashboard, LogOut, User as UserIcon, Menu } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
@@ -39,31 +39,23 @@ export function Header() {
   const getDashboardPath = () => {
     if (!profile) return '/';
     const role = profile.role;
-    if (role === 'admin' || role === 'operations_manager') {
-      return '/admin';
-    }
-    if (role === 'client') {
-      return '/dashboard';
-    }
-    if (role === 'field_technician') {
-      return '/technician-panel';
-    }
+    if (role === 'admin' || role === 'operations_manager') return '/admin';
+    if (role === 'client') return '/dashboard';
+    if (role === 'field_technician') return '/technician-panel';
     return '/';
   };
 
   const getInitials = (name) => {
     if (!name) return 'U';
     const names = name.split(' ');
-    if (names.length > 1) {
-      return `${names[0][0]}${names[names.length - 1][0]}`;
-    }
+    if (names.length > 1) return `${names[0][0]}${names[names.length - 1][0]}`;
     return name.substring(0, 2);
   };
 
   return (
-    <header className="bg-black/40 shadow-lg sticky top-0 z-50">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-3 items-center h-16 sm:h-20">
+    <header className="bg-black/40 shadow-lg sticky top-0 z-50 h-16 sm:h-20 flex-shrink-0">
+      <div className="container mx-auto px-4 h-full">
+        <div className="grid grid-cols-3 items-center h-full">
           {/* Coluna Esquerda: Menu */}
           <div className="justify-self-start">
             <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
@@ -136,25 +128,24 @@ export function Header() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate(getDashboardPath())}>
-                    <LayoutDashboard className="mr-2 h-6 w-6" />
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
                     <span>Dashboard</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate(getDashboardPath())}>
-                    <UserIcon className="mr-2 h-6 w-6" />
+                    <UserIcon className="mr-2 h-4 w-4" />
                     <span>Perfil</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="mr-2 h-6 w-6" />
+                    <LogOut className="mr-2 h-4 w-4" />
                     <span>Sair</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button variant="default" size="sm" asChild>
-                <Link to="/login">
-                  <LogIn className="mr-2 h-6 w-6" />
-                  Área Restrita
+              <Button asChild variant="outline" className="h-10 w-10 p-0 flex items-center justify-center overflow-hidden">
+                <Link to="/login" aria-label="Área Restrita">
+                  <UserIcon className="h-12 w-12" />
                 </Link>
               </Button>
             )}
