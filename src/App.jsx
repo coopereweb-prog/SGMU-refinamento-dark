@@ -21,6 +21,11 @@ import { ManageTagsPage } from './pages/ManageTagsPage';
 import { ManagePricingPage } from './pages/ManagePricingPage';
 import { ManageMapSettingsPage } from './pages/ManageMapSettingsPage';
 import SignUpPage from './pages/SignUpPage';
+import AboutPage from './pages/AboutPage';
+import ServicesPage from './pages/ServicesPage';
+import HowToBuyPage from './pages/HowToBuyPage';
+import CareersPage from './pages/CareersPage';
+import ContactPage from './pages/ContactPage';
 
 import { Toaster } from "@/components/ui/sonner";
 
@@ -41,8 +46,16 @@ function App() {
               <Route path="/signup" element={<GuestRoute><SignUpPage /></GuestRoute>} />
               <Route path="/update-password" element={<UpdatePasswordPage />} />
 
-              {/* Rotas Protegidas com Layout Principal */}
+              {/* Rotas Protegidas e Páginas Institucionais com Layout Principal */}
               <Route element={<AppLayout />}>
+                {/* Páginas Institucionais */}
+                <Route path="/quem-somos" element={<AboutPage />} />
+                <Route path="/nossos-servicos" element={<ServicesPage />} />
+                <Route path="/como-adquirir" element={<HowToBuyPage />} />
+                <Route path="/trabalhe-conosco" element={<CareersPage />} />
+                <Route path="/fale-conosco" element={<ContactPage />} />
+
+                {/* Páginas de Usuário */}
                 <Route 
                   path="/dashboard" 
                   element={<ProtectedRoute allowedRoles={CLIENT_ROLES}><ClientDashboardPage /></ProtectedRoute>} 

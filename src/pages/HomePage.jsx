@@ -8,7 +8,7 @@ import { Modal } from '@/components/Modal';
 import { EnhancedReservationForm } from '@/components/EnhancedReservationForm';
 import { toast } from 'sonner';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { FilterPanel } from '@/components/FilterPanel';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -17,6 +17,8 @@ import { Menu, User } from 'lucide-react';
 import { CartModal } from '@/components/CartModal';
 import { FloatingCartButton } from '@/components/FloatingCartButton';
 import { GOOGLE_MAPS_LIBRARIES } from '@/config/googleMaps';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 const mapContainerStyle = {
   width: '100%',
@@ -35,6 +37,14 @@ const mapOptions = {
   streetViewControl: false,
   fullscreenControl: false,
 };
+
+const navLinks = [
+  { to: '/quem-somos', label: 'Quem Somos' },
+  { to: '/nossos-servicos', label: 'Nossos Serviços' },
+  { to: '/como-adquirir', label: 'Como Adquirir' },
+  { to: '/trabalhe-conosco', label: 'Trabalhe Conosco' },
+  { to: '/fale-conosco', label: 'Fale Conosco' },
+];
 
 const getMarkerIcon = (status) => {
   const colors = {
@@ -302,33 +312,66 @@ function HomePage() {
     <div className="h-screen w-screen overflow-hidden bg-background flex flex-col">
       <header className="h-auto sm:h-20 bg-black/30 backdrop-blur-sm z-20 flex-shrink-0 py-2">
         <div className="container mx-auto px-4 h-full grid grid-cols-3 items-center">
-          {/* Botão de Menu para Mobile */}
-          <div className="justify-self-start md:hidden">
-            <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" className="h-10 w-10 p-0 flex items-center justify-center">
-                  <Menu className="h-8 w-8" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[380px] p-0 border-none flex flex-col">
-                <SheetHeader className="p-4 pb-2 border-b">
-                  <SheetTitle>Filtrar Pontos</SheetTitle>
-                  <SheetDescription>Selecione um ou mais filtros para refinar a busca no mapa.</SheetDescription>
-                </SheetHeader>
-                <FilterPanel points={points} onFilterChange={handleFilterChange} />
-              </SheetContent>
-            </Sheet>
+          {/* Coluna Esquerda: Menu Mobile / Links Desktop */}
+          <div className="justify-self-start">
+            <div className="md:hidden">
+              <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="h-10 w-10 p-0 flex items-center justify-center">
+                    <Menu className="h-8 w-8" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[380px] p-0 border-none flex flex-col">
+                  <SheetHeader className="p-4 pb-2">
+                    <SheetTitle>Menu</SheetTitle>
+                  </SheetHeader>
+                  <nav className="flex flex-col gap-1 p-4">
+                    {navLinks.map(link => (
+                      <NavLink
+                        key={link.to}
+                        to={link.to}
+                        onClick={() => setIsSidebarOpen(false)}
+                        className={({ isActive }) =>
+                          cn(
+                            "text-lg rounded-md p-2 transition-colors hover:bg-accent",
+                            isActive ? "font-semibold text-primary" : "text-muted-foreground"
+                          )
+                        }
+                      >
+                        {link.label}
+                      </NavLink>
+                    ))}
+                  </nav>
+                  <Separator />
+                  <SheetHeader className="p-4 pb-2 border-b">
+                    <SheetTitle>Filtrar Pontos</SheetTitle>
+                    <SheetDescription>Selecione um ou mais filtros para refinar a busca no mapa.</SheetDescription>
+                  </SheetHeader>
+                  <FilterPanel points={points} onFilterChange={handleFilterChange} />
+                </SheetContent>
+              </Sheet>
+            </div>
+            <nav className="hidden md:flex items-center gap-4 text-sm font-medium">
+              {navLinks.slice(0, 2).map(link => (
+                <NavLink key={link.to} to={link.to} className={({ isActive }) => cn("transition-colors hover:text-primary", isActive ? "text-primary" : "text-muted-foreground")}>{link.label}</NavLink>
+              ))}
+            </nav>
           </div>
           
-          <Link to="/" className="flex items-center gap-2 justify-self-center col-start-2 flex-col sm:flex-row">
+          {/* Coluna Central: Logo */}
+          <Link to="/" className="flex items-center gap-2 justify-self-center flex-col sm:flex-row">
             <img src="/logo.png" alt="SGMU Logo" className="h-10 sm:h-12 flex-shrink-0" />
-            <div className="text-center sm:text-left">
-              <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight"><span className="font-semibold">Sistema Gestor</span> de Mobiliário Urbano</p>
-            </div>
           </Link>
 
-          <div className="justify-self-end col-start-3">
+          {/* Coluna Direita: Links Desktop / Área Restrita */}
+          <div className="justify-self-end">
             <div className="flex items-center gap-2">
+              <nav className="hidden md:flex items-center gap-4 text-sm font-medium">
+                {navLinks.slice(2).map(link => (
+                  <NavLink key={link.to} to={link.to} className={({ isActive }) => cn("transition-colors hover:text-primary", isActive ? "text-primary" : "text-muted-foreground")}>{link.label}</NavLink>
+                ))}
+              </nav>
+              <Separator orientation="vertical" className="h-6 mx-2 hidden md:block" />
               <Button asChild variant="outline" className="h-10 w-10 p-0 flex items-center justify-center">
                 <Link to="/login" aria-label="Área Restrita">
                   <User className="h-6 w-6" />
