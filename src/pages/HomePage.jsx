@@ -1,1 +1,2 @@
-export { HomePage as default };
+);
+}
