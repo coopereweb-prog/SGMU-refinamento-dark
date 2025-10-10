@@ -3,6 +3,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { UserProvider } from './contexts/UserContext';
 import { MapConfigProvider } from './contexts/MapConfigContext';
 
+import { PublicLayout } from './components/PublicLayout';
 import { AppLayout } from './components/AppLayout';
 import { AdminLayout } from './components/admin/AdminLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -40,13 +41,17 @@ function App() {
         <MapConfigProvider>
           <Router>
             <Routes>
-              {/* Rotas Públicas */}
-              <Route path="/" element={<HomePage />} />
-              <Route path="/quem-somos" element={<AppLayout><QuemSomosPage /></AppLayout>} />
-              <Route path="/nossos-servicos" element={<AppLayout><NossosServicosPage /></AppLayout>} />
-              <Route path="/como-adquirir" element={<AppLayout><ComoAdquirirPage /></AppLayout>} />
-              <Route path="/trabalhe-conosco" element={<AppLayout><TrabalheConoscoPage /></AppLayout>} />
-              <Route path="/fale-conosco" element={<AppLayout><FaleConoscoPage /></AppLayout>} />
+              {/* Rotas Públicas com PublicLayout */}
+              <Route element={<PublicLayout />}>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/quem-somos" element={<QuemSomosPage />} />
+                <Route path="/nossos-servicos" element={<NossosServicosPage />} />
+                <Route path="/como-adquirir" element={<ComoAdquirirPage />} />
+                <Route path="/trabalhe-conosco" element={<TrabalheConoscoPage />} />
+                <Route path="/fale-conosco" element={<FaleConoscoPage />} />
+              </Route>
+
+              {/* Rotas de Autenticação sem layout */}
               <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
               <Route path="/signup" element={<GuestRoute><SignUpPage /></GuestRoute>} />
               <Route path="/update-password" element={<UpdatePasswordPage />} />

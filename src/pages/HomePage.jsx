@@ -17,7 +17,6 @@ import { Menu, User } from 'lucide-react';
 import { CartModal } from '@/components/CartModal';
 import { FloatingCartButton } from '@/components/FloatingCartButton';
 import { GOOGLE_MAPS_LIBRARIES } from '@/config/googleMaps';
-import { Header } from '@/components/Header';
 
 const mapContainerStyle = {
   width: '100%',
@@ -310,8 +309,6 @@ function HomePage() {
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-background flex flex-col">
-      <Header />
-
       <main className="flex-grow relative">
         {/* Painel de Filtro Flutuante para Desktop */}
         <div className="hidden md:block absolute top-4 left-4 z-10 w-full max-w-[300px]">
