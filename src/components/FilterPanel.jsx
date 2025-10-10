@@ -138,7 +138,7 @@ export function FilterPanel({ points, onFilterChange }) {
     <>
       <CardContent className="p-0 flex-grow overflow-hidden">
         <ScrollArea className="h-full">
-          <div className="px-2 pb-2 space-y-2">
+          <div className="px-4 pb-2 space-y-2">
             <h4 className="font-semibold text-sm">Status</h4>
             <div className="space-y-1">
               <div className="flex items-center justify-between w-[260px]">
@@ -212,7 +212,7 @@ export function FilterPanel({ points, onFilterChange }) {
           </div>
         </ScrollArea>
       </CardContent>
-      <div className="px-2 pt-1 border-t">
+      <div className="px-4 pt-1 border-t">
         <Button variant="outline" className="w-full" onClick={clearFilters}>
           Limpar Filtros
         </Button>
