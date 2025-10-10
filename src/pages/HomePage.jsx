@@ -335,7 +335,7 @@ function HomePage() {
         {/* Painel de Filtro Flutuante para Desktop */}
         <div className="hidden md:block absolute top-4 left-4 z-10 w-full max-w-sm">
           <Card className="bg-background/80 backdrop-blur-sm max-h-[calc(100vh-6rem)] flex flex-col">
-            <CardHeader className="p-3">
+            <CardHeader className="p-2"> {/* Padding reduzido */}
               <CardTitle className="text-base">Filtrar Pontos</CardTitle>
             </CardHeader>
             <FilterPanel points={points} onFilterChange={handleFilterChange} />
