@@ -107,16 +107,16 @@ export function Header() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate(getDashboardPath())}>
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <LayoutDashboard className="mr-2 h-6 w-6" />
                     <span>Dashboard</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate(getDashboardPath())}>
-                    <UserIcon className="mr-2 h-4 w-4" />
+                    <UserIcon className="mr-2 h-6 w-6" />
                     <span>Perfil</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="mr-2 h-4 w-4" />
+                    <LogOut className="mr-2 h-6 w-6" />
                     <span>Sair</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -124,7 +124,7 @@ export function Header() {
             ) : (
               <Button variant="default" size="sm" asChild>
                 <Link to="/login">
-                  <LogIn className="mr-2 h-4 w-4" />
+                  <LogIn className="mr-2 h-6 w-6" />
                   Área Restrita
                 </Link>
               </Button>
