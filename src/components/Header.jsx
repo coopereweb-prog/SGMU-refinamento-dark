@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUser } from '@/contexts/UserContext';
 import { Button } from '@/components/ui/button';
@@ -12,25 +11,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { LayoutDashboard, LogOut, User as UserIcon, LogIn, Menu } from 'lucide-react';
+import { LayoutDashboard, LogOut, User as UserIcon, LogIn } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
-
-const navLinks = [
-  { to: '/quem-somos', label: 'Quem Somos' },
-  { to: '/nossos-servicos', label: 'Nossos Serviços' },
-  { to: '/como-adquirir', label: 'Como Adquirir' },
-  { to: '/trabalhe-conosco', label: 'Trabalhe Conosco' },
-  { to: '/fale-conosco', label: 'Fale Conosco' },
-];
 
 export function Header() {
   const { user, signOut, loading: authLoading } = useAuth();
   const { profile } = useUser();
   const navigate = useNavigate();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -40,70 +27,63 @@ export function Header() {
   const getDashboardPath = () => {
     if (!profile) return '/';
     const role = profile.role;
-    if (role === 'admin' || role === 'operations_manager') return '/admin';
-    if (role === 'client') return '/dashboard';
-    if (role === 'field_technician') return '/technician-panel';
+    if (role === 'admin' || role === 'operations_manager') {
+      return '/admin';
+    }
+    if (role === 'client') {
+      return '/dashboard';
+    }
+    if (role === 'field_technician') {
+      return '/technician-panel';
+    }
     return '/';
   };
 
   const getInitials = (name) => {
     if (!name) return 'U';
     const names = name.split(' ');
-    if (names.length > 1) return `${names[0][0]}${names[names.length - 1][0]}`;
+    if (names.length > 1) {
+      return `${names[0][0]}${names[names.length - 1][0]}`;
+    }
     return name.substring(0, 2);
   };
-
-  const NavItems = ({ isMobile = false }) => (
-    <nav className={cn(
-      "items-center gap-4 lg:gap-6",
-      isMobile ? "flex flex-col items-start gap-6 p-6 text-lg" : "hidden md:flex text-sm font-medium"
-    )}>
-      {navLinks.map(link => (
-        <NavLink
-          key={link.to}
-          to={link.to}
-          onClick={() => isMobile && setIsMobileMenuOpen(false)}
-          className={({ isActive }) =>
-            cn(
-              "transition-colors hover:text-primary",
-              isActive ? "text-primary" : "text-muted-foreground"
-            )
-          }
-        >
-          {link.label}
-        </NavLink>
-      ))}
-    </nav>
-  );
 
   return (
     <header className="bg-black/40 shadow-lg sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-3 items-center h-16 sm:h-20">
-          {/* Coluna Esquerda: Menu Mobile / Links Desktop */}
+          {/* Coluna Esquerda: E-mail do usuário ou Vazio */}
           <div className="justify-self-start">
-            <div className="md:hidden">
-              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon"><Menu className="h-6 w-6" /></Button>
-                </SheetTrigger>
-                <SheetContent side="left">
-                  <NavItems isMobile />
-                </SheetContent>
-              </Sheet>
-            </div>
-            <div className="hidden md:flex">
-              <NavItems />
-            </div>
+            {authLoading ? (
+              <Skeleton className="h-6 w-32 rounded-md hidden sm:block" />
+            ) : user ? (
+              <p className="text-sm text-muted-foreground hidden sm:block truncate" title={user.email}>
+                {user.email}
+              </p>
+            ) : (
+              <div /> // Espaço reservado para manter o alinhamento
+            )}
           </div>
 
-          {/* Coluna Central: Logo */}
+          {/* Coluna Central: Logo e Título */}
           <Link to={user && profile ? getDashboardPath() : '/'} className="flex items-center space-x-2 sm:space-x-3 justify-self-center">
-            <img className="h-10 sm:h-12 md:h-14 w-auto" src="/logo.png" alt="SGMU Logo" />
+            <img 
+              className="h-10 sm:h-12 md:h-14 w-auto" 
+              src="/logo.png" 
+              alt="SGMU Logo" 
+            />
+            <div className="hidden sm:block">
+              <span className="font-bold text-lg sm:text-xl md:text-2xl text-foreground tracking-tight block">
+                SGMU
+              </span>
+              <p className="text-xs text-muted-foreground leading-tight">
+                <span className="font-semibold">Sistema Gestor</span> de Mobiliário Urbano
+              </p>
+            </div>
           </Link>
 
           {/* Coluna Direita: Ações do Usuário */}
-          <div className="flex items-center justify-self-end">
+          <nav className="flex items-center justify-self-end">
             {authLoading ? (
               <Skeleton className="h-9 w-9 rounded-full" />
             ) : user ? (
@@ -120,22 +100,36 @@ export function Header() {
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">{profile?.name}</p>
-                      <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user.email}
+                      </p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate(getDashboardPath())}><LayoutDashboard className="mr-2 h-4 w-4" /><span>Dashboard</span></DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate(getDashboardPath())}><UserIcon className="mr-2 h-4 w-4" /><span>Perfil</span></DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate(getDashboardPath())}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate(getDashboardPath())}>
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    <span>Perfil</span>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}><LogOut className="mr-2 h-4 w-4" /><span>Sair</span></DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sair</span>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <Button variant="default" size="sm" asChild>
-                <Link to="/login"><LogIn className="mr-2 h-4 w-4" />Área Restrita</Link>
+                <Link to="/login">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Área Restrita
+                </Link>
               </Button>
             )}
-          </div>
+          </nav>
         </div>
       </div>
     </header>
