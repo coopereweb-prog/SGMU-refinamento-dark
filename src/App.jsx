@@ -1,31 +1,31 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import { UserProvider } from './contexts/UserContext';
-import { MapConfigProvider } from './contexts/MapConfigContext';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { UserProvider } from '@/contexts/UserContext';
+import { MapConfigProvider } from '@/contexts/MapConfigContext';
 
-import { AppLayout } from './components/AppLayout';
-import { AdminLayout } from './components/admin/AdminLayout';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import { GuestRoute } from './components/GuestRoute';
+import { AppLayout } from '@/components/AppLayout';
+import { AdminLayout } from '@/components/admin/AdminLayout';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { GuestRoute } from '@/components/GuestRoute';
 
-import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
-import UpdatePasswordPage from './pages/UpdatePasswordPage';
-import ClientDashboardPage from './pages/ClientDashboardPage';
-import FieldTechnicianPage from './pages/FieldTechnicianPage';
-import { ManageOrdersPage } from './pages/ManageOrdersPage';
-import { OrderDetailPage } from './pages/OrderDetailPage';
-import { ManagePointsPage } from './pages/ManagePointsPage';
-import { ManageUsersPage } from './pages/ManageUsersPage';
-import { ManageTagsPage } from './pages/ManageTagsPage';
-import { ManagePricingPage } from './pages/ManagePricingPage';
-import { ManageMapSettingsPage } from './pages/ManageMapSettingsPage';
-import SignUpPage from './pages/SignUpPage';
-import AboutUsPage from './pages/AboutUsPage';
-import NossosServicosPage from './pages/NossosServicosPage';
-import ComoAdquirirPage from './pages/ComoAdquirirPage';
-import TrabalheConoscoPage from './pages/TrabalheConoscoPage';
-import FaleConoscoPage from './pages/FaleConoscoPage';
+import HomePage from '@/pages/HomePage';
+import LoginPage from '@/pages/LoginPage';
+import UpdatePasswordPage from '@/pages/UpdatePasswordPage';
+import ClientDashboardPage from '@/pages/ClientDashboardPage';
+import FieldTechnicianPage from '@/pages/FieldTechnicianPage';
+import { ManageOrdersPage } from '@/pages/ManageOrdersPage';
+import { OrderDetailPage } from '@/pages/OrderDetailPage';
+import { ManagePointsPage } from '@/pages/ManagePointsPage';
+import { ManageUsersPage } from '@/pages/ManageUsersPage';
+import { ManageTagsPage } from '@/pages/ManageTagsPage';
+import { ManagePricingPage } from '@/pages/ManagePricingPage';
+import { ManageMapSettingsPage } from '@/pages/ManageMapSettingsPage';
+import SignUpPage from '@/pages/SignUpPage';
+import AboutUsPage from '@/pages/AboutUsPage';
+import NossosServicosPage from '@/pages/NossosServicosPage';
+import ComoAdquirirPage from '@/pages/ComoAdquirirPage';
+import TrabalheConoscoPage from '@/pages/TrabalheConoscoPage';
+import FaleConoscoPage from '@/pages/FaleConoscoPage';
 
 import { Toaster } from "@/components/ui/sonner";
 
