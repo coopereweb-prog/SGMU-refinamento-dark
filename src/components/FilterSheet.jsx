@@ -10,7 +10,7 @@ import { FilterPanel } from "@/components/FilterPanel";
 export function FilterSheet({ isOpen, onOpenChange, points, onFilterChange }) {
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[80%] flex flex-col">
+      <SheetContent side="bottom" className="h-[90%] flex flex-col">
         <SheetHeader className="px-4 pt-4 pb-2">
           <SheetTitle>Filtrar Pontos</SheetTitle>
           <SheetDescription>
