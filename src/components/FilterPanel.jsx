@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 // Função para obter o estado inicial dos filtros
@@ -136,10 +137,10 @@ export function FilterPanel({ points, onFilterChange }) {
   return (
     <>
       <CardContent className="p-0 flex-grow overflow-hidden">
-        <div className="h-full overflow-y-auto">
-          <div className="p-2 pt-1 space-y-1">
+        <ScrollArea className="h-full">
+          <div className="p-3 space-y-3">
             <h4 className="font-semibold text-sm">Status</h4>
-            <div className="space-y-1">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2"><Checkbox id="status-available" checked={selectedStatuses.has('available')} onCheckedChange={() => handleStatusChange('available')} /><Label htmlFor="status-available" className="cursor-pointer">Disponíveis</Label></div>
                 <Badge className="bg-status-available text-primary-foreground hover:bg-status-available/90">{statusCounts.available}</Badge>
@@ -163,10 +164,10 @@ export function FilterPanel({ points, onFilterChange }) {
             )}
 
             {isExpanded && (
-              <div className="space-y-1 animate-in fade-in-0 duration-300">
+              <div className="space-y-3 animate-in fade-in-0 duration-300">
                 <div>
                   <h4 className="font-semibold text-sm">Classificação</h4>
-                  <div className="space-y-1 mt-1">
+                  <div className="space-y-2 mt-2">
                     {loadingTiers ? (
                       Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)
                     ) : tiersError ? (
@@ -188,7 +189,7 @@ export function FilterPanel({ points, onFilterChange }) {
 
                 <div>
                   <h4 className="font-semibold text-sm">Características</h4>
-                  <div className="space-y-1 mt-1">
+                  <div className="space-y-2 mt-2">
                     {loadingTags ? (
                       Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)
                     ) : (
@@ -209,9 +210,9 @@ export function FilterPanel({ points, onFilterChange }) {
               </div>
             )}
           </div>
-        </div>
+        </ScrollArea>
       </CardContent>
-      <div className="p-2 pt-1 border-t">
+      <div className="p-3 pt-2 border-t">
         <Button variant="outline" className="w-full" onClick={clearFilters}>
           Limpar Filtros
         </Button>
