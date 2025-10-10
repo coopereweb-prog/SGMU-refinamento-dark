@@ -331,15 +331,15 @@ export function ManageOrdersPage() {
     <div className="container mx-auto p-4 space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold">Gerenciar Pedidos</h1>
-        <div className="flex gap-2">
-          <Button onClick={handleGenerateRoute} disabled={selectedPoints.size === 0}>
-            <Map className="h-4 w-4 mr-2" /> Gerar Rota ({selectedPoints.size})
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button onClick={handleGenerateRoute} disabled={selectedPoints.size === 0} className="flex-grow sm:flex-grow-0">
+            <Map className="h-4 w-4 mr-2" /> Rota ({selectedPoints.size})
           </Button>
-          <div className="relative w-full sm:max-w-xs">
+          <div className="relative flex-grow sm:max-w-xs">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Buscar por cliente ou email..."
+              placeholder="Buscar por cliente..."
               className="pl-8"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -364,16 +364,16 @@ export function ManageOrdersPage() {
                 <Card key={order.id}>
                   <CardHeader>
                     <div className="flex flex-wrap justify-between items-start gap-4">
-                      <div>
-                        <CardTitle>Pedido #{order.id.substring(0, 8)}</CardTitle>
-                        <CardDescription>
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="truncate">Pedido #{order.id.substring(0, 8)}</CardTitle>
+                        <CardDescription className="break-words">
                           Cliente: {order.customer_name} - {order.customer_email}
                         </CardDescription>
                         <CardDescription>
                           Criado em: {format(new Date(order.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                         </CardDescription>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center flex-wrap gap-2">
                         <Badge variant={statusProps.variant}>{statusProps.label}</Badge>
                         {order.reserved_until && (
                           <Badge variant="outline">
@@ -395,17 +395,17 @@ export function ManageOrdersPage() {
                     </div>
                     <div className="grid gap-2">
                       {order.order_items.map(item => (
-                        <div key={item.id} className="flex items-center justify-between p-2 border rounded">
-                          <div className="flex items-center gap-2">
+                        <div key={item.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-2 border rounded">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <Checkbox
                               id={`point-${item.points.id}`}
                               checked={selectedPoints.has(item.points.id)}
                               onCheckedChange={(checked) => handlePointSelection(item.points.id, checked)}
                             />
-                            <Label htmlFor={`point-${item.points.id}`} className="font-medium">{item.points.name}</Label>
+                            <Label htmlFor={`point-${item.points.id}`} className="font-medium break-words">{item.points.name}</Label>
                             <span className="text-sm text-muted-foreground">({item.period_years} ano(s))</span>
                           </div>
-                          <span className="font-mono">{Number(item.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                          <span className="font-mono text-right w-full sm:w-auto">{Number(item.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
                         </div>
                       ))}
                     </div>
@@ -438,9 +438,9 @@ export function ManageOrdersPage() {
                         <Printer className="h-4 w-4 mr-2" />Imprimir Pedido
                       </Button>
                       {!order.installation_sent && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Select value={kitType[order.id] || ''} onValueChange={(value) => setKitType(prev => ({ ...prev, [order.id]: value }))}>
-                            <SelectTrigger className="w-[180px]">
+                            <SelectTrigger className="w-full sm:w-[180px]">
                               <SelectValue placeholder="Tipo de Kit" />
                             </SelectTrigger>
                             <SelectContent>
@@ -449,7 +449,7 @@ export function ManageOrdersPage() {
                               <SelectItem value="troca_propaganda">Troca de Propaganda</SelectItem>
                             </SelectContent>
                           </Select>
-                          <Button variant="outline" onClick={() => handleSendToInstallation(order.id, kitType[order.id])} disabled={!kitType[order.id]}>
+                          <Button variant="outline" onClick={() => handleSendToInstallation(order.id, kitType[order.id])} disabled={!kitType[order.id]} className="w-full sm:w-auto">
                             <Truck className="h-4 w-4 mr-2" />Enviar para Instalação
                           </Button>
                         </div>
@@ -459,15 +459,18 @@ export function ManageOrdersPage() {
                       )}
                     </div>
                     {extendingOrder === order.id && (
-                      <div className="flex items-center gap-2 p-2 border rounded">
-                        <Label>Nova data de expiração:</Label>
+                      <div className="flex flex-col sm:flex-row items-center gap-2 p-2 border rounded">
+                        <Label className="flex-shrink-0">Nova data de expiração:</Label>
                         <Input
                           type="datetime-local"
                           value={newReservedUntil}
                           onChange={(e) => setNewReservedUntil(e.target.value)}
+                          className="flex-grow"
                         />
-                        <Button onClick={() => handleExtendReservation(order.id)}>Salvar</Button>
-                        <Button variant="outline" onClick={() => setExtendingOrder(null)}>Cancelar</Button>
+                        <div className="flex gap-2 w-full sm:w-auto">
+                          <Button onClick={() => handleExtendReservation(order.id)} className="flex-1">Salvar</Button>
+                          <Button variant="outline" onClick={() => setExtendingOrder(null)} className="flex-1">Cancelar</Button>
+                        </div>
                       </div>
                     )}
                   </CardContent>
