@@ -334,7 +334,7 @@ function HomePage() {
       <main className="flex-grow relative">
         {/* Painel de Filtro Flutuante para Desktop */}
         <div className="hidden md:block absolute top-4 left-4 z-10 w-full max-w-[300px]">
-          <Card className="bg-background/80 backdrop-blur-sm max-h-[calc(100vh-6rem)] flex flex-col py-2">
+          <Card className="bg-background/80 backdrop-blur-sm max-h-[calc(100vh-6rem)] flex flex-col gap-2 py-2">
             <CardHeader className="px-4 py-0">
               <CardTitle className="text-base">Filtrar Pontos</CardTitle>
             </CardHeader>
