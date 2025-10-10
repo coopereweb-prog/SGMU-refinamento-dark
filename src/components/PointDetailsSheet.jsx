@@ -12,7 +12,7 @@ export function PointDetailsSheet({ point, isOpen, onOpenChange, onAddToCart }) 
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-md p-0 flex flex-col">
+      <SheetContent className="w-full sm:max-w-md p-0 flex flex-col" aria-describedby={undefined}>
         <SheetHeader className="p-6 pb-4">
           <SheetTitle>{point.name}</SheetTitle>
           {point.description && (

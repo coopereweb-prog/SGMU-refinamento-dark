@@ -137,14 +137,14 @@ export function OrderDetailPage() {
                 <>
                   <AlertDialog>
                     <AlertDialogTrigger asChild><Button><CheckCircle className="h-4 w-4 mr-2" />Confirmar Pagamento</Button></AlertDialogTrigger>
-                    <AlertDialogContent>
+                    <AlertDialogContent aria-describedby={undefined}>
                       <AlertDialogHeader><AlertDialogTitle>Confirmar Pagamento?</AlertDialogTitle><AlertDialogDescription>Esta ação marcará o pedido como 'Concluído' e os pontos como 'Vendidos'. Esta ação não pode ser desfeita.</AlertDialogDescription></AlertDialogHeader>
                       <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleConfirmOrder}>Confirmar</AlertDialogAction></AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
                   <AlertDialog>
                     <AlertDialogTrigger asChild><Button variant="destructive"><XCircle className="h-4 w-4 mr-2" />Cancelar Pedido</Button></AlertDialogTrigger>
-                    <AlertDialogContent>
+                    <AlertDialogContent aria-describedby={undefined}>
                       <AlertDialogHeader><AlertDialogTitle>Cancelar Pedido?</AlertDialogTitle><AlertDialogDescription>Esta ação marcará o pedido como 'Cancelado' e liberará os pontos. Esta ação não pode ser desfeita.</AlertDialogDescription></AlertDialogHeader>
                       <AlertDialogFooter><AlertDialogCancel>Voltar</AlertDialogCancel><AlertDialogAction onClick={handleCancelOrder}>Sim, Cancelar</AlertDialogAction></AlertDialogFooter>
                     </AlertDialogContent>
