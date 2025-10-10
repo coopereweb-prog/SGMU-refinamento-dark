@@ -307,7 +307,7 @@ function HomePage() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-[380px] p-0 border-none flex flex-col">
-                <SheetHeader className="p-4 border-b">
+                <SheetHeader className="p-4 pb-2 border-b">
                   <SheetTitle>Filtrar Pontos</SheetTitle>
                   <SheetDescription>Selecione um ou mais filtros para refinar a busca no mapa.</SheetDescription>
                 </SheetHeader>
@@ -335,7 +335,7 @@ function HomePage() {
         {/* Painel de Filtro Flutuante para Desktop */}
         <div className="hidden md:block absolute top-4 left-4 z-10 w-full max-w-sm">
           <Card className="bg-background/80 backdrop-blur-sm max-h-[calc(100vh-6rem)] flex flex-col">
-            <CardHeader className="px-4 py-2">
+            <CardHeader className="px-4 py-3">
               <CardTitle className="text-base">Filtrar Pontos</CardTitle>
             </CardHeader>
             <FilterPanel points={points} onFilterChange={handleFilterChange} />
