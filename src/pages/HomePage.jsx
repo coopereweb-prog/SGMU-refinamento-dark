@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { FilterPanel } from '@/components/FilterPanel';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Menu } from 'lucide-react';
+import { Menu, User } from 'lucide-react';
 import { CartModal } from '@/components/CartModal';
 import { FloatingCartButton } from '@/components/FloatingCartButton';
 import { GOOGLE_MAPS_LIBRARIES } from '@/config/googleMaps';
@@ -329,7 +329,11 @@ function HomePage() {
 
           <div className="justify-self-end col-start-3">
             <div className="flex items-center gap-2">
-              <Button asChild variant="outline" className="h-10 sm:h-12 px-3 sm:px-4 text-xs sm:text-sm"><Link to="/login">Área Restrita</Link></Button>
+              <Button asChild variant="outline" className="h-10 w-10 p-0 flex items-center justify-center">
+                <Link to="/login" aria-label="Área Restrita">
+                  <User className="h-6 w-6" />
+                </Link>
+              </Button>
             </div>
           </div>
         </div>
