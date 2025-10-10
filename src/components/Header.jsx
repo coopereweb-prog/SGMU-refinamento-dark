@@ -153,10 +153,9 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button variant="default" size="sm" asChild>
-                <Link to="/login">
-                  <LogIn className="mr-2 h-6 w-6" />
-                  Área Restrita
+              <Button variant="outline" className="h-10 w-10 p-0 flex items-center justify-center overflow-hidden" asChild>
+                <Link to="/login" aria-label="Área Restrita">
+                  <UserIcon className="h-12 w-12" />
                 </Link>
               </Button>
             )}
