@@ -329,9 +329,9 @@ function HomePage() {
 
           <div className="justify-self-end col-start-3">
             <div className="flex items-center gap-2">
-              <Button asChild variant="outline" className="h-10 w-10 p-0 flex items-center justify-center">
+              <Button asChild variant="outline" className="h-10 w-10 p-0 flex items-center justify-center overflow-hidden">
                 <Link to="/login" aria-label="Área Restrita">
-                  <User className="h-9 w-9" />
+                  <User className="h-12 w-12" />
                 </Link>
               </Button>
             </div>
