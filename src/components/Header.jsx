@@ -87,15 +87,15 @@ export function Header() {
           </div>
 
           {/* Coluna Central: Logo e Título */}
-          <Link to={user && profile ? getDashboardPath() : '/'} className="flex flex-col items-center justify-center justify-self-center">
+          <Link to={user && profile ? getDashboardPath() : '/'} className="flex items-center space-x-3 justify-self-center">
             <img 
               className="h-12 w-auto" 
               src="/logo.png" 
               alt="SGMU Logo" 
             />
-            <div className="hidden sm:block text-center">
-              <p className="text-xs text-muted-foreground leading-tight mt-1">
-                <span className="font-semibold">Sistema Gestor</span> de Mobiliário Urbano
+            <div className="hidden sm:block">
+              <p className="text-xs text-muted-foreground leading-tight">
+                <span className="font-semibold">Sistema Gestor</span><br />de Mobiliário Urbano
               </p>
             </div>
           </Link>
