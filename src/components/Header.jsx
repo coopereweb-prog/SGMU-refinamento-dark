@@ -1,4 +1,5 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUser } from '@/contexts/UserContext';
 import { Button } from '@/components/ui/button';
@@ -11,13 +12,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LayoutDashboard, LogOut, User as UserIcon, LogIn } from 'lucide-react';
+import { LayoutDashboard, LogOut, User as UserIcon, LogIn, Menu } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+
+const navLinks = [
+  { to: '/', label: 'Início' },
+  { to: '/quem-somos', label: 'Quem Somos' },
+  { to: '/nossos-servicos', label: 'Nossos Serviços' },
+  { to: '/como-adquirir', label: 'Como Adquirir' },
+  { to: '/trabalhe-conosco', label: 'Trabalhe Conosco' },
+  { to: '/fale-conosco', label: 'Fale Conosco' },
+];
 
 export function Header() {
   const { user, signOut, loading: authLoading } = useAuth();
   const { profile } = useUser();
   const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -52,17 +64,34 @@ export function Header() {
     <header className="bg-black/40 shadow-lg sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-3 items-center h-16 sm:h-20">
-          {/* Coluna Esquerda: E-mail do usuário ou Vazio */}
+          {/* Coluna Esquerda: Menu */}
           <div className="justify-self-start">
-            {authLoading ? (
-              <Skeleton className="h-6 w-32 rounded-md hidden sm:block" />
-            ) : user ? (
-              <p className="text-sm text-muted-foreground hidden sm:block truncate" title={user.email}>
-                {user.email}
-              </p>
-            ) : (
-              <div /> // Espaço reservado para manter o alinhamento
-            )}
+            <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="h-10 w-10 p-0 flex items-center justify-center">
+                  <Menu className="h-8 w-8" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[300px] p-0 border-none flex flex-col bg-card">
+                <SheetHeader className="p-4 pb-2 border-b">
+                  <SheetTitle>Menu</SheetTitle>
+                </SheetHeader>
+                <nav className="flex flex-col p-4 space-y-2">
+                  {navLinks.map(({ to, label }) => (
+                    <NavLink
+                      key={to}
+                      to={to}
+                      onClick={() => setIsMenuOpen(false)}
+                      className={({ isActive }) =>
+                        `px-3 py-2 rounded-md text-lg ${isActive ? 'bg-accent text-primary font-semibold' : 'text-muted-foreground hover:bg-accent'}`
+                      }
+                    >
+                      {label}
+                    </NavLink>
+                  ))}
+                </nav>
+              </SheetContent>
+            </Sheet>
           </div>
 
           {/* Coluna Central: Logo e Título */}
