@@ -11,6 +11,7 @@ import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { FilterPanel } from '@/components/FilterPanel';
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Menu } from 'lucide-react';
 import { CartModal } from '@/components/CartModal';
@@ -168,7 +169,6 @@ function HomePage() {
         if (error) throw error;
         const validPoints = data.filter(p => p.latitude && p.longitude);
         setPoints(validPoints);
-        setFilteredPoints(validPoints);
       } catch (error) {
         console.error('Error fetching points:', error);
         toast.error("Falha ao carregar os pontos do mapa.", { description: error.message });
@@ -202,11 +202,11 @@ function HomePage() {
     }
   }, [map, points]);
 
-  const handleFilterChange = useCallback(({ statuses, tags, tiers }) => {
+  const handleFilterChange = useCallback((filters) => {
     let newFilteredPoints = points;
-    if (statuses.length > 0) newFilteredPoints = newFilteredPoints.filter(point => statuses.includes(point.status));
-    if (tags.length > 0) newFilteredPoints = newFilteredPoints.filter(point => point.tags && point.tags.some(tag => tags.includes(tag.id)));
-    if (tiers.length > 0) newFilteredPoints = newFilteredPoints.filter(point => point.pricing_tiers && tiers.includes(point.pricing_tiers.id));
+    if (filters.statuses.length > 0) newFilteredPoints = newFilteredPoints.filter(point => filters.statuses.includes(point.status));
+    if (filters.tags.length > 0) newFilteredPoints = newFilteredPoints.filter(point => point.tags && point.tags.some(tag => filters.tags.includes(tag.id)));
+    if (filters.tiers.length > 0) newFilteredPoints = newFilteredPoints.filter(point => point.pricing_tiers && filters.tiers.includes(point.pricing_tiers.id));
     setFilteredPoints(newFilteredPoints);
   }, [points]);
 
@@ -297,32 +297,35 @@ function HomePage() {
   return (
     <div className="h-screen w-screen overflow-hidden bg-background flex flex-col">
       <header className="h-auto sm:h-20 bg-black/30 backdrop-blur-sm z-20 flex-shrink-0 py-2">
-        <div className="container mx-auto px-4 h-full grid grid-cols-3 lg:grid-cols-4 items-center">
+        <div className="container mx-auto px-4 h-full grid grid-cols-3 items-center">
           <div className="justify-self-start">
-            <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" className="h-10 w-10 sm:h-12 sm:w-12 p-0 flex items-center justify-center">
-                  <Menu className="h-8 w-8 sm:h-10 sm:w-10" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[380px] p-0 border-none flex flex-col">
-                <SheetHeader className="p-6 pb-4 border-b">
-                  <SheetTitle>Filtrar Pontos</SheetTitle>
-                  <SheetDescription>Selecione um ou mais filtros para refinar a busca no mapa.</SheetDescription>
-                </SheetHeader>
-                <FilterPanel points={points} onFilterChange={handleFilterChange} />
-              </SheetContent>
-            </Sheet>
+            {/* Botão de Menu para Mobile */}
+            <div className="md:hidden">
+              <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="h-10 w-10 p-0 flex items-center justify-center">
+                    <Menu className="h-8 w-8" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[380px] p-0 border-none flex flex-col">
+                  <SheetHeader className="p-6 pb-4 border-b">
+                    <SheetTitle>Filtrar Pontos</SheetTitle>
+                    <SheetDescription>Selecione um ou mais filtros para refinar a busca no mapa.</SheetDescription>
+                  </SheetHeader>
+                  <FilterPanel points={points} onFilterChange={handleFilterChange} />
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
           
-          <Link to="/" className="flex items-center gap-2 justify-self-center col-start-2 lg:col-span-2 flex-col sm:flex-row">
+          <Link to="/" className="flex items-center gap-2 justify-self-center col-start-2 flex-col sm:flex-row">
             <img src="/logo.png" alt="SGMU Logo" className="h-10 sm:h-12 flex-shrink-0" />
             <div className="text-center sm:text-left">
               <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight"><span className="font-semibold">Sistema Gestor</span> de Mobiliário Urbano</p>
             </div>
           </Link>
 
-          <div className="justify-self-end col-start-3 lg:col-start-4">
+          <div className="justify-self-end col-start-3">
             <div className="flex items-center gap-2">
               <Button asChild variant="outline" className="h-10 sm:h-12 px-3 sm:px-4 text-xs sm:text-sm"><Link to="/login">Área Restrita</Link></Button>
             </div>
@@ -330,25 +333,31 @@ function HomePage() {
         </div>
       </header>
 
-      <main className="flex-grow grid grid-cols-1">
-        <div className="h-full w-full relative">
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-background/80 backdrop-blur-sm py-2 px-4 rounded-full shadow-lg text-sm text-muted-foreground pointer-events-none">
-            Clique nos marcadores para ver detalhes e adicionar ao carrinho.
-          </div>
-          <GoogleMap mapContainerStyle={mapContainerStyle} center={defaultCenter} zoom={currentZoom} options={mapOptions} onLoad={onMapLoad} onZoomChanged={onZoomChanged}>
-            {activeRule.display_mode === 'cluster' ? (
-              <MarkerClustererF options={{ gridSize: activeRule.cluster_radius, minimumClusterSize: activeRule.min_cluster_size, styles: clusterStyles }} calculator={clustererCalculator}>
-                {(clusterer) => filteredPoints.map((point) => (
-                  <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} onClick={() => handleMarkerClick(point)} clusterer={clusterer} icon={getMarkerIcon(point.status)} animation={markerAnimation} {...{point_status: point.status}} />
-                ))}
-              </MarkerClustererF>
-            ) : (
-              filteredPoints.map((point) => (
-                <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} onClick={() => handleMarkerClick(point)} icon={getMarkerIcon(point.status)} animation={markerAnimation} />
-              ))
-            )}
-          </GoogleMap>
+      <main className="flex-grow relative">
+        {/* Painel de Filtro Flutuante para Desktop */}
+        <div className="hidden md:block absolute top-4 left-4 z-10 w-full max-w-sm">
+          <Card className="bg-background/80 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle>Filtrar Pontos</CardTitle>
+              <CardDescription>Refine sua busca no mapa.</CardDescription>
+            </CardHeader>
+            <FilterPanel points={points} onFilterChange={handleFilterChange} />
+          </Card>
         </div>
+
+        <GoogleMap mapContainerStyle={mapContainerStyle} center={defaultCenter} zoom={currentZoom} options={mapOptions} onLoad={onMapLoad} onZoomChanged={onZoomChanged}>
+          {activeRule.display_mode === 'cluster' ? (
+            <MarkerClustererF options={{ gridSize: activeRule.cluster_radius, minimumClusterSize: activeRule.min_cluster_size, styles: clusterStyles }} calculator={clustererCalculator}>
+              {(clusterer) => filteredPoints.map((point) => (
+                <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} onClick={() => handleMarkerClick(point)} clusterer={clusterer} icon={getMarkerIcon(point.status)} animation={markerAnimation} {...{point_status: point.status}} />
+              ))}
+            </MarkerClustererF>
+          ) : (
+            filteredPoints.map((point) => (
+              <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} onClick={() => handleMarkerClick(point)} icon={getMarkerIcon(point.status)} animation={markerAnimation} />
+            ))
+          )}
+        </GoogleMap>
       </main>
 
       <PointDetailsSheet point={selectedPoint} isOpen={isSheetOpen} onOpenChange={setIsSheetOpen} onAddToCart={handleAddToCart} />

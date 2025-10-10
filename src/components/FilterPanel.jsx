@@ -9,32 +9,28 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
+// Função para obter o estado inicial dos filtros
+const getInitialFilterState = (key, defaultValue) => {
+  try {
+    const savedState = localStorage.getItem(key);
+    if (savedState) {
+      return new Set(JSON.parse(savedState));
+    }
+  } catch (error) {
+    console.error("Failed to parse filters from localStorage", error);
+  }
+  return new Set(defaultValue);
+};
+
 export function FilterPanel({ points, onFilterChange }) {
   const [tags, setTags] = useState([]);
   const [allTiers, setAllTiers] = useState([]);
-  const [selectedStatuses, setSelectedStatuses] = useState(new Set());
-  const [selectedTags, setSelectedTags] = useState(new Set());
-  const [selectedTiers, setSelectedTiers] = useState(new Set());
+  const [selectedStatuses, setSelectedStatuses] = useState(() => getInitialFilterState('filterStatuses', ['available']));
+  const [selectedTags, setSelectedTags] = useState(() => getInitialFilterState('filterTags', []));
+  const [selectedTiers, setSelectedTiers] = useState(() => getInitialFilterState('filterTiers', []));
   const [loadingTags, setLoadingTags] = useState(true);
   const [loadingTiers, setLoadingTiers] = useState(true);
   const [tiersError, setTiersError] = useState(null);
-
-  // Carregar filtros do localStorage
-  useEffect(() => {
-    const savedStatuses = localStorage.getItem('filterStatuses');
-    const savedTags = localStorage.getItem('filterTags');
-    const savedTiers = localStorage.getItem('filterTiers');
-
-    if (savedStatuses) {
-      setSelectedStatuses(new Set(JSON.parse(savedStatuses)));
-    }
-    if (savedTags) {
-      setSelectedTags(new Set(JSON.parse(savedTags)));
-    }
-    if (savedTiers) {
-      setSelectedTiers(new Set(JSON.parse(savedTiers)));
-    }
-  }, []);
 
   // Salvar filtros no localStorage sempre que mudarem
   useEffect(() => {
@@ -55,12 +51,9 @@ export function FilterPanel({ points, onFilterChange }) {
     const tierCounts = {};
 
     points.forEach(p => {
-      // Contagem de status
       if (statusCounts[p.status] !== undefined) {
         statusCounts[p.status]++;
       }
-
-      // Contagem de tiers
       if (p.pricing_tiers) {
         const tierId = p.pricing_tiers.id;
         tierCounts[tierId] = (tierCounts[tierId] || 0) + 1;
@@ -87,12 +80,9 @@ export function FilterPanel({ points, onFilterChange }) {
       try {
         const { data: tiersData, error } = await supabase.from('pricing_tiers').select('*').order('name');
         if (error) {
-          console.error('Erro ao buscar tiers:', error);
           setTiersError(error.message);
           setAllTiers([]);
         } else {
-          console.log('Tiers carregados:', tiersData);
-          // Ordenar os tiers na ordem desejada: Ouro, Prata, Bronze
           const sortedTiers = tiersData.sort((a, b) => {
             const order = ['Ouro', 'Prata', 'Bronze'];
             return order.indexOf(a.name) - order.indexOf(b.name);
@@ -100,7 +90,6 @@ export function FilterPanel({ points, onFilterChange }) {
           setAllTiers(sortedTiers);
         }
       } catch (err) {
-        console.error('Erro inesperado ao buscar tiers:', err);
         setTiersError('Erro inesperado ao carregar classificações.');
         setAllTiers([]);
       } finally {
@@ -143,7 +132,7 @@ export function FilterPanel({ points, onFilterChange }) {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <>
       <CardContent className="flex-grow overflow-y-auto p-6">
         <div className="space-y-4">
           <h4 className="font-semibold text-sm">Status</h4>
@@ -204,6 +193,6 @@ export function FilterPanel({ points, onFilterChange }) {
           Limpar Filtros
         </Button>
       </div>
-    </div>
+    </>
   );
 }
