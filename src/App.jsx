@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { UserProvider } from '@/contexts/UserContext';
-import { MapConfigProvider } from '@/contexts/MapConfigProvider';
+import { MapConfigProvider } from '@/contexts/MapConfigContext';
 
 import { AppLayout } from '@/components/AppLayout';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -64,21 +64,21 @@ function App() {
                   path="/technician-panel" 
                   element={<ProtectedRoute allowedRoles={TECHNICIAN_ROLES}><FieldTechnicianPage /></ProtectedRoute>} 
                 />
-              </Route>
-              
-              {/* Rotas de Administração com Layout próprio */}
-              <Route 
-                path="/admin" 
-                element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><AdminLayout /></ProtectedRoute>}
-              >
-                <Route index element={<Navigate to="orders" replace />} />
-                <Route path="orders" element={<ManageOrdersPage />} />
-                <Route path="orders/:orderId" element={<OrderDetailPage />} />
-                <Route path="points" element={<ManagePointsPage />} />
-                <Route path="users" element={<ManageUsersPage />} />
-                <Route path="tags" element={<ManageTagsPage />} />
-                <Route path="pricing" element={<ManagePricingPage />} />
-                <Route path="map-settings" element={<ManageMapSettingsPage />} />
+                
+                {/* Rotas de Administração com Layout aninhado */}
+                <Route 
+                  path="/admin" 
+                  element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><AdminLayout /></ProtectedRoute>}
+                >
+                  <Route index element={<Navigate to="orders" replace />} />
+                  <Route path="orders" element={<ManageOrdersPage />} />
+                  <Route path="orders/:orderId" element={<OrderDetailPage />} />
+                  <Route path="points" element={<ManagePointsPage />} />
+                  <Route path="users" element={<ManageUsersPage />} />
+                  <Route path="tags" element={<ManageTagsPage />} />
+                  <Route path="pricing" element={<ManagePricingPage />} />
+                  <Route path="map-settings" element={<ManageMapSettingsPage />} />
+                </Route>
               </Route>
 
               {/* Rota de fallback */}
