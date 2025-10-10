@@ -188,7 +188,7 @@ function LoginPage() {
         {!isForgotPassword && (
           <div className="text-center text-base">
             Ainda não tem uma conta?{" "}
-            <Link to="/" className="underline font-bold">
+            <Link to="/signup" className="underline font-bold">
               Cadastre-se
             </Link>
           </div>

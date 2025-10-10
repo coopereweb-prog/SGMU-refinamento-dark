@@ -20,6 +20,7 @@ import { ManageUsersPage } from './pages/ManageUsersPage';
 import { ManageTagsPage } from './pages/ManageTagsPage';
 import { ManagePricingPage } from './pages/ManagePricingPage';
 import { ManageMapSettingsPage } from './pages/ManageMapSettingsPage';
+import SignUpPage from './pages/SignUpPage';
 
 import { Toaster } from "@/components/ui/sonner";
 
@@ -37,6 +38,7 @@ function App() {
               {/* Rotas Públicas */}
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
+              <Route path="/signup" element={<GuestRoute><SignUpPage /></GuestRoute>} />
               <Route path="/update-password" element={<UpdatePasswordPage />} />
 
               {/* Rotas Protegidas com Layout Principal */}
