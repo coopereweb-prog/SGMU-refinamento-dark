@@ -59,7 +59,7 @@ export function EditOrderDialog({ order, isOpen, onClose, onSave }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[525px]" aria-describedby={undefined}>
+      <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
           <DialogTitle>Editar Pedido #{order.id.substring(0, 8)}</DialogTitle>
           <DialogDescription>

@@ -349,24 +349,6 @@ function HomePage() {
       </Modal>
       
       <WhatsAppButton />
-
-      {/* Painel de Filtro para Mobile */}
-      <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-        <SheetTrigger asChild className="md:hidden fixed bottom-4 left-4 z-50">
-          <Button variant="outline" size="lg" className="rounded-full shadow-lg">
-            <Menu className="h-6 w-6 mr-2" /> Filtros
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="w-full sm:max-w-xs p-0 flex flex-col" aria-describedby={undefined}>
-          <SheetHeader className="p-4 pb-2">
-            <SheetTitle>Filtrar Pontos</SheetTitle>
-            <SheetDescription>
-              Use os filtros para encontrar pontos específicos no mapa.
-            </SheetDescription>
-          </SheetHeader>
-          <FilterPanel points={points} onFilterChange={handleFilterChange} />
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }
