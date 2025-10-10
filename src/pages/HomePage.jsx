@@ -298,24 +298,22 @@ function HomePage() {
     <div className="h-screen w-screen overflow-hidden bg-background flex flex-col">
       <header className="h-auto sm:h-20 bg-black/30 backdrop-blur-sm z-20 flex-shrink-0 py-2">
         <div className="container mx-auto px-4 h-full grid grid-cols-3 items-center">
-          <div className="justify-self-start">
-            {/* Botão de Menu para Mobile */}
-            <div className="md:hidden">
-              <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="outline" className="h-10 w-10 p-0 flex items-center justify-center">
-                    <Menu className="h-8 w-8" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[380px] p-0 border-none flex flex-col">
-                  <SheetHeader className="p-6 pb-4 border-b">
-                    <SheetTitle>Filtrar Pontos</SheetTitle>
-                    <SheetDescription>Selecione um ou mais filtros para refinar a busca no mapa.</SheetDescription>
-                  </SheetHeader>
-                  <FilterPanel points={points} onFilterChange={handleFilterChange} />
-                </SheetContent>
-              </Sheet>
-            </div>
+          {/* Botão de Menu para Mobile */}
+          <div className="justify-self-start md:hidden">
+            <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="h-10 w-10 p-0 flex items-center justify-center">
+                  <Menu className="h-8 w-8" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[380px] p-0 border-none flex flex-col">
+                <SheetHeader className="p-6 pb-4 border-b">
+                  <SheetTitle>Filtrar Pontos</SheetTitle>
+                  <SheetDescription>Selecione um ou mais filtros para refinar a busca no mapa.</SheetDescription>
+                </SheetHeader>
+                <FilterPanel points={points} onFilterChange={handleFilterChange} />
+              </SheetContent>
+            </Sheet>
           </div>
           
           <Link to="/" className="flex items-center gap-2 justify-self-center col-start-2 flex-col sm:flex-row">
@@ -335,11 +333,10 @@ function HomePage() {
 
       <main className="flex-grow relative">
         {/* Painel de Filtro Flutuante para Desktop */}
-        <div className="hidden md:block absolute top-4 left-4 z-10 w-full max-w-sm">
+        <div className="hidden md:block absolute top-4 left-4 z-10 w-full max-w-xs">
           <Card className="bg-background/80 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle>Filtrar Pontos</CardTitle>
-              <CardDescription>Refine sua busca no mapa.</CardDescription>
+            <CardHeader className="p-4">
+              <CardTitle className="text-lg">Filtrar Pontos</CardTitle>
             </CardHeader>
             <FilterPanel points={points} onFilterChange={handleFilterChange} />
           </Card>

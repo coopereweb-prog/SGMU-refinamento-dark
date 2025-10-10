@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 // Função para obter o estado inicial dos filtros
 const getInitialFilterState = (key, defaultValue) => {
@@ -23,6 +25,7 @@ const getInitialFilterState = (key, defaultValue) => {
 };
 
 export function FilterPanel({ points, onFilterChange }) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const [tags, setTags] = useState([]);
   const [allTiers, setAllTiers] = useState([]);
   const [selectedStatuses, setSelectedStatuses] = useState(() => getInitialFilterState('filterStatuses', ['available']));
@@ -133,62 +136,83 @@ export function FilterPanel({ points, onFilterChange }) {
 
   return (
     <>
-      <CardContent className="flex-grow overflow-y-auto p-6">
-        <div className="space-y-4">
-          <h4 className="font-semibold text-sm">Status</h4>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2"><Checkbox id="status-available" checked={selectedStatuses.has('available')} onCheckedChange={() => handleStatusChange('available')} /><Label htmlFor="status-available" className="cursor-pointer">Disponíveis</Label></div>
-              <Badge className="bg-status-available text-primary-foreground hover:bg-status-available/90">{statusCounts.available}</Badge>
+      <CardContent className="p-0">
+        <ScrollArea className="max-h-[calc(100vh-250px)]">
+          <div className="p-4 space-y-4">
+            <h4 className="font-semibold text-sm">Status</h4>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2"><Checkbox id="status-available" checked={selectedStatuses.has('available')} onCheckedChange={() => handleStatusChange('available')} /><Label htmlFor="status-available" className="cursor-pointer">Disponíveis</Label></div>
+                <Badge className="bg-status-available text-primary-foreground hover:bg-status-available/90">{statusCounts.available}</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2"><Checkbox id="status-reserved" checked={selectedStatuses.has('reserved')} onCheckedChange={() => handleStatusChange('reserved')} /><Label htmlFor="status-reserved" className="cursor-pointer">Reservados</Label></div>
+                <Badge className="bg-status-reserved text-primary-foreground hover:bg-status-reserved/90">{statusCounts.reserved}</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2"><Checkbox id="status-sold" checked={selectedStatuses.has('sold')} onCheckedChange={() => handleStatusChange('sold')} /><Label htmlFor="status-sold" className="cursor-pointer">Contratados</Label></div>
+                <Badge variant="destructive">{statusCounts.sold}</Badge>
+              </div>
             </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2"><Checkbox id="status-reserved" checked={selectedStatuses.has('reserved')} onCheckedChange={() => handleStatusChange('reserved')} /><Label htmlFor="status-reserved" className="cursor-pointer">Reservados</Label></div>
-              <Badge className="bg-status-reserved text-primary-foreground hover:bg-status-reserved/90">{statusCounts.reserved}</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2"><Checkbox id="status-sold" checked={selectedStatuses.has('sold')} onCheckedChange={() => handleStatusChange('sold')} /><Label htmlFor="status-sold" className="cursor-pointer">Contratados</Label></div>
-              <Badge variant="destructive">{statusCounts.sold}</Badge>
-            </div>
-          </div>
 
-          <Separator className="my-4" />
+            <Separator />
 
-          <h4 className="font-semibold text-sm">Classificação</h4>
-          <div className="space-y-3">
-            {loadingTiers ? (
-              Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)
-            ) : tiersError ? (
-              <p className="text-sm text-red-500">Erro ao carregar classificações: {tiersError}</p>
-            ) : allTiers.length === 0 ? (
-              <p className="text-sm text-gray-500">Nenhuma classificação disponível.</p>
-            ) : (
-              allTiers.map(tier => (
-                <div key={tier.id} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2"><Checkbox id={`tier-${tier.id}`} checked={selectedTiers.has(tier.id)} onCheckedChange={() => handleTierChange(tier.id)} /><Label htmlFor={`tier-${tier.id}`} className="cursor-pointer">{tier.name}</Label></div>
-                  <Badge variant="secondary">{tierCounts[tier.id] || 0}</Badge>
+            {!isExpanded && (
+              <Button variant="link" className="p-0 h-auto" onClick={() => setIsExpanded(true)}>
+                Ver mais filtros <ChevronDown className="h-4 w-4 ml-1" />
+              </Button>
+            )}
+
+            {isExpanded && (
+              <div className="space-y-4 animate-in fade-in-0 duration-300">
+                <div>
+                  <h4 className="font-semibold text-sm">Classificação</h4>
+                  <div className="space-y-3 mt-3">
+                    {loadingTiers ? (
+                      Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)
+                    ) : tiersError ? (
+                      <p className="text-sm text-red-500">Erro ao carregar: {tiersError}</p>
+                    ) : allTiers.length === 0 ? (
+                      <p className="text-sm text-gray-500">Nenhuma classificação.</p>
+                    ) : (
+                      allTiers.map(tier => (
+                        <div key={tier.id} className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2"><Checkbox id={`tier-${tier.id}`} checked={selectedTiers.has(tier.id)} onCheckedChange={() => handleTierChange(tier.id)} /><Label htmlFor={`tier-${tier.id}`} className="cursor-pointer">{tier.name}</Label></div>
+                          <Badge variant="secondary">{tierCounts[tier.id] || 0}</Badge>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
-              ))
+
+                <Separator />
+
+                <div>
+                  <h4 className="font-semibold text-sm">Características</h4>
+                  <div className="space-y-3 mt-3">
+                    {loadingTags ? (
+                      Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)
+                    ) : (
+                      tags.map(tag => (
+                        <div key={tag.id} className="flex items-center space-x-2">
+                          <Checkbox id={`tag-${tag.id}`} checked={selectedTags.has(tag.id)} onCheckedChange={() => handleTagChange(tag.id)} />
+                          <Label htmlFor={`tag-${tag.id}`} className="cursor-pointer">{tag.name}</Label>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <Separator />
+                <Button variant="link" className="p-0 h-auto" onClick={() => setIsExpanded(false)}>
+                  Mostrar menos <ChevronUp className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
             )}
           </div>
-
-          <Separator className="my-4" />
-
-          <h4 className="font-semibold text-sm">Características</h4>
-          <div className="space-y-3">
-            {loadingTags ? (
-              Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)
-            ) : (
-              tags.map(tag => (
-                <div key={tag.id} className="flex items-center space-x-2">
-                  <Checkbox id={`tag-${tag.id}`} checked={selectedTags.has(tag.id)} onCheckedChange={() => handleTagChange(tag.id)} />
-                  <Label htmlFor={`tag-${tag.id}`} className="cursor-pointer">{tag.name}</Label>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+        </ScrollArea>
       </CardContent>
-      <div className="p-6 pt-4 mt-auto border-t">
+      <div className="p-4 pt-2 border-t">
         <Button variant="outline" className="w-full" onClick={clearFilters}>
           Limpar Filtros
         </Button>
