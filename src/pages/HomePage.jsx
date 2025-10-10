@@ -9,11 +9,13 @@ import { EnhancedReservationForm } from '@/components/EnhancedReservationForm';
 import { toast } from 'sonner';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { FilterPanel } from '@/components/FilterPanel';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { CartModal } from '@/components/CartModal';
 import { FloatingCartButton } from '@/components/FloatingCartButton';
 import { GOOGLE_MAPS_LIBRARIES } from '@/config/googleMaps';
 import { Header } from '@/components/Header';
+import { MobileFilterButton } from '@/components/MobileFilterButton';
+import { FilterSheet } from '@/components/FilterSheet';
 
 const mapContainerStyle = {
   width: '100%',
@@ -118,6 +120,7 @@ function HomePage() {
   const [isCartModalOpen, setIsCartModalOpen] = useState(false);
   const [isCartMinimized, setIsCartMinimized] = useState(false);
   const [activeFilters, setActiveFilters] = useState({ statuses: ['available'], tags: [], tiers: [] });
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
 
   const { rules, settings, loading: loadingConfig } = useMapConfig();
 
@@ -308,6 +311,15 @@ function HomePage() {
             <FilterPanel points={points} onFilterChange={handleFilterChange} />
           </Card>
         </div>
+
+        {/* Botão e Sheet para Mobile */}
+        <MobileFilterButton onClick={() => setIsFilterSheetOpen(true)} />
+        <FilterSheet
+          isOpen={isFilterSheetOpen}
+          onOpenChange={setIsFilterSheetOpen}
+          points={points}
+          onFilterChange={handleFilterChange}
+        />
 
         <GoogleMap mapContainerStyle={mapContainerStyle} center={defaultCenter} zoom={currentZoom} options={mapOptions} onLoad={onMapLoad} onZoomChanged={onZoomChanged}>
           {activeRule.display_mode === 'cluster' ? (
