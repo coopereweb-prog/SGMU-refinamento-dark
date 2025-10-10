@@ -68,23 +68,72 @@ const getMarkerIcon = (status) => {
   };
 };
 
-const createClusterSvg = (size) => `
+const createClusterSvg = (size, fillColor, strokeColor = 'oklch(1 0 0 / 25%)') => `
   <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <radialGradient id="grad1" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-        <stop offset="0%" style="stop-color:oklch(0.269 0 0);stop-opacity:0.9" />
+      <radialGradient id="grad-${fillColor.replace(/[^a-zA-Z0-9]/g, '')}" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+        <stop offset="0%" style="stop-color:${fillColor};stop-opacity:0.9" />
         <stop offset="100%" style="stop-color:oklch(0.205 0 0);stop-opacity:0.95" />
       </radialGradient>
     </defs>
-    <circle cx="${size / 2}" cy="${size / 2}" r="${(size / 2) - 2}" fill="url(#grad1)" stroke="oklch(1 0 0 / 25%)" stroke-width="2"/>
+    <circle cx="${size / 2}" cy="${size / 2}" r="${(size / 2) - 2}" fill="url(#grad-${fillColor.replace(/[^a-zA-Z0-9]/g, '')})" stroke="${strokeColor}" stroke-width="2"/>
   </svg>
 `;
 
+const clusterColors = {
+  available: 'oklch(0.75 0.25 145)', // Verde
+  reserved: 'oklch(0.85 0.2 90)',   // Amarelo
+  sold: 'oklch(0.65 0.22 25)',      // Vermelho
+  mixed: 'oklch(0.145 0 0)',        // Preto
+};
+
 const clusterStyles = [
-  { url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(createClusterSvg(50))}`, height: 50, width: 50, textColor: 'oklch(0.985 0 0)', textSize: 15, fontFamily: 'sans-serif', fontWeight: 'bold' },
-  { url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(createClusterSvg(60))}`, height: 60, width: 60, textColor: 'oklch(0.985 0 0)', textSize: 16, fontFamily: 'sans-serif', fontWeight: 'bold' },
-  { url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(createClusterSvg(70))}`, height: 70, width: 70, textColor: 'oklch(0.985 0 0)', textSize: 18, fontFamily: 'sans-serif', fontWeight: 'bold' },
-];
+  // Available (Green)
+  { size: 50, color: clusterColors.available }, { size: 60, color: clusterColors.available }, { size: 70, color: clusterColors.available },
+  // Reserved (Yellow)
+  { size: 50, color: clusterColors.reserved }, { size: 60, color: clusterColors.reserved }, { size: 70, color: clusterColors.reserved },
+  // Sold (Red)
+  { size: 50, color: clusterColors.sold }, { size: 60, color: clusterColors.sold }, { size: 70, color: clusterColors.sold },
+  // Mixed (Black)
+  { size: 50, color: clusterColors.mixed }, { size: 60, color: clusterColors.mixed }, { size: 70, color: clusterColors.mixed },
+].map(config => ({
+  url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(createClusterSvg(config.size, config.color))}`,
+  height: config.size,
+  width: config.size,
+  textColor: 'oklch(0.985 0 0)',
+  textSize: config.size > 60 ? 18 : (config.size > 50 ? 16 : 15),
+  fontFamily: 'sans-serif',
+  fontWeight: 'bold',
+}));
+
+const clustererCalculator = (markers) => {
+  const statuses = new Set(markers.map(m => m.point_status));
+  const count = markers.length;
+  let statusType;
+
+  if (statuses.size === 1) {
+    statusType = statuses.values().next().value;
+  } else {
+    statusType = 'mixed';
+  }
+
+  let baseIndex;
+  switch (statusType) {
+    case 'available': baseIndex = 0; break;
+    case 'reserved': baseIndex = 3; break;
+    case 'sold': baseIndex = 6; break;
+    case 'mixed': default: baseIndex = 9; break;
+  }
+
+  const sizeIndex = count < 10 ? 0 : (count < 100 ? 1 : 2);
+  const finalIndex = baseIndex + sizeIndex + 1; // MarkerClustererF indices are 1-based
+
+  return {
+    text: String(count),
+    index: finalIndex,
+    title: `${count} pontos (${statusType})`,
+  };
+};
 
 function HomePage() {
   const [points, setPoints] = useState([]);
@@ -113,23 +162,13 @@ function HomePage() {
     const fetchPoints = async () => {
       setLoadingPoints(true);
       try {
-        // Buscar pontos e seus dados relacionados em uma única consulta
         const { data, error } = await supabase
           .from('points')
-          .select(`
-            *,
-            tags(id, name),
-            pricing_tiers(id, name)
-          `);
-
+          .select(`*, tags(id, name), pricing_tiers(id, name)`);
         if (error) throw error;
-
         const validPoints = data.filter(p => p.latitude && p.longitude);
-        
-        console.log("Pontos carregados com pricing_tiers:", validPoints);
         setPoints(validPoints);
         setFilteredPoints(validPoints);
-
       } catch (error) {
         console.error('Error fetching points:', error);
         toast.error("Falha ao carregar os pontos do mapa.", { description: error.message });
@@ -165,23 +204,9 @@ function HomePage() {
 
   const handleFilterChange = useCallback(({ statuses, tags, tiers }) => {
     let newFilteredPoints = points;
-
-    if (statuses.length > 0) {
-      newFilteredPoints = newFilteredPoints.filter(point => statuses.includes(point.status));
-    }
-
-    if (tags.length > 0) {
-      newFilteredPoints = newFilteredPoints.filter(point =>
-        point.tags && point.tags.some(tag => tags.includes(tag.id))
-      );
-    }
-
-    if (tiers.length > 0) {
-      newFilteredPoints = newFilteredPoints.filter(point =>
-        point.pricing_tiers && tiers.includes(point.pricing_tiers.id)
-      );
-    }
-
+    if (statuses.length > 0) newFilteredPoints = newFilteredPoints.filter(point => statuses.includes(point.status));
+    if (tags.length > 0) newFilteredPoints = newFilteredPoints.filter(point => point.tags && point.tags.some(tag => tags.includes(tag.id)));
+    if (tiers.length > 0) newFilteredPoints = newFilteredPoints.filter(point => point.pricing_tiers && tiers.includes(point.pricing_tiers.id));
     setFilteredPoints(newFilteredPoints);
   }, [points]);
 
@@ -191,22 +216,20 @@ function HomePage() {
   };
 
   const handleAddToCart = (point, period) => {
-    const isAlreadyInCart = cartItems.some(item => item.point_id === point.id);
-    if (isAlreadyInCart) {
+    if (cartItems.some(item => item.point_id === point.id)) {
       toast.warning("Este ponto já está no seu carrinho.");
       return;
     }
-    const priceKey = `price_${period}y`;
-    const price = point[priceKey];
+    const price = point[`price_${period}y`];
     if (typeof price !== 'number' || price <= 0) {
       toast.error("Preço inválido para o período selecionado.");
       return;
     }
-    const newItem = { point_id: point.id, name: point.name, price: price, period_years: period };
+    const newItem = { point_id: point.id, name: point.name, price, period_years: period };
     setCartItems(prevItems => {
       if (prevItems.length === 0) {
-        setIsCartMinimized(true); // Mostra o botão flutuante
-        setIsCartModalOpen(false); // Garante que o modal não abra
+        setIsCartMinimized(true);
+        setIsCartModalOpen(false);
       }
       return [...prevItems, newItem];
     });
@@ -225,8 +248,7 @@ function HomePage() {
     const itemToUpdate = cartItems[index];
     const point = points.find(p => p.id === itemToUpdate.point_id);
     if (!point) return;
-    const priceKey = `price_${newPeriod}y`;
-    const newPrice = point[priceKey];
+    const newPrice = point[`price_${newPeriod}y`];
     if (typeof newPrice !== 'number' || newPrice <= 0) {
       toast.error("Período indisponível para este ponto.");
       return;
@@ -242,9 +264,7 @@ function HomePage() {
 
   const handleCloseCartModal = () => {
     setIsCartModalOpen(false);
-    if (cartItems.length > 0) {
-      setIsCartMinimized(true);
-    }
+    if (cartItems.length > 0) setIsCartMinimized(true);
   };
 
   const handleOpenCartModal = () => {
@@ -264,13 +284,6 @@ function HomePage() {
     if (loadingConfig || !rules.length) return { display_mode: currentZoom > 14 ? 'individual' : 'cluster', cluster_radius: 60, min_cluster_size: 2 };
     return rules.find(r => r.zoom_level === currentZoom) || rules[rules.length - 1];
   }, [currentZoom, rules, loadingConfig]);
-
-  const clustererCalculator = useCallback((markers) => {
-    if (!settings) return { text: String(markers.length), index: 1, title: '' };
-    const count = settings.cluster_count_logic === 'available_only' ? markers.filter(m => m.point_status === 'available').length : markers.length;
-    const index = Math.min(String(count).length, 5);
-    return { text: String(count), index, title: `${count} pontos` };
-  }, [settings]);
 
   if (!isLoaded || loadingPoints || loadingConfig) {
     return (
@@ -295,14 +308,9 @@ function HomePage() {
               <SheetContent side="left" className="w-[380px] p-0 border-none flex flex-col">
                 <SheetHeader className="p-6 pb-4 border-b">
                   <SheetTitle>Filtrar Pontos</SheetTitle>
-                  <SheetDescription>
-                    Selecione um ou mais filtros para refinar a busca no mapa.
-                  </SheetDescription>
+                  <SheetDescription>Selecione um ou mais filtros para refinar a busca no mapa.</SheetDescription>
                 </SheetHeader>
-                <FilterPanel
-                  points={points}
-                  onFilterChange={handleFilterChange}
-                />
+                <FilterPanel points={points} onFilterChange={handleFilterChange} />
               </SheetContent>
             </Sheet>
           </div>
@@ -310,17 +318,13 @@ function HomePage() {
           <Link to="/" className="flex items-center gap-2 justify-self-center col-start-2 lg:col-span-2 flex-col sm:flex-row">
             <img src="/logo.png" alt="SGMU Logo" className="h-10 sm:h-12 flex-shrink-0" />
             <div className="text-center sm:text-left">
-              <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight">
-                <span className="font-semibold">Sistema Gestor</span> de Mobiliário Urbano
-              </p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight"><span className="font-semibold">Sistema Gestor</span> de Mobiliário Urbano</p>
             </div>
           </Link>
 
           <div className="justify-self-end col-start-3 lg:col-start-4">
             <div className="flex items-center gap-2">
-              <Button asChild variant="outline" className="h-10 sm:h-12 px-3 sm:px-4 text-xs sm:text-sm">
-                <Link to="/login">Área Restrita</Link>
-              </Button>
+              <Button asChild variant="outline" className="h-10 sm:h-12 px-3 sm:px-4 text-xs sm:text-sm"><Link to="/login">Área Restrita</Link></Button>
             </div>
           </div>
         </div>
@@ -331,14 +335,7 @@ function HomePage() {
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-background/80 backdrop-blur-sm py-2 px-4 rounded-full shadow-lg text-sm text-muted-foreground pointer-events-none">
             Clique nos marcadores para ver detalhes e adicionar ao carrinho.
           </div>
-          <GoogleMap
-            mapContainerStyle={mapContainerStyle}
-            center={defaultCenter}
-            zoom={currentZoom}
-            options={mapOptions}
-            onLoad={onMapLoad}
-            onZoomChanged={onZoomChanged}
-          >
+          <GoogleMap mapContainerStyle={mapContainerStyle} center={defaultCenter} zoom={currentZoom} options={mapOptions} onLoad={onMapLoad} onZoomChanged={onZoomChanged}>
             {activeRule.display_mode === 'cluster' ? (
               <MarkerClustererF options={{ gridSize: activeRule.cluster_radius, minimumClusterSize: activeRule.min_cluster_size, styles: clusterStyles }} calculator={clustererCalculator}>
                 {(clusterer) => filteredPoints.map((point) => (
@@ -356,19 +353,9 @@ function HomePage() {
 
       <PointDetailsSheet point={selectedPoint} isOpen={isSheetOpen} onOpenChange={setIsSheetOpen} onAddToCart={handleAddToCart} />
       
-      <CartModal
-        isOpen={isCartModalOpen}
-        onClose={handleCloseCartModal}
-        cartItems={cartItems}
-        onRemoveFromCart={handleRemoveFromCart}
-        onClearCart={handleClearCart}
-        onUpdateCartItemPeriod={handleUpdateCartItemPeriod}
-        onShowReservationForm={handleShowReservationForm}
-      />
+      <CartModal isOpen={isCartModalOpen} onClose={handleCloseCartModal} cartItems={cartItems} onRemoveFromCart={handleRemoveFromCart} onClearCart={handleClearCart} onUpdateCartItemPeriod={handleUpdateCartItemPeriod} onShowReservationForm={handleShowReservationForm} />
 
-      {isCartMinimized && (
-        <FloatingCartButton itemCount={cartItems.length} onClick={handleOpenCartModal} />
-      )}
+      {isCartMinimized && (<FloatingCartButton itemCount={cartItems.length} onClick={handleOpenCartModal} />)}
 
       <Modal isOpen={isReservationFormOpen} onClose={() => setIsReservationFormOpen(false)} title="Finalizar Reserva" description="Preencha seus dados para concluir a reserva dos pontos.">
         <EnhancedReservationForm cartItems={cartItems} onClose={() => setIsReservationFormOpen(false)} onReservationSuccess={handleReservationSuccess} />
