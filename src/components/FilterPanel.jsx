@@ -136,11 +136,11 @@ export function FilterPanel({ points, onFilterChange }) {
 
   return (
     <>
-      <CardContent className="p-0">
-        <ScrollArea className="max-h-[calc(100vh-250px)]">
-          <div className="p-4 space-y-4">
+      <CardContent className="p-0 flex-grow overflow-hidden">
+        <ScrollArea className="h-full">
+          <div className="p-3 space-y-3">
             <h4 className="font-semibold text-sm">Status</h4>
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2"><Checkbox id="status-available" checked={selectedStatuses.has('available')} onCheckedChange={() => handleStatusChange('available')} /><Label htmlFor="status-available" className="cursor-pointer">Disponíveis</Label></div>
                 <Badge className="bg-status-available text-primary-foreground hover:bg-status-available/90">{statusCounts.available}</Badge>
@@ -158,16 +158,16 @@ export function FilterPanel({ points, onFilterChange }) {
             <Separator />
 
             {!isExpanded && (
-              <Button variant="link" className="p-0 h-auto" onClick={() => setIsExpanded(true)}>
+              <Button variant="link" className="p-0 h-auto text-xs" onClick={() => setIsExpanded(true)}>
                 Ver mais filtros <ChevronDown className="h-4 w-4 ml-1" />
               </Button>
             )}
 
             {isExpanded && (
-              <div className="space-y-4 animate-in fade-in-0 duration-300">
+              <div className="space-y-3 animate-in fade-in-0 duration-300">
                 <div>
                   <h4 className="font-semibold text-sm">Classificação</h4>
-                  <div className="space-y-3 mt-3">
+                  <div className="space-y-2 mt-2">
                     {loadingTiers ? (
                       Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)
                     ) : tiersError ? (
@@ -189,7 +189,7 @@ export function FilterPanel({ points, onFilterChange }) {
 
                 <div>
                   <h4 className="font-semibold text-sm">Características</h4>
-                  <div className="space-y-3 mt-3">
+                  <div className="space-y-2 mt-2">
                     {loadingTags ? (
                       Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)
                     ) : (
@@ -204,7 +204,7 @@ export function FilterPanel({ points, onFilterChange }) {
                 </div>
 
                 <Separator />
-                <Button variant="link" className="p-0 h-auto" onClick={() => setIsExpanded(false)}>
+                <Button variant="link" className="p-0 h-auto text-xs" onClick={() => setIsExpanded(false)}>
                   Mostrar menos <ChevronUp className="h-4 w-4 ml-1" />
                 </Button>
               </div>
@@ -212,7 +212,7 @@ export function FilterPanel({ points, onFilterChange }) {
           </div>
         </ScrollArea>
       </CardContent>
-      <div className="p-4 pt-2 border-t">
+      <div className="p-3 pt-2 border-t">
         <Button variant="outline" className="w-full" onClick={clearFilters}>
           Limpar Filtros
         </Button>
