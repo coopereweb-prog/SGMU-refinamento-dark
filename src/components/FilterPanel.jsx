@@ -212,7 +212,7 @@ export function FilterPanel({ points, onFilterChange }) {
           </div>
         </ScrollArea>
       </CardContent>
-      <div className="p-2 pt-1 border-t">
+      <div className="px-2 pt-1 border-t">
         <Button variant="outline" className="w-full" onClick={clearFilters}>
           Limpar Filtros
         </Button>
