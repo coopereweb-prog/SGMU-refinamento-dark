@@ -17,6 +17,7 @@ import { Menu, User } from 'lucide-react';
 import { CartModal } from '@/components/CartModal';
 import { FloatingCartButton } from '@/components/FloatingCartButton';
 import { GOOGLE_MAPS_LIBRARIES } from '@/config/googleMaps';
+import { Header } from '@/components/Header';
 
 const mapContainerStyle = {
   width: '100%',
@@ -309,51 +310,7 @@ function HomePage() {
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-background flex flex-col">
-      <header className="h-auto sm:h-20 bg-black/30 backdrop-blur-sm z-20 flex-shrink-0 py-2">
-        <div className="container mx-auto px-4 h-full grid grid-cols-3 items-center">
-          {/* Botão de Menu Principal */}
-          <div className="justify-self-start">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" className="h-10 w-10 p-0 flex items-center justify-center">
-                  <Menu className="h-6 w-6" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[300px] sm:w-[400px]">
-                <SheetHeader>
-                  <SheetTitle>Menu</SheetTitle>
-                </SheetHeader>
-                <nav className="flex flex-col gap-4 mt-6">
-                  {menuItems.map((item) => (
-                    <Link
-                      key={item.to}
-                      to={item.to}
-                      className="text-lg font-medium hover:text-primary transition-colors"
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </nav>
-              </SheetContent>
-            </Sheet>
-          </div>
-          
-          <Link to="/" className="flex items-center gap-2 justify-self-center col-start-2 flex-col sm:flex-row">
-            <img src="/logo.png" alt="SGMU Logo" className="h-10 sm:h-12 flex-shrink-0" />
-            <div className="text-center sm:text-left">
-              <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight"><span className="font-semibold">Sistema Gestor</span> de Mobiliário Urbano</p>
-            </div>
-          </Link>
-
-          <div className="justify-self-end col-start-3">
-            <Button asChild variant="outline" className="h-10 w-10 p-0 flex items-center justify-center overflow-hidden">
-              <Link to="/login" aria-label="Área Restrita">
-                <User className="h-12 w-12" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <main className="flex-grow relative">
         {/* Painel de Filtro Flutuante para Desktop */}
