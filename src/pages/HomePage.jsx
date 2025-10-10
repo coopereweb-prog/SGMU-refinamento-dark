@@ -331,7 +331,7 @@ function HomePage() {
             <div className="flex items-center gap-2">
               <Button asChild variant="outline" className="h-10 w-10 p-0 flex items-center justify-center">
                 <Link to="/login" aria-label="Área Restrita">
-                  <User className="h-6 w-6" />
+                  <User className="h-9 w-9" />
                 </Link>
               </Button>
             </div>
