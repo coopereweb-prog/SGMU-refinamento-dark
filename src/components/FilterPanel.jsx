@@ -139,7 +139,7 @@ export function FilterPanel({ points, onFilterChange }) {
       <CardContent className="p-0 flex-grow overflow-hidden">
         <ScrollArea className="h-full">
           <div className="px-2 pb-2 space-y-2">
-            <h4 className="font-semibold text-sm">Status</h4>
+            <h4 className="font-semibold text-sm text-center">Status</h4>
             <div className="space-y-1">
               <div className="flex items-center justify-between w-[260px]">
                 <div className="flex items-center space-x-2"><Checkbox id="status-available" checked={selectedStatuses.has('available')} onCheckedChange={() => handleStatusChange('available')} /><Label htmlFor="status-available" className="cursor-pointer">Disponíveis</Label></div>
@@ -166,7 +166,7 @@ export function FilterPanel({ points, onFilterChange }) {
             {isExpanded && (
               <div className="space-y-2 animate-in fade-in-0 duration-300">
                 <div>
-                  <h4 className="font-semibold text-sm">Classificação</h4>
+                  <h4 className="font-semibold text-sm text-center">Classificação</h4>
                   <div className="space-y-1 mt-1">
                     {loadingTiers ? (
                       Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)
@@ -188,13 +188,13 @@ export function FilterPanel({ points, onFilterChange }) {
                 <Separator />
 
                 <div>
-                  <h4 className="font-semibold text-sm">Características</h4>
+                  <h4 className="font-semibold text-sm text-center">Características</h4>
                   <div className="space-y-1 mt-1">
                     {loadingTags ? (
                       Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)
                     ) : (
                       tags.map(tag => (
-                        <div key={tag.id} className="flex items-center space-x-2">
+                        <div key={tag.id} className="flex items-center justify-center space-x-2">
                           <Checkbox id={`tag-${tag.id}`} checked={selectedTags.has(tag.id)} onCheckedChange={() => handleTagChange(tag.id)} />
                           <Label htmlFor={`tag-${tag.id}`} className="cursor-pointer">{tag.name}</Label>
                         </div>
