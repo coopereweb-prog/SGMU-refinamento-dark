@@ -141,15 +141,15 @@ export function FilterPanel({ points, onFilterChange }) {
           <div className="px-2 pb-2 space-y-2">
             <h4 className="font-semibold text-sm">Status</h4>
             <div className="space-y-1">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between w-[260px]">
                 <div className="flex items-center space-x-2"><Checkbox id="status-available" checked={selectedStatuses.has('available')} onCheckedChange={() => handleStatusChange('available')} /><Label htmlFor="status-available" className="cursor-pointer">Disponíveis</Label></div>
                 <Badge className="bg-status-available text-primary-foreground hover:bg-status-available/90">{statusCounts.available}</Badge>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between w-[260px]">
                 <div className="flex items-center space-x-2"><Checkbox id="status-reserved" checked={selectedStatuses.has('reserved')} onCheckedChange={() => handleStatusChange('reserved')} /><Label htmlFor="status-reserved" className="cursor-pointer">Reservados</Label></div>
                 <Badge className="bg-status-reserved text-primary-foreground hover:bg-status-reserved/90">{statusCounts.reserved}</Badge>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between w-[260px]">
                 <div className="flex items-center space-x-2"><Checkbox id="status-sold" checked={selectedStatuses.has('sold')} onCheckedChange={() => handleStatusChange('sold')} /><Label htmlFor="status-sold" className="cursor-pointer">Contratados</Label></div>
                 <Badge variant="destructive">{statusCounts.sold}</Badge>
               </div>
@@ -176,7 +176,7 @@ export function FilterPanel({ points, onFilterChange }) {
                       <p className="text-sm text-gray-500">Nenhuma classificação.</p>
                     ) : (
                       allTiers.map(tier => (
-                        <div key={tier.id} className="flex items-center justify-between">
+                        <div key={tier.id} className="flex items-center justify-between w-[260px]">
                           <div className="flex items-center space-x-2"><Checkbox id={`tier-${tier.id}`} checked={selectedTiers.has(tier.id)} onCheckedChange={() => handleTierChange(tier.id)} /><Label htmlFor={`tier-${tier.id}`} className="cursor-pointer">{tier.name}</Label></div>
                           <Badge variant="secondary">{tierCounts[tier.id] || 0}</Badge>
                         </div>
