@@ -11,8 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { LayoutDashboard, LogOut, User as UserIcon, LogIn, Menu } from 'lucide-react';
+import { LayoutDashboard, LogOut, User as UserIcon, LogIn } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function Header() {
@@ -49,51 +48,21 @@ export function Header() {
     return name.substring(0, 2);
   };
 
-  const menuItems = [
-    { to: '/', label: 'Início' },
-    { to: '/quem-somos', label: 'Quem Somos' },
-    { to: '/nossos-servicos', label: 'Nossos Serviços' },
-    { to: '/como-adquirir', label: 'Como Adquirir' },
-    { to: '/trabalhe-conosco', label: 'Trabalhe conosco' },
-    { to: '/fale-conosco', label: 'Fale conosco' },
-  ];
-
   return (
     <header className="bg-black/40 shadow-lg sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-3 items-center h-16 sm:h-20">
-          {/* Coluna Esquerda: Menu Principal e E-mail do usuário */}
-          <div className="justify-self-start flex items-center gap-4">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" className="h-10 w-10 p-0 flex items-center justify-center">
-                  <Menu className="h-6 w-6" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[300px] sm:w-[400px]">
-                <SheetHeader>
-                  <SheetTitle>Menu</SheetTitle>
-                </SheetHeader>
-                <nav className="flex flex-col gap-4 mt-6">
-                  {menuItems.map((item) => (
-                    <Link
-                      key={item.to}
-                      to={item.to}
-                      className="text-lg font-medium hover:text-primary transition-colors"
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </nav>
-              </SheetContent>
-            </Sheet>
+          {/* Coluna Esquerda: E-mail do usuário ou Vazio */}
+          <div className="justify-self-start">
             {authLoading ? (
               <Skeleton className="h-6 w-32 rounded-md hidden sm:block" />
             ) : user ? (
               <p className="text-sm text-muted-foreground hidden sm:block truncate" title={user.email}>
                 {user.email}
               </p>
-            ) : null}
+            ) : (
+              <div /> // Espaço reservado para manter o alinhamento
+            )}
           </div>
 
           {/* Coluna Central: Logo e Título */}
@@ -153,9 +122,10 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button variant="outline" className="h-10 w-10 p-0 flex items-center justify-center overflow-hidden" asChild>
-                <Link to="/login" aria-label="Área Restrita">
-                  <UserIcon className="h-12 w-12" />
+              <Button variant="default" size="sm" asChild>
+                <Link to="/login">
+                  <LogIn className="mr-2 h-6 w-6" />
+                  Área Restrita
                 </Link>
               </Button>
             )}
