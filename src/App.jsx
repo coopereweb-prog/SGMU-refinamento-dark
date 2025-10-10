@@ -21,7 +21,7 @@ import { ManageTagsPage } from './pages/ManageTagsPage';
 import { ManagePricingPage } from './pages/ManagePricingPage';
 import { ManageMapSettingsPage } from './pages/ManageMapSettingsPage';
 import SignUpPage from './pages/SignUpPage';
-import QuemSomosPage from './pages/QuemSomosPage';
+import AboutUsPage from './pages/AboutUsPage'; // Nova importação
 import NossosServicosPage from './pages/NossosServicosPage';
 import ComoAdquirirPage from './pages/ComoAdquirirPage';
 import TrabalheConoscoPage from './pages/TrabalheConoscoPage';
@@ -42,7 +42,7 @@ function App() {
             <Routes>
               {/* Rotas Públicas */}
               <Route path="/" element={<HomePage />} />
-              <Route path="/quem-somos" element={<AppLayout><QuemSomosPage /></AppLayout>} />
+              <Route path="/quem-somos" element={<AppLayout><AboutUsPage /></AppLayout>} /> {/* Rota atualizada */}
               <Route path="/nossos-servicos" element={<AppLayout><NossosServicosPage /></AppLayout>} />
               <Route path="/como-adquirir" element={<AppLayout><ComoAdquirirPage /></AppLayout>} />
               <Route path="/trabalhe-conosco" element={<AppLayout><TrabalheConoscoPage /></AppLayout>} />
