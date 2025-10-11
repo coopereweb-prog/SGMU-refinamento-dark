@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useContext } from 'react';
+import { createContext, useState, useEffect, useContext, useMemo, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 
 const AuthContext = createContext(null);
@@ -36,13 +36,15 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  const value = {
+  const signOut = useCallback(() => supabase.auth.signOut(), []);
+
+  const value = useMemo(() => ({
     session,
     user: session?.user || null,
     authEvent, // Expose the event
-    signOut: () => supabase.auth.signOut(),
+    signOut,
     loading,
-  };
+  }), [session, authEvent, signOut, loading]);
 
   return (
     <AuthContext.Provider value={value}>

@@ -114,11 +114,19 @@ function HomePage() {
   const [loadingPoints, setLoadingPoints] = useState(true);
   const [map, setMap] = useState(null);
   const [currentZoom, setCurrentZoom] = useState(12);
-  const [cartItems, setCartItems] = useState([]);
+  const [cartItems, setCartItems] = useState(() => {
+    try {
+      const savedCart = localStorage.getItem('sgmu-cart');
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch (error) {
+      console.error("Falha ao carregar o carrinho do localStorage:", error);
+      return [];
+    }
+  });
   const [isReservationFormOpen, setIsReservationFormOpen] = useState(false);
   const [markerAnimation, setMarkerAnimation] = useState(null);
   const [isCartModalOpen, setIsCartModalOpen] = useState(false);
-  const [isCartMinimized, setIsCartMinimized] = useState(false);
+  const [isCartMinimized, setIsCartMinimized] = useState(cartItems.length > 0);
   const [activeFilters, setActiveFilters] = useState({ statuses: ['available'], tags: [], tiers: [] });
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
 
@@ -129,6 +137,17 @@ function HomePage() {
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     libraries: GOOGLE_MAPS_LIBRARIES,
   });
+
+  // Salva o carrinho no localStorage sempre que ele for alterado
+  useEffect(() => {
+    try {
+      localStorage.setItem('sgmu-cart', JSON.stringify(cartItems));
+      // Atualiza o estado do botão flutuante
+      setIsCartMinimized(cartItems.length > 0);
+    } catch (error) {
+      console.error("Falha ao salvar o carrinho no localStorage:", error);
+    }
+  }, [cartItems]);
 
   useEffect(() => {
     const fetchPoints = async () => {
@@ -198,13 +217,7 @@ function HomePage() {
       return;
     }
     const newItem = { point_id: point.id, name: point.name, price, period_years: period };
-    setCartItems(prevItems => {
-      if (prevItems.length === 0) {
-        setIsCartMinimized(true);
-        setIsCartModalOpen(false);
-      }
-      return [...prevItems, newItem];
-    });
+    setCartItems(prevItems => [...prevItems, newItem]);
     toast.success(`${point.name} adicionado ao carrinho!`);
     setIsSheetOpen(false);
   };
@@ -213,7 +226,6 @@ function HomePage() {
   const handleClearCart = () => {
     setCartItems([]);
     setIsCartModalOpen(false);
-    setIsCartMinimized(false);
   };
 
   const handleUpdateCartItemPeriod = (index, newPeriod) => {
@@ -231,16 +243,13 @@ function HomePage() {
   const handleReservationSuccess = () => {
     setIsReservationFormOpen(false);
     setCartItems([]);
-    setIsCartMinimized(false);
   };
 
   const handleCloseCartModal = () => {
     setIsCartModalOpen(false);
-    if (cartItems.length > 0) setIsCartMinimized(true);
   };
 
   const handleOpenCartModal = () => {
-    setIsCartMinimized(false);
     setIsCartModalOpen(true);
   };
 

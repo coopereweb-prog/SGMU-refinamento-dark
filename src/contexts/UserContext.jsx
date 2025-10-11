@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useContext } from 'react';
+import { createContext, useState, useEffect, useContext, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -10,7 +10,7 @@ export function UserProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     // Apenas busca o perfil se o usuário existir
     if (user) {
       setLoading(true);
@@ -36,18 +36,18 @@ export function UserProvider({ children }) {
       setProfile(null);
       setLoading(false);
     }
-  };
-
-  // O useEffect reage à mudança do objeto 'user'
-  useEffect(() => {
-    fetchProfile();
   }, [user]);
 
-  const value = {
+  // O useEffect agora depende da função memoizada
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  const value = useMemo(() => ({
     profile,
     loading,
     refreshProfile: fetchProfile,
-  };
+  }), [profile, loading, fetchProfile]);
 
   return (
     <UserContext.Provider value={value}>
