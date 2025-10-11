@@ -181,6 +181,7 @@ export function ManageOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [selectedPoints, setSelectedPoints] = useState(new Set());
   const [extendingOrder, setExtendingOrder] = useState(null);
   const [newReservedUntil, setNewReservedUntil] = useState('');
@@ -205,6 +206,10 @@ export function ManageOrdersPage() {
       query = query.or(`customer_name.ilike.%${searchTerm}%,customer_email.ilike.%${searchTerm}%`);
     }
 
+    if (statusFilter !== 'all') {
+      query = query.eq('status', statusFilter);
+    }
+
     const { data, error } = await query;
 
     if (error) {
@@ -222,7 +227,7 @@ export function ManageOrdersPage() {
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm]);
+  }, [searchTerm, statusFilter]);
 
   const handleExtendReservation = async (orderId) => {
     if (!newReservedUntil) {
@@ -331,11 +336,22 @@ export function ManageOrdersPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold">Gerenciar Pedidos</h1>
-        <div className="flex gap-2 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Button onClick={handleGenerateRoute} disabled={selectedPoints.size === 0} className="flex-grow sm:flex-grow-0">
             <Map className="h-4 w-4 mr-2" /> Rota ({selectedPoints.size})
           </Button>
-          <div className="relative flex-grow sm:max-w-xs">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Filtrar por status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os Status</SelectItem>
+              <SelectItem value="pending">Pendente</SelectItem>
+              <SelectItem value="completed">Concluído</SelectItem>
+              <SelectItem value="cancelled">Cancelado</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="relative flex-grow">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
@@ -355,7 +371,7 @@ export function ManageOrdersPage() {
       ) : (
         <div className="space-y-4">
           {orders.length === 0 ? (
-            <p className="text-center text-gray-500 py-4">Nenhum pedido encontrado.</p>
+            <p className="text-center text-gray-500 py-4">Nenhum pedido encontrado para os filtros selecionados.</p>
           ) : (
             orders.map((order) => {
               const statusProps = getOrderStatusProps(order.status);
