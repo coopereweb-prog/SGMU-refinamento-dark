@@ -105,18 +105,24 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
         email: userEmail,
         password: values.password,
       });
-      if (signInError) throw signInError;
+      if (signInError) throw new Error('E-mail ou senha inválidos.');
       
-      const { data: profile } = await supabase.from('profiles').select('*').eq('email', userEmail).single();
-      await createOrder(profile, cartItems);
+      const { data: profile, error: profileError } = await supabase.from('profiles').select('*').eq('email', userEmail).single();
+      if (profileError || !profile) throw new Error('Não foi possível carregar seu perfil após o login.');
+
+      const customerDataForOrder = {
+        name: profile.name,
+        email: profile.email,
+        phone: profile.phone || '',
+      };
+      await createOrder(customerDataForOrder, cartItems);
       
       toast.success('Reserva confirmada!', { description: 'Você será redirecionado para seu painel.' });
       localStorage.removeItem('pendingReservationCart');
       onReservationSuccess();
       navigate('/dashboard');
     } catch (err) {
-      setError('E-mail ou senha inválidos.');
-    } finally {
+      setError(err.message || 'Ocorreu um erro desconhecido.');
       setLoading(false);
     }
   };
@@ -143,7 +149,6 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
       navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Ocorreu um erro no cadastro.');
-    } finally {
       setLoading(false);
     }
   };
@@ -160,8 +165,7 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
        navigate('/dashboard');
      } catch (err) {
         setError(err.message || 'Ocorreu um erro ao criar sua reserva.');
-     } finally {
-       setLoading(false);
+        setLoading(false);
      }
   };
 
