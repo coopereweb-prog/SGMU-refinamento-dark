@@ -4,10 +4,42 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { supabase } from '../lib/supabase';
+import { supabase, createOrder } from '../lib/supabase';
 import { toast } from 'sonner';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { WhatsAppButton } from '../components/WhatsAppButton';
+
+// Função para processar uma reserva pendente após o login
+const processPendingReservation = async (userId) => {
+  const pendingCartRaw = localStorage.getItem('pendingReservationCart');
+  if (!pendingCartRaw) return false;
+
+  try {
+    const pendingCartItems = JSON.parse(pendingCartRaw);
+    if (!Array.isArray(pendingCartItems) || pendingCartItems.length === 0) {
+      localStorage.removeItem('pendingReservationCart');
+      return false;
+    }
+
+    // Busca o perfil do usuário para obter os dados completos
+    const { data: profile } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    if (!profile) throw new Error('Perfil do usuário não encontrado.');
+
+    await createOrder(profile, pendingCartItems);
+
+    // Limpa os carrinhos pendentes e o principal
+    localStorage.removeItem('pendingReservationCart');
+    localStorage.removeItem('sgmu-cart');
+
+    toast.success('Reserva confirmada!', { description: 'Seu carrinho pendente foi processado com sucesso.' });
+    return true;
+  } catch (error) {
+    console.error('Erro ao processar reserva pendente:', error);
+    toast.error('Falha ao processar reserva pendente', { description: error.message });
+    localStorage.removeItem('pendingReservationCart'); // Limpa para evitar loops de erro
+    return false;
+  }
+};
 
 function LoginPage() {
   const [email, setEmail] = useState('');
@@ -24,7 +56,16 @@ function LoginPage() {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
+
       if (data.user) {
+        // VERIFICA E PROCESSA RESERVA PENDENTE
+        const reservationProcessed = await processPendingReservation(data.user.id);
+        if (reservationProcessed) {
+          navigate('/dashboard', { replace: true });
+          return;
+        }
+
+        // Lógica de redirecionamento padrão
         const { data: profile, error: profileError } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
         if (profileError) throw profileError;
         if (from) {

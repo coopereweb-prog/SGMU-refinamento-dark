@@ -49,6 +49,13 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
     defaultValues: { email: '', password: '', name: '', phone: '', confirmPassword: '' },
   });
 
+  // Salva o carrinho como uma reserva pendente ao iniciar o formulário
+  useEffect(() => {
+    if (cartItems && cartItems.length > 0) {
+      localStorage.setItem('pendingReservationCart', JSON.stringify(cartItems));
+    }
+  }, [cartItems]);
+
   // 1. Checa se o usuário já está logado ao iniciar
   useEffect(() => {
     const checkSession = async () => {
@@ -104,6 +111,7 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
       await createOrder(profile, cartItems);
       
       toast.success('Reserva confirmada!', { description: 'Você será redirecionado para seu painel.' });
+      localStorage.removeItem('pendingReservationCart');
       onReservationSuccess();
       navigate('/dashboard');
     } catch (err) {
@@ -130,6 +138,7 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
       await createOrder({ name: values.name, email: userEmail, phone: values.phone }, cartItems);
 
       toast.success('Conta criada e reserva confirmada!', { description: 'Verifique seu e-mail para ativar a conta. Você será redirecionado.' });
+      localStorage.removeItem('pendingReservationCart');
       onReservationSuccess();
       navigate('/dashboard');
     } catch (err) {
@@ -146,6 +155,7 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
      try {
        await createOrder(userData, cartItems);
        toast.success('Reserva confirmada!', { description: 'Você será redirecionado para seu painel.' });
+       localStorage.removeItem('pendingReservationCart');
        onReservationSuccess();
        navigate('/dashboard');
      } catch (err) {
