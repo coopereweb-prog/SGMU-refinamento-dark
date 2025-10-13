@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Package, ShoppingCart, Users, Tag, DollarSign, Map, Settings, FileText } from 'lucide-react';
+import { Package, ShoppingCart, Users, Tag, DollarSign, Map, Settings, FileText, LayoutGrid } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 
@@ -8,6 +8,7 @@ const links = [
     section: 'Pedidos',
     items: [
       { to: '/admin/orders', label: 'Gerenciar Pedidos', icon: ShoppingCart },
+      { to: '/admin/pipeline', label: 'Pipeline de Instalação', icon: LayoutGrid },
     ]
   },
   {

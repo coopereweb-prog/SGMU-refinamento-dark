@@ -19,6 +19,7 @@ import { ManageUsersPage } from '@/pages/ManageUsersPage';
 import { ManageTagsPage } from '@/pages/ManageTagsPage';
 import { ManagePricingPage } from '@/pages/ManagePricingPage';
 import { ManageMapSettingsPage } from '@/pages/ManageMapSettingsPage';
+import { InstallationPipelinePage } from '@/pages/InstallationPipelinePage';
 import SignUpPage from '@/pages/SignUpPage';
 import UpdatePasswordPage from '@/pages/UpdatePasswordPage';
 import AboutUsPage from '@/pages/AboutUsPage';
@@ -75,6 +76,7 @@ function App() {
                   <Route index element={<Navigate to="orders" replace />} />
                   <Route path="orders" element={<ManageOrdersPage />} />
                   <Route path="orders/:orderId" element={<OrderDetailPage />} />
+                  <Route path="pipeline" element={<InstallationPipelinePage />} />
                   <Route path="points" element={<ManagePointsPage />} />
                   <Route path="users" element={<ManageUsersPage />} />
                   <Route path="tags" element={<ManageTagsPage />} />
