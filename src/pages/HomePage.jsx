@@ -12,7 +12,7 @@ import { FilterPanel } from '@/components/FilterPanel';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { CartModal } from '@/components/CartModal';
 import { FloatingCartButton } from '@/components/FloatingCartButton';
-import { GOOGLE_MAPS_LIBRARIES } from '@/config/googleMaps';
+import { GOOGLE_MAPS_API_KEY, GOOGLE_MAPS_LIBRARIES } from '@/config/googleMaps';
 import { Header } from '@/components/Header';
 import { MobileFilterButton } from '@/components/MobileFilterButton';
 import { FilterSheet } from '@/components/FilterSheet';
@@ -172,7 +172,7 @@ function HomePage() {
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script-main',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
     libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
