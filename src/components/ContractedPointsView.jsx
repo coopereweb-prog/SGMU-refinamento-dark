@@ -60,7 +60,9 @@ export function ContractedPointsView({ orders, profile }) {
   };
 
   const routeUrl = useMemo(() => {
-    return generateOptimizedRouteUrl(selectedPoints);
+    // Filtra pontos sem latitude ou longitude válidas antes de gerar a URL
+    const pointsWithCoords = selectedPoints.filter(p => p.latitude && p.longitude);
+    return generateOptimizedRouteUrl(pointsWithCoords);
   }, [selectedPoints]);
 
   const handleGenerateRoute = () => {
