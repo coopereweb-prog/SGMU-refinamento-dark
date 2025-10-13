@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getUsers, supabase } from "@/lib/supabase";
+import { getUsers, inviteUser, supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -33,15 +33,13 @@ export function ManageUsersPage() {
   }, []);
 
   const handleInvite = async (values) => {
-    const { data, error } = await supabase.auth.admin.inviteUserByEmail(values.email, {
-      data: { role: values.role },
-    });
-    if (error) {
-      toast.error("Erro ao convidar usuário", { description: error.message });
-    } else {
+    try {
+      await inviteUser(values.email, values.full_name, values.role);
       toast.success("Convite enviado!", { description: `Um e-mail de convite foi enviado para ${values.email}.` });
       fetchUsers();
       setIsInviteModalOpen(false);
+    } catch (error) {
+      toast.error("Erro ao convidar usuário", { description: error.message });
     }
   };
 

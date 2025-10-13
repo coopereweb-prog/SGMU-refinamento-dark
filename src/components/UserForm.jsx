@@ -11,7 +11,7 @@ import { Loader2 } from 'lucide-react';
 const userSchema = z.object({
   email: z.string().email({ message: "Por favor, insira um e-mail válido." }),
   role: z.enum(['admin', 'operations_manager', 'field_technician', 'client']),
-  full_name: z.string().optional(),
+  full_name: z.string().min(2, { message: "O nome completo é obrigatório." }),
   phone: z.string().optional(),
 });
 
@@ -64,31 +64,29 @@ export function UserForm({ user, onSave, onCancel, isInvite = false }) {
             </FormItem>
           )}
         />
+        <FormField
+          control={form.control}
+          name="full_name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nome Completo</FormLabel>
+              <FormControl><Input placeholder="Nome do usuário" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         {!isInvite && (
-          <>
-            <FormField
-              control={form.control}
-              name="full_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome Completo</FormLabel>
-                  <FormControl><Input placeholder="Nome do usuário" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Telefone</FormLabel>
-                  <FormControl><Input placeholder="(00) 00000-0000" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </>
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Telefone</FormLabel>
+                <FormControl><Input placeholder="(00) 00000-0000" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         )}
         <FormField
           control={form.control}
