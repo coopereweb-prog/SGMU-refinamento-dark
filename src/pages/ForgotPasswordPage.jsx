@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { Loader2, CheckCircle } from 'lucide-react';
+import { WhatsAppButton } from '../components/WhatsAppButton';
 
 function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -17,9 +18,12 @@ function ForgotPasswordPage() {
     e.preventDefault();
     setLoading(true);
     try {
+      const redirectToUrl = `${window.location.origin}/update-password`;
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/update-password`,
+        redirectTo: redirectToUrl,
       });
+
       if (error) throw error;
       setSuccess(true);
     } catch (error) {
@@ -54,13 +58,17 @@ function ForgotPasswordPage() {
     <div className="w-full min-h-screen flex items-center justify-center py-12">
       <div className="mx-auto grid w-[350px] gap-6">
         <div className="grid gap-2 text-center">
+          <img src="/logo.png" alt="SGMU Logo" className="w-32 mx-auto mb-4" />
           <h1 className="text-3xl font-bold">Redefinir Senha</h1>
           <p className="text-balance text-muted-foreground">
             Insira seu e-mail para receber o link de redefinição.
           </p>
         </div>
         <Card>
-          <CardContent className="pt-6">
+          <CardHeader>
+            <CardTitle>Recuperação de Conta</CardTitle>
+          </CardHeader>
+          <CardContent>
             <form onSubmit={handlePasswordReset} className="grid gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
@@ -72,11 +80,14 @@ function ForgotPasswordPage() {
             </form>
           </CardContent>
         </Card>
-        <div className="text-center text-base">
+         <div className="text-center text-base">
           Lembrou a senha?{" "}
-          <Link to="/login" className="underline font-bold">Faça Login</Link>
+          <Link to="/login" className="underline font-bold">
+            Faça Login
+          </Link>
         </div>
       </div>
+      <WhatsAppButton />
     </div>
   );
 }
