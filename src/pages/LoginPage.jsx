@@ -58,9 +58,13 @@ function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
+      // Forçando a URL de redirecionamento para depuração
+      const redirectToUrl = 'http://localhost:5173/update-password';
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${import.meta.env.VITE_SITE_URL}/update-password`,
+        redirectTo: redirectToUrl,
       });
+
       if (error) throw error;
       toast.success('Verifique seu e-mail', { description: `Um link para redefinir sua senha foi enviado para ${email}.` });
       setView('login');
