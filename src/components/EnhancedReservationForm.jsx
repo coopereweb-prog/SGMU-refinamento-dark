@@ -206,25 +206,41 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
           )}
 
           {step === 'login' && (
-            <FormField
-              control={form.control} name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center justify-between">
-                    <FormLabel>Senha</FormLabel>
-                    <Link 
-                      to="/forgot-password" 
-                      className="text-sm font-medium text-primary underline-offset-4 hover:underline"
-                      state={{ email: userEmail }}
-                    >
-                      Esqueceu sua senha?
-                    </Link>
-                  </div>
-                  <FormControl><Input type="password" placeholder="Sua senha" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <>
+              <FormField
+                control={form.control} name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Senha</FormLabel>
+                      <Link 
+                        to="/forgot-password" 
+                        className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                        state={{ email: userEmail }}
+                      >
+                        Esqueceu sua senha?
+                      </Link>
+                    </div>
+                    <FormControl><Input type="password" placeholder="Sua senha" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <p className="text-center text-sm text-muted-foreground">
+                Ainda não tem uma conta?{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep('signup');
+                    setError(null);
+                    form.reset();
+                  }}
+                  className="font-bold text-yellow-500 hover:underline"
+                >
+                  Cadastre-se
+                </button>
+              </p>
+            </>
           )}
 
           {step === 'signup' && (
