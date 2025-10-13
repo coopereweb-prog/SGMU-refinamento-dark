@@ -165,6 +165,21 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
      }
   };
 
+  const getSubmitHandler = () => {
+    switch (step) {
+      case 'email': return onEmailSubmit;
+      case 'login': return onLoginAndReserve;
+      case 'signup': return onSignUpAndReserve;
+      default: return () => {};
+    }
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      form.handleSubmit(getSubmitHandler())();
+    }
+  };
 
   const renderContent = () => {
     if (step === 'loading') {
@@ -191,9 +206,7 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
     return (
       <Form {...form}>
         <form 
-          onSubmit={form.handleSubmit(
-            step === 'email' ? onEmailSubmit : step === 'login' ? onLoginAndReserve : onSignUpAndReserve
-          )} 
+          onSubmit={form.handleSubmit(getSubmitHandler())} 
           className="space-y-4"
         >
           {step === 'email' && (
@@ -202,7 +215,7 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Email</FormLabel>
-                  <FormControl><Input placeholder="seu@email.com" {...field} /></FormControl>
+                  <FormControl><Input placeholder="seu@email.com" {...field} onKeyDown={handleKeyDown} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -234,7 +247,7 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
                     </div>
                     <FormControl>
                       <div className="relative">
-                        <Input type={showPassword ? 'text' : 'password'} placeholder="Sua senha" {...field} className="pr-10" />
+                        <Input type={showPassword ? 'text' : 'password'} placeholder="Sua senha" {...field} className="pr-10" onKeyDown={handleKeyDown} />
                         <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2" onClick={() => setShowPassword(!showPassword)}>
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
@@ -289,7 +302,7 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
                     <FormLabel>Confirme a Senha</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Input type={showConfirmPassword ? 'text' : 'password'} {...field} className="pr-10" />
+                        <Input type={showConfirmPassword ? 'text' : 'password'} {...field} className="pr-10" onKeyDown={handleKeyDown} />
                         <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
                           {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
