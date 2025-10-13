@@ -481,7 +481,7 @@ export function ManageOrdersPage() {
                           type="datetime-local"
                           value={newReservedUntil}
                           onChange={(e) => setNewReservedUntil(e.target.value)}
-                          className="flex-grow"
+                          className="flex-grow yellow-accent"
                         />
                         <div className="flex gap-2 w-full sm:w-auto">
                           <Button onClick={() => handleExtendReservation(order.id)} className="flex-1">Salvar</Button>

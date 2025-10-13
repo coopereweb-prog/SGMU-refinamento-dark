@@ -8,7 +8,7 @@ export function PrintableOrder({ order }) {
     <div className="p-8 font-sans">
       <header className="flex justify-between items-center border-b pb-4 mb-8">
         <div className="flex items-center space-x-4">
-          <img src="/logo.png" alt="SGMU Logo" className="h-20" />
+          <img src="/lightsquare-logo.png" alt="Lightsquare Logo" className="h-20" />
           <div>
             <h1 className="text-3xl font-bold">SGMU</h1>
             <p className="text-gray-600">Sistema de Gestão de Mobiliário Urbano</p>
