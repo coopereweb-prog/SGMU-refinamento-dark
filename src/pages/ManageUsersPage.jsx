@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getUsers, inviteUser, supabase } from "@/lib/supabase";
+import { getUsers, inviteUser, deleteUser, supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -69,12 +69,13 @@ export function ManageUsersPage() {
   };
 
   const confirmDelete = async () => {
-    const { error } = await supabase.auth.admin.deleteUser(selectedUser.id);
-    if (error) {
-      toast.error("Erro ao deletar usuário", { description: error.message });
-    } else {
+    try {
+      await deleteUser(selectedUser.id);
       toast.success("Usuário deletado com sucesso!");
       fetchUsers();
+    } catch (error) {
+      toast.error("Erro ao deletar usuário", { description: error.message });
+    } finally {
       setIsAlertOpen(false);
       setSelectedUser(null);
     }
