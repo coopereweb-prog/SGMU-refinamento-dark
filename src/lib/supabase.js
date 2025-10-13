@@ -360,3 +360,31 @@ export const assignTaskToTechnician = async (taskId, technicianId) => {
     technician_name: data.profiles?.name,
   };
 };
+
+// Nova função para devolver uma tarefa para o estado 'on_hold'
+export const returnTaskToHold = async (taskId, pointId, notes) => {
+  // Primeiro, atualiza as notas no próprio ponto
+  const { error: pointUpdateError } = await supabase
+    .from('points')
+    .update({ installation_notes: notes })
+    .eq('id', pointId);
+
+  if (pointUpdateError) {
+    console.error('Error updating point notes:', pointUpdateError);
+    throw pointUpdateError;
+  }
+
+  // Em seguida, atualiza o status da tarefa e desatribui o técnico
+  const { error: taskUpdateError } = await supabase
+    .from('installation_tasks')
+    .update({ 
+      status: 'on_hold',
+      assigned_technician_id: null 
+    })
+    .eq('id', taskId);
+
+  if (taskUpdateError) {
+    console.error('Error returning task to hold:', taskUpdateError);
+    throw taskUpdateError;
+  }
+};

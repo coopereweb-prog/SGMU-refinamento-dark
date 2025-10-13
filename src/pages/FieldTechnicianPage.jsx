@@ -1,13 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase, getTechnicianTasks, completeInstallationTask } from '../lib/supabase';
+import { supabase, getTechnicianTasks, completeInstallationTask, returnTaskToHold } from '../lib/supabase';
 import { compressImage } from '../lib/image-utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { LogOut, Camera, UploadCloud, User, Loader2 } from 'lucide-react';
+import { LogOut, Camera, UploadCloud, Loader2, RotateCcw } from 'lucide-react';
 import { RouteGenerator } from '@/components/RouteGenerator';
 
 function FieldTechnicianPage() {
@@ -16,6 +16,7 @@ function FieldTechnicianPage() {
   const [selectedFiles, setSelectedFiles] = useState({});
   const [comments, setComments] = useState({});
   const [uploading, setUploading] = useState({});
+  const [returning, setReturning] = useState({});
   const [compressing, setCompressing] = useState({});
   const navigate = useNavigate();
 
@@ -64,9 +65,9 @@ function FieldTechnicianPage() {
     setComments(prev => ({ ...prev, [pointId]: text }));
   };
 
-  const handleUpload = async (taskId, pointId, file, comment) => {
+  const handleCompleteTask = async (taskId, pointId, file, comment) => {
     if (!file) {
-      toast.warning('Por favor, selecione um arquivo primeiro.');
+      toast.warning('Por favor, selecione uma foto para concluir a tarefa.');
       return;
     }
     setUploading(prev => ({ ...prev, [pointId]: true }));
@@ -91,15 +92,32 @@ function FieldTechnicianPage() {
 
       await completeInstallationTask(taskId);
 
-      toast.success('Foto enviada e tarefa concluída!');
-      
+      toast.success('Tarefa concluída com sucesso!');
       setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
 
     } catch (error) {
-      console.error("Error uploading file:", error);
-      toast.error(`Falha no upload: ${error.message}`);
+      console.error("Error completing task:", error);
+      toast.error(`Falha ao concluir tarefa: ${error.message}`);
     } finally {
       setUploading(prev => ({ ...prev, [pointId]: false }));
+    }
+  };
+
+  const handleReturnToHold = async (taskId, pointId, comment) => {
+    if (!comment) {
+      toast.warning('É obrigatório adicionar um comentário para devolver a tarefa.');
+      return;
+    }
+    setReturning(prev => ({ ...prev, [pointId]: true }));
+    try {
+      await returnTaskToHold(taskId, pointId, comment);
+      toast.success('Tarefa devolvida para pendências.');
+      setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+    } catch (error) {
+      console.error("Error returning task:", error);
+      toast.error(`Falha ao devolver tarefa: ${error.message}`);
+    } finally {
+      setReturning(prev => ({ ...prev, [pointId]: false }));
     }
   };
 
@@ -148,29 +166,36 @@ function FieldTechnicianPage() {
                       <p className="text-sm text-gray-600">Cliente: {task.customer_name}</p>
                     </div>
                     <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Input 
-                          type="file" 
-                          accept="image/*"
-                          className="flex-1" 
-                          onChange={(e) => handleFileChange(task.points.id, e.target.files[0])} 
-                          disabled={uploading[task.points.id] || compressing[task.points.id]} 
-                        />
-                        <Button 
-                          onClick={() => handleUpload(task.id, task.points.id, selectedFiles[task.points.id], comments[task.points.id])} 
-                          disabled={!selectedFiles[task.points.id] || uploading[task.points.id] || compressing[task.points.id]}
-                          className="w-32"
-                        >
-                          {uploading[task.points.id] ? <Loader2 className="animate-spin" /> : <><UploadCloud className="h-4 w-4 mr-2" /> Enviar</>}
-                        </Button>
-                      </div>
+                      <Input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={(e) => handleFileChange(task.points.id, e.target.files[0])} 
+                        disabled={uploading[task.points.id] || compressing[task.points.id] || returning[task.points.id]} 
+                      />
                       {compressing[task.points.id] && <p className="text-sm text-gray-600 flex items-center"><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Comprimindo imagem...</p>}
                       <Textarea 
-                        placeholder="Adicionar um comentário sobre a instalação (opcional)..."
+                        placeholder="Adicionar um comentário (obrigatório para devolver)..."
                         value={comments[task.points.id] || ''}
                         onChange={(e) => handleCommentChange(task.points.id, e.target.value)}
-                        disabled={uploading[task.points.id]}
+                        disabled={uploading[task.points.id] || returning[task.points.id]}
                       />
+                      <div className="flex flex-col sm:flex-row items-center gap-2">
+                        <Button 
+                          onClick={() => handleCompleteTask(task.id, task.points.id, selectedFiles[task.points.id], comments[task.points.id])} 
+                          disabled={!selectedFiles[task.points.id] || uploading[task.points.id] || compressing[task.points.id] || returning[task.points.id]}
+                          className="w-full sm:w-auto flex-1"
+                        >
+                          {uploading[task.points.id] ? <Loader2 className="animate-spin" /> : <><UploadCloud className="h-4 w-4 mr-2" /> Concluir Instalação</>}
+                        </Button>
+                        <Button 
+                          variant="destructive"
+                          onClick={() => handleReturnToHold(task.id, task.points.id, comments[task.points.id])}
+                          disabled={uploading[task.points.id] || returning[task.points.id]}
+                          className="w-full sm:w-auto flex-1"
+                        >
+                          {returning[task.points.id] ? <Loader2 className="animate-spin" /> : <><RotateCcw className="h-4 w-4 mr-2" /> Devolver para Pendências</>}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
