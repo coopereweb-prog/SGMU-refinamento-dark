@@ -68,6 +68,45 @@ const getMarkerIcon = (status) => {
   };
 };
 
+const getInCartMarkerIcon = () => {
+  const color = 'oklch(0.6 0.2 255)'; // Azul para destacar
+  const iconColor = 'oklch(1 0 0)'; // Branco para o ícone do carrinho
+
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
+      <defs>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="black" flood-opacity="0.5"/>
+        </filter>
+      </defs>
+      <path 
+        d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" 
+        fill="${color}" 
+        stroke="oklch(0.145 0 0)" 
+        stroke-width="0.5"
+        filter="url(#shadow)"
+      />
+      <g transform="translate(12, 9) scale(0.45) translate(-12, -12)">
+        <path fill="${iconColor}" d="M9 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+      </g>
+    </svg>
+  `;
+
+  return {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    scaledSize: new window.google.maps.Size(36, 36),
+    anchor: new window.google.maps.Point(18, 36),
+  };
+};
+
+const getDynamicMarkerIcon = (point, cartItems) => {
+  const isInCart = cartItems.some(item => item.point_id === point.id);
+  if (isInCart) {
+    return getInCartMarkerIcon();
+  }
+  return getMarkerIcon(point.status);
+};
+
 const createClusterSvg = (size, fillColor, strokeColor = 'oklch(1 0 0 / 25%)') => `
   <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -334,12 +373,12 @@ function HomePage() {
           {activeRule.display_mode === 'cluster' ? (
             <MarkerClustererF options={{ gridSize: activeRule.cluster_radius, minimumClusterSize: activeRule.min_cluster_size, styles: clusterStyles }} calculator={clustererCalculator}>
               {(clusterer) => filteredPoints.map((point) => (
-                <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} onClick={() => handleMarkerClick(point)} clusterer={clusterer} icon={getMarkerIcon(point.status)} animation={markerAnimation} {...{point_status: point.status}} />
+                <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} onClick={() => handleMarkerClick(point)} clusterer={clusterer} icon={getDynamicMarkerIcon(point, cartItems)} animation={markerAnimation} {...{point_status: point.status}} />
               ))}
             </MarkerClustererF>
           ) : (
             filteredPoints.map((point) => (
-              <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} onClick={() => handleMarkerClick(point)} icon={getMarkerIcon(point.status)} animation={markerAnimation} />
+              <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} onClick={() => handleMarkerClick(point)} icon={getDynamicMarkerIcon(point, cartItems)} animation={markerAnimation} />
             ))
           )}
         </GoogleMap>
