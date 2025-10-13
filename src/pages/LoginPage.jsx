@@ -58,7 +58,15 @@ function LoginPage() {
     const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
 
     if (signInError) {
-      toast.error('Falha no Login', { description: 'E-mail ou senha inválidos.' });
+      if (signInError.message.includes('Email not confirmed')) {
+        toast.error('Confirmação de E-mail Pendente', {
+          description: 'Por favor, verifique sua caixa de entrada e confirme seu e-mail para continuar.',
+        });
+      } else {
+        toast.error('Falha no Login', {
+          description: 'E-mail ou senha inválidos. Por favor, verifique suas credenciais.',
+        });
+      }
       setLoading(false);
       return;
     }
