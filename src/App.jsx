@@ -20,6 +20,7 @@ import { ManageTagsPage } from '@/pages/ManageTagsPage';
 import { ManagePricingPage } from '@/pages/ManagePricingPage';
 import { ManageMapSettingsPage } from '@/pages/ManageMapSettingsPage';
 import SignUpPage from '@/pages/SignUpPage';
+import UpdatePasswordPage from '@/pages/UpdatePasswordPage';
 import AboutUsPage from '@/pages/AboutUsPage';
 import NossosServicosPage from '@/pages/NossosServicosPage';
 import ComoAdquirirPage from '@/pages/ComoAdquirirPage';
@@ -43,6 +44,7 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
               <Route path="/signup" element={<GuestRoute><SignUpPage /></GuestRoute>} />
+              <Route path="/update-password" element={<UpdatePasswordPage />} />
 
               {/* Rotas com o layout principal (cabeçalho e rodapé) */}
               <Route element={<AppLayout />}>
