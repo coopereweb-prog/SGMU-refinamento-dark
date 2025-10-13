@@ -252,6 +252,11 @@ export const getInstallationTasks = async () => {
     .order('created_at', { ascending: false });
 
   if (error) {
+    // Se a tabela não for encontrada, retorna um array vazio para evitar que a aplicação quebre.
+    if (error.code === 'PGRST205') {
+      console.warn("A tabela 'installation_tasks' não foi encontrada. O pipeline de instalação estará vazio.");
+      return [];
+    }
     console.error('Error fetching installation tasks:', error);
     throw error;
   }
