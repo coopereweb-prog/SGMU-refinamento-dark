@@ -8,6 +8,10 @@ export function GuestRoute({ children }) {
   const { profile, loading: profileLoading } = useUser();
 
   const isLoading = authLoading || (user && profileLoading);
+  
+  // Verifica diretamente na URL se é um fluxo de recuperação de senha.
+  // Isso é mais robusto do que depender do estado do AuthContext.
+  const isPasswordRecovery = window.location.hash.includes('type=recovery');
 
   if (isLoading) {
     return (
@@ -17,8 +21,8 @@ export function GuestRoute({ children }) {
     );
   }
 
-  // If the user is logged in, redirect them.
-  if (user && profile) {
+  // Se o usuário estiver logado E não for um fluxo de recuperação de senha, redirecione.
+  if (user && profile && !isPasswordRecovery) {
     const role = profile.role;
     let dashboardPath = '/';
     if (role === 'admin' || role === 'operations_manager') {
@@ -31,6 +35,6 @@ export function GuestRoute({ children }) {
     return <Navigate to={dashboardPath} replace />;
   }
 
-  // Otherwise, show the guest page (e.g., Login)
+  // Caso contrário, mostre a página de convidado (Login, Cadastro, etc.).
   return children;
 }

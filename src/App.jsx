@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { UserProvider } from '@/contexts/UserContext';
-import { MapConfigProvider } from '@/contexts/MapConfigContext';
+import { MapConfigProvider } from '@/contexts/MapConfigProvider';
 
 import { AppLayout } from '@/components/AppLayout';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -10,7 +10,6 @@ import { GuestRoute } from '@/components/GuestRoute';
 
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
-import UpdatePasswordPage from '@/pages/UpdatePasswordPage';
 import ClientDashboardPage from '@/pages/ClientDashboardPage';
 import FieldTechnicianPage from '@/pages/FieldTechnicianPage';
 import { ManageOrdersPage } from '@/pages/ManageOrdersPage';
@@ -44,7 +43,6 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
               <Route path="/signup" element={<GuestRoute><SignUpPage /></GuestRoute>} />
-              <Route path="/update-password" element={<UpdatePasswordPage />} />
 
               {/* Rotas com o layout principal (cabeçalho e rodapé) */}
               <Route element={<AppLayout />}>
