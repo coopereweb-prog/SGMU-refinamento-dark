@@ -92,7 +92,7 @@ Deno.serve(async (req: Request) => {
     const { data: newOrderId, error: rpcError } = await supabaseAdmin.rpc('create_new_order', {
       customer_name: customerData.name,
       customer_email: customerData.email,
-      customer_phone: customerData.phone,
+      customer_phone: customerData.phone || null,
       total_amount: calculatedTotalAmount,
       items: validatedItems,
       p_user_id: userId, // Passa o ID do usuário para a função
