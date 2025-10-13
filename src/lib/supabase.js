@@ -236,3 +236,31 @@ export const updateClientProfile = async (userId, profileData) => {
     throw error;
   }
 };
+
+// Nova função para buscar tarefas de instalação
+export const getInstallationTasks = async () => {
+  const { data, error } = await supabase
+    .from('installation_tasks')
+    .select(`
+      *,
+      order_items (
+        orders ( id, customer_name )
+      ),
+      points ( name ),
+      profiles ( full_name )
+    `)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching installation tasks:', error);
+    throw error;
+  }
+
+  // Formata os dados para um acesso mais fácil
+  return data.map(task => ({
+    ...task,
+    customer_name: task.order_items?.orders?.customer_name,
+    point_name: task.points?.name,
+    technician_name: task.profiles?.full_name,
+  }));
+};
