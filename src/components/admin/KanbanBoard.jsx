@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
-import { getInstallationTasks } from '@/lib/supabase';
+import { DndContext, DragOverlay, closestCorners } from '@dnd-kit/core';
+import { getInstallationTasks, updateInstallationTaskStatus } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { KanbanColumn } from './KanbanColumn';
+import { KanbanCard } from './KanbanCard';
 
 const columnsConfig = [
   { id: 'pending_art', title: 'Aprovação da Arte' },
@@ -17,6 +19,7 @@ const columnsConfig = [
 export function KanbanBoard() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTask, setActiveTask] = useState(null);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -46,6 +49,43 @@ export function KanbanBoard() {
     return groupedTasks;
   }, [tasks]);
 
+  const handleDragStart = (event) => {
+    setActiveTask(event.active.data.current);
+  };
+
+  const handleDragEnd = async (event) => {
+    setActiveTask(null);
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const taskId = active.id;
+    const newStatus = over.id;
+    const originalTask = tasks.find(t => t.id === taskId);
+
+    if (originalTask && originalTask.status !== newStatus) {
+      // Optimistic UI update
+      const originalTasks = [...tasks];
+      setTasks(prevTasks =>
+        prevTasks.map(task =>
+          task.id === taskId ? { ...task, status: newStatus } : task
+        )
+      );
+
+      try {
+        await updateInstallationTaskStatus(taskId, newStatus);
+        const newColumn = columnsConfig.find(c => c.id === newStatus);
+        toast.success(`Tarefa movida para "${newColumn?.title || newStatus}"`);
+      } catch (error) {
+        // Revert UI on failure
+        setTasks(originalTasks);
+        toast.error("Falha ao mover tarefa", { description: error.message });
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -56,17 +96,26 @@ export function KanbanBoard() {
   }
 
   return (
-    <ScrollArea className="w-full whitespace-nowrap">
-      <div className="flex gap-4 p-4 h-[calc(100vh-200px)]">
-        {columnsConfig.map(column => (
-          <KanbanColumn
-            key={column.id}
-            column={column}
-            tasks={tasksByColumn[column.id]}
-          />
-        ))}
-      </div>
-      <ScrollBar orientation="horizontal" />
-    </ScrollArea>
+    <DndContext
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      collisionDetection={closestCorners}
+    >
+      <ScrollArea className="w-full whitespace-nowrap">
+        <div className="flex gap-4 p-4 h-[calc(100vh-200px)]">
+          {columnsConfig.map(column => (
+            <KanbanColumn
+              key={column.id}
+              column={column}
+              tasks={tasksByColumn[column.id]}
+            />
+          ))}
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+      <DragOverlay>
+        {activeTask ? <KanbanCard task={activeTask} /> : null}
+      </DragOverlay>
+    </DndContext>
   );
 }

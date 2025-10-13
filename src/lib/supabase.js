@@ -264,3 +264,16 @@ export const getInstallationTasks = async () => {
     technician_name: task.profiles?.full_name,
   }));
 };
+
+// Nova função para atualizar o status de uma tarefa
+export const updateInstallationTaskStatus = async (taskId, newStatus) => {
+  const { error } = await supabase
+    .from('installation_tasks')
+    .update({ status: newStatus })
+    .eq('id', taskId);
+
+  if (error) {
+    console.error('Error updating task status:', error);
+    throw error;
+  }
+};
