@@ -6,6 +6,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authEvent, setAuthEvent] = useState(null);
 
   useEffect(() => {
     const getInitialSession = async () => {
@@ -17,8 +18,9 @@ export function AuthProvider({ children }) {
     getInitialSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setSession(session);
+        setAuthEvent(event);
       }
     );
 
@@ -34,7 +36,8 @@ export function AuthProvider({ children }) {
     user: session?.user || null,
     signOut,
     loading,
-  }), [session, signOut, loading]);
+    authEvent,
+  }), [session, signOut, loading, authEvent]);
 
   return (
     <AuthContext.Provider value={value}>

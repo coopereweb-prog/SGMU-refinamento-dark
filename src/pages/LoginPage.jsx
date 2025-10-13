@@ -30,11 +30,17 @@ function UpdatePasswordForm() {
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
+      
+      // Força o logout para limpar a sessão de recuperação
+      await supabase.auth.signOut();
+
       toast.success('Senha atualizada com sucesso!', {
         description: 'Você já pode fazer login com sua nova senha.',
       });
-      await supabase.auth.signOut();
-      navigate('/login');
+      
+      // Navega para a página de login, limpando o hash da URL
+      navigate('/login', { replace: true });
+
     } catch (error) {
       toast.error('Falha ao atualizar a senha.', {
         description: 'O link de recuperação pode ter expirado. Por favor, tente novamente.',
@@ -81,10 +87,15 @@ function LoginPage() {
   const from = location.state?.from?.pathname || null;
 
   useEffect(() => {
-    // Verifica se a URL contém o hash de recuperação de senha ao carregar a página
-    if (window.location.hash.includes('type=recovery')) {
-      setView('update_password');
-    }
+    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setView('update_password');
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   const handleLogin = async (e) => {

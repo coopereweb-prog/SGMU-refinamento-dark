@@ -4,14 +4,13 @@ import { useUser } from '@/contexts/UserContext';
 import { Loader2 } from 'lucide-react';
 
 export function GuestRoute({ children }) {
-  const { user, loading: authLoading } = useAuth();
+  const { user, authEvent, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useUser();
 
   const isLoading = authLoading || (user && profileLoading);
   
-  // Verifica diretamente na URL se é um fluxo de recuperação de senha.
-  // Isso é mais robusto do que depender do estado do AuthContext.
-  const isPasswordRecovery = window.location.hash.includes('type=recovery');
+  // O fluxo de recuperação de senha é identificado pelo evento do Supabase.
+  const isPasswordRecovery = authEvent === 'PASSWORD_RECOVERY';
 
   if (isLoading) {
     return (
