@@ -7,7 +7,7 @@ import { Save, Loader2 } from 'lucide-react';
 import { ZoomTimeline } from '@/components/ZoomTimeline';
 import { MapSettingsForm } from '@/components/MapSettingsForm';
 import { Skeleton } from '@/components/ui/skeleton';
-import { GOOGLE_MAPS_API_KEY, GOOGLE_MAPS_LIBRARIES } from '@/config/googleMaps';
+import { GOOGLE_MAPS_LIBRARIES } from '@/config/googleMaps';
 
 const mapContainerStyle = {
   width: '100%',
@@ -28,7 +28,7 @@ export function ManageMapSettingsPage() {
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script-admin',
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
