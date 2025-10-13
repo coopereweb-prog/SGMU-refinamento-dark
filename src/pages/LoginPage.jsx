@@ -53,25 +53,36 @@ function LoginPage() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
 
-      if (data.user) {
-        // VERIFICA E PROCESSA RESERVA PENDENTE
+    // 1. Autenticação
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (signInError) {
+      toast.error('Falha no Login', { description: 'E-mail ou senha inválidos.' });
+      setLoading(false);
+      return;
+    }
+
+    // 2. Lógica pós-login
+    if (data.user) {
+      try {
         const reservationProcessed = await processPendingReservation(data.user.id);
         if (reservationProcessed) {
           navigate('/dashboard', { replace: true });
-          return;
+          return; // A navegação já acontece, não precisa de setLoading(false)
         }
 
-        // Lógica de redirecionamento padrão
         const { data: profile, error: profileError } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
-        if (profileError) throw profileError;
+        if (profileError) {
+          // Lança um erro específico para o catch abaixo
+          throw new Error('Não foi possível carregar os dados do seu perfil.');
+        }
+
         if (from) {
           navigate(from, { replace: true });
           return;
         }
+
         switch (profile.role) {
           case 'admin':
           case 'operations_manager':
@@ -86,10 +97,14 @@ function LoginPage() {
           default:
             navigate('/');
         }
+      } catch (err) {
+        // Este catch agora lida com erros que acontecem *depois* do login
+        toast.error('Erro ao carregar sua sessão', { description: err.message });
+        setLoading(false);
       }
-    } catch (err) {
-      toast.error('Falha no Login', { description: 'E-mail ou senha inválidos.' });
-    } finally {
+    } else {
+      // Fallback, caso 'data.user' seja nulo mesmo sem erro de autenticação (improvável)
+      toast.error('Falha no Login', { description: 'Ocorreu um erro inesperado.' });
       setLoading(false);
     }
   };
