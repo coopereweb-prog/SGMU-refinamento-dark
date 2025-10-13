@@ -14,7 +14,6 @@ function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [view, setView] = useState('login'); // 'login', 'forgot_password'
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || null;
@@ -54,82 +53,6 @@ function LoginPage() {
     }
   };
 
-  const handlePasswordReset = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      // Forçando a URL de redirecionamento para depuração
-      const redirectToUrl = 'http://localhost:5173/update-password';
-      
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: redirectToUrl,
-      });
-
-      if (error) throw error;
-      toast.success('Verifique seu e-mail', { description: `Um link para redefinir sua senha foi enviado para ${email}.` });
-      setView('login');
-    } catch (error) {
-      toast.error('Erro ao enviar e-mail', { description: error.message });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const renderContent = () => {
-    switch (view) {
-      case 'forgot_password':
-        return (
-          <Card>
-            <CardHeader><CardTitle>Redefinir Senha</CardTitle></CardHeader>
-            <CardContent>
-              <form onSubmit={handlePasswordReset} className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="seu@email.com" required value={email} onChange={(e) => setEmail(e.target.value)} disabled={loading} />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>{loading ? <Loader2 className="animate-spin" /> : 'Enviar Link'}</Button>
-                <Button variant="link" onClick={() => setView('login')}>Voltar para o Login</Button>
-              </form>
-            </CardContent>
-          </Card>
-        );
-      case 'login':
-      default:
-        return (
-          <>
-            <Card>
-              <CardHeader><CardTitle>Login</CardTitle></CardHeader>
-              <CardContent>
-                <form onSubmit={handleLogin} className="grid gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" placeholder="seu@email.com" required value={email} onChange={(e) => setEmail(e.target.value)} disabled={loading} />
-                  </div>
-                  <div className="grid gap-2">
-                    <div className="flex items-center">
-                      <Label htmlFor="password">Senha</Label>
-                      <Button type="button" variant="link" className="ml-auto h-auto p-0 text-sm underline" onClick={() => setView('forgot_password')}>Esqueceu sua senha?</Button>
-                    </div>
-                    <div className="relative">
-                      <Input id="password" type={showPassword ? 'text' : 'password'} required value={password} onChange={(e) => setPassword(e.target.value)} disabled={loading} className="pr-10" />
-                      <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-gray-500" onClick={() => setShowPassword(!showPassword)} disabled={loading}>
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>{loading ? <Loader2 className="animate-spin" /> : 'Entrar'}</Button>
-                </form>
-              </CardContent>
-            </Card>
-            <div className="text-center text-base">
-              Ainda não tem uma conta?{" "}
-              <Link to="/signup" className="underline font-bold">Cadastre-se</Link>
-            </div>
-          </>
-        );
-    }
-  };
-
   return (
     <div className="w-full min-h-screen flex items-center justify-center py-12">
       <div className="mx-auto grid w-[350px] gap-6">
@@ -137,10 +60,39 @@ function LoginPage() {
           <img src="/logo.png" alt="SGMU Logo" className="w-32 mx-auto mb-4" />
           <h1 className="text-3xl font-bold">Área Restrita</h1>
           <p className="text-balance text-muted-foreground">
-            {view === 'forgot_password' ? 'Insira seu e-mail para redefinir a senha' : 'Insira suas credenciais para acessar o painel'}
+            Insira suas credenciais para acessar o painel
           </p>
         </div>
-        {renderContent()}
+        <Card>
+          <CardHeader><CardTitle>Login</CardTitle></CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" placeholder="seu@email.com" required value={email} onChange={(e) => setEmail(e.target.value)} disabled={loading} />
+              </div>
+              <div className="grid gap-2">
+                <div className="flex items-center">
+                  <Label htmlFor="password">Senha</Label>
+                  <Link to="/forgot-password" className="ml-auto inline-block text-sm underline">
+                    Esqueceu sua senha?
+                  </Link>
+                </div>
+                <div className="relative">
+                  <Input id="password" type={showPassword ? 'text' : 'password'} required value={password} onChange={(e) => setPassword(e.target.value)} disabled={loading} className="pr-10" />
+                  <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-gray-500" onClick={() => setShowPassword(!showPassword)} disabled={loading}>
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>{loading ? <Loader2 className="animate-spin" /> : 'Entrar'}</Button>
+            </form>
+          </CardContent>
+        </Card>
+        <div className="text-center text-base">
+          Ainda não tem uma conta?{" "}
+          <Link to="/signup" className="underline font-bold">Cadastre-se</Link>
+        </div>
       </div>
       <WhatsAppButton />
     </div>

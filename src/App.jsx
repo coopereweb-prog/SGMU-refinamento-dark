@@ -26,6 +26,7 @@ import NossosServicosPage from '@/pages/NossosServicosPage';
 import ComoAdquirirPage from '@/pages/ComoAdquirirPage';
 import TrabalheConoscoPage from '@/pages/TrabalheConoscoPage';
 import FaleConoscoPage from '@/pages/FaleConoscoPage';
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 
 import { Toaster } from "@/components/ui/sonner";
 
@@ -44,6 +45,7 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
               <Route path="/signup" element={<GuestRoute><SignUpPage /></GuestRoute>} />
+              <Route path="/forgot-password" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
               <Route path="/update-password" element={<UpdatePasswordPage />} />
 
               {/* Rotas com o layout principal (cabeçalho e rodapé) */}
