@@ -83,8 +83,10 @@ const getInCartMarkerIcon = () => {
       <g filter="url(#shadow)">
         <circle cx="18" cy="18" r="16" fill="${circleFill}" stroke="${ringColor}" stroke-width="2"/>
       </g>
-      <g transform="translate(18, 18) scale(0.6) translate(-12, -12)">
-        <path fill="${iconFill}" stroke="${iconFill}" stroke-width="1" stroke-linejoin="round" d="M9 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+      <g transform="translate(18, 18) scale(0.8) translate(-12, -12)" fill="none" stroke="${iconFill}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="8" cy="21" r="1"/>
+        <circle cx="19" cy="21" r="1"/>
+        <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.16"/>
       </g>
     </svg>
   `;
