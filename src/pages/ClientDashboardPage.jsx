@@ -20,6 +20,8 @@ import { ClientProfileForm } from '../components/ClientProfileForm';
 import { WhatsAppButton } from '../components/WhatsAppButton';
 import { RouteGenerator } from '@/components/RouteGenerator';
 import { ContractedPointsView } from '../components/ContractedPointsView';
+import { VisitationRoutePlanner } from '../components/VisitationRoutePlanner';
+import { addYears } from 'date-fns';
 
 function ClientDashboardPage() {
   const { profile, loading: userProfileLoading } = useUser();
@@ -103,6 +105,21 @@ function ClientDashboardPage() {
   const completedOrders = useMemo(() => {
     return orders.filter(order => order.status === 'completed');
   }, [orders]);
+
+  // Esta é a lista "achatada" de pontos necessária para ambos os componentes
+  const contractedPoints = useMemo(() => {
+    if (!completedOrders) return [];
+    return completedOrders.flatMap(order => 
+      order.order_items.map(item => ({
+        ...item.points,
+        uniqueId: `${order.id}-${item.id}`, 
+        price: item.price,
+        period_years: item.period_years,
+        startDate: new Date(order.updated_at), 
+        endDate: addYears(new Date(order.updated_at), item.period_years),
+      }))
+    );
+  }, [completedOrders]);
 
   if (userProfileLoading || loadingOrders) return <div className="flex items-center justify-center h-full">Carregando...</div>;
 
@@ -214,7 +231,10 @@ function ClientDashboardPage() {
         </TabsContent>
 
         <TabsContent value="points">
-          <ContractedPointsView orders={completedOrders} profile={profile} />
+          <div className="space-y-6 mt-6">
+            <VisitationRoutePlanner points={contractedPoints} />
+            <ContractedPointsView orders={completedOrders} profile={profile} />
+          </div>
         </TabsContent>
 
         <TabsContent value="profile">
