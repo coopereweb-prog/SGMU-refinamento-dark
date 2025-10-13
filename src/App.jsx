@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from '@/contexts/AuthContext';
 import { UserProvider } from '@/contexts/UserContext';
 import { MapConfigProvider } from '@/contexts/MapConfigContext';
+import { CartProvider } from '@/contexts/CartContext';
+import { GlobalCart } from '@/components/GlobalCart';
 
 import { AppLayout } from '@/components/AppLayout';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -40,56 +42,59 @@ function App() {
     <AuthProvider>
       <UserProvider>
         <MapConfigProvider>
-          <Router>
-            <Routes>
-              {/* Rotas Públicas */}
-              <Route path="/" element={<HomePage />} />
-              <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
-              <Route path="/signup" element={<GuestRoute><SignUpPage /></GuestRoute>} />
-              <Route path="/forgot-password" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
-              <Route path="/update-password" element={<UpdatePasswordPage />} />
+          <CartProvider>
+            <Router>
+              <Routes>
+                {/* Rotas Públicas */}
+                <Route path="/" element={<HomePage />} />
+                <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
+                <Route path="/signup" element={<GuestRoute><SignUpPage /></GuestRoute>} />
+                <Route path="/forgot-password" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
+                <Route path="/update-password" element={<UpdatePasswordPage />} />
 
-              {/* Rotas com o layout principal (cabeçalho e rodapé) */}
-              <Route element={<AppLayout />}>
-                {/* Páginas de Conteúdo Público */}
-                <Route path="/quem-somos" element={<AboutUsPage />} />
-                <Route path="/nossos-servicos" element={<NossosServicosPage />} />
-                <Route path="/como-adquirir" element={<ComoAdquirirPage />} />
-                <Route path="/trabalhe-conosco" element={<TrabalheConoscoPage />} />
-                <Route path="/fale-conosco" element={<FaleConoscoPage />} />
+                {/* Rotas com o layout principal (cabeçalho e rodapé) */}
+                <Route element={<AppLayout />}>
+                  {/* Páginas de Conteúdo Público */}
+                  <Route path="/quem-somos" element={<AboutUsPage />} />
+                  <Route path="/nossos-servicos" element={<NossosServicosPage />} />
+                  <Route path="/como-adquirir" element={<ComoAdquirirPage />} />
+                  <Route path="/trabalhe-conosco" element={<TrabalheConoscoPage />} />
+                  <Route path="/fale-conosco" element={<FaleConoscoPage />} />
 
-                {/* Páginas Protegidas */}
-                <Route 
-                  path="/dashboard" 
-                  element={<ProtectedRoute allowedRoles={CLIENT_ROLES}><ClientDashboardPage /></ProtectedRoute>} 
-                />
-                <Route 
-                  path="/technician-panel" 
-                  element={<ProtectedRoute allowedRoles={TECHNICIAN_ROLES}><FieldTechnicianPage /></ProtectedRoute>} 
-                />
-                
-                {/* Rotas de Administração com Layout aninhado */}
-                <Route 
-                  path="/admin" 
-                  element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><AdminLayout /></ProtectedRoute>}
-                >
-                  <Route index element={<Navigate to="orders" replace />} />
-                  <Route path="orders" element={<ManageOrdersPage />} />
-                  <Route path="orders/:orderId" element={<OrderDetailPage />} />
-                  <Route path="pipeline" element={<InstallationPipelinePage />} />
-                  <Route path="points" element={<ManagePointsPage />} />
-                  <Route path="users" element={<ManageUsersPage />} />
-                  <Route path="tags" element={<ManageTagsPage />} />
-                  <Route path="pricing" element={<ManagePricingPage />} />
-                  <Route path="map-settings" element={<ManageMapSettingsPage />} />
+                  {/* Páginas Protegidas */}
+                  <Route 
+                    path="/dashboard" 
+                    element={<ProtectedRoute allowedRoles={CLIENT_ROLES}><ClientDashboardPage /></ProtectedRoute>} 
+                  />
+                  <Route 
+                    path="/technician-panel" 
+                    element={<ProtectedRoute allowedRoles={TECHNICIAN_ROLES}><FieldTechnicianPage /></ProtectedRoute>} 
+                  />
+                  
+                  {/* Rotas de Administração com Layout aninhado */}
+                  <Route 
+                    path="/admin" 
+                    element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><AdminLayout /></ProtectedRoute>}
+                  >
+                    <Route index element={<Navigate to="orders" replace />} />
+                    <Route path="orders" element={<ManageOrdersPage />} />
+                    <Route path="orders/:orderId" element={<OrderDetailPage />} />
+                    <Route path="pipeline" element={<InstallationPipelinePage />} />
+                    <Route path="points" element={<ManagePointsPage />} />
+                    <Route path="users" element={<ManageUsersPage />} />
+                    <Route path="tags" element={<ManageTagsPage />} />
+                    <Route path="pricing" element={<ManagePricingPage />} />
+                    <Route path="map-settings" element={<ManageMapSettingsPage />} />
+                  </Route>
                 </Route>
-              </Route>
 
-              {/* Rota de fallback */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Router>
-          <Toaster />
+                {/* Rota de fallback */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+              <GlobalCart />
+            </Router>
+            <Toaster />
+          </CartProvider>
         </MapConfigProvider>
       </UserProvider>
     </AuthProvider>

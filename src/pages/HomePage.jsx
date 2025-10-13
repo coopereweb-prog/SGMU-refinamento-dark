@@ -4,14 +4,11 @@ import { supabase } from '@/lib/supabase';
 import { PointDetailsSheet } from '@/components/PointDetailsSheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMapConfig } from '@/contexts/MapConfigContext';
-import { Modal } from '@/components/Modal';
-import { EnhancedReservationForm } from '@/components/EnhancedReservationForm';
+import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { FilterPanel } from '@/components/FilterPanel';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
-import { CartModal } from '@/components/CartModal';
-import { FloatingCartButton } from '@/components/FloatingCartButton';
 import { GOOGLE_MAPS_LIBRARIES } from '@/config/googleMaps';
 import { Header } from '@/components/Header';
 import { MobileFilterButton } from '@/components/MobileFilterButton';
@@ -152,40 +149,18 @@ function HomePage() {
   const [loadingPoints, setLoadingPoints] = useState(true);
   const [map, setMap] = useState(null);
   const [currentZoom, setCurrentZoom] = useState(12);
-  const [cartItems, setCartItems] = useState(() => {
-    try {
-      const savedCart = localStorage.getItem('sgmu-cart');
-      return savedCart ? JSON.parse(savedCart) : [];
-    } catch (error) {
-      console.error("Falha ao carregar o carrinho do localStorage:", error);
-      return [];
-    }
-  });
-  const [isReservationFormOpen, setIsReservationFormOpen] = useState(false);
   const [markerAnimation, setMarkerAnimation] = useState(null);
-  const [isCartModalOpen, setIsCartModalOpen] = useState(false);
-  const [isCartMinimized, setIsCartMinimized] = useState(cartItems.length > 0);
   const [activeFilters, setActiveFilters] = useState({ statuses: ['available'], tags: [], tiers: [] });
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
 
-  const { rules, settings, loading: loadingConfig } = useMapConfig();
+  const { rules, loading: loadingConfig } = useMapConfig();
+  const { cartItems, addToCart } = useCart();
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script-main',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     libraries: GOOGLE_MAPS_LIBRARIES,
   });
-
-  // Salva o carrinho no localStorage sempre que ele for alterado
-  useEffect(() => {
-    try {
-      localStorage.setItem('sgmu-cart', JSON.stringify(cartItems));
-      // Atualiza o estado do botão flutuante
-      setIsCartMinimized(cartItems.length > 0);
-    } catch (error) {
-      console.error("Falha ao salvar o carrinho no localStorage:", error);
-    }
-  }, [cartItems]);
 
   useEffect(() => {
     const fetchPoints = async () => {
@@ -245,55 +220,8 @@ function HomePage() {
   };
 
   const handleAddToCart = (point, period) => {
-    if (cartItems.some(item => item.point_id === point.id)) {
-      toast.warning("Este ponto já está no seu carrinho.");
-      return;
-    }
-    const price = point[`price_${period}y`];
-    if (typeof price !== 'number' || price <= 0) {
-      toast.error("Preço inválido para o período selecionado.");
-      return;
-    }
-    const newItem = { point_id: point.id, name: point.name, price, period_years: period };
-    setCartItems(prevItems => [...prevItems, newItem]);
-    toast.success(`${point.name} adicionado ao carrinho!`);
+    addToCart(point, period);
     setIsSheetOpen(false);
-  };
-
-  const handleRemoveFromCart = (index) => setCartItems(prev => prev.filter((_, i) => i !== index));
-  const handleClearCart = () => {
-    setCartItems([]);
-    setIsCartModalOpen(false);
-  };
-
-  const handleUpdateCartItemPeriod = (index, newPeriod) => {
-    const itemToUpdate = cartItems[index];
-    const point = points.find(p => p.id === itemToUpdate.point_id);
-    if (!point) return;
-    const newPrice = point[`price_${newPeriod}y`];
-    if (typeof newPrice !== 'number' || newPrice <= 0) {
-      toast.error("Período indisponível para este ponto.");
-      return;
-    }
-    setCartItems(prev => prev.map((item, i) => i === index ? { ...item, period_years: newPeriod, price: newPrice } : item));
-  };
-
-  const handleReservationSuccess = () => {
-    setIsReservationFormOpen(false);
-    setCartItems([]);
-  };
-
-  const handleCloseCartModal = () => {
-    setIsCartModalOpen(false);
-  };
-
-  const handleOpenCartModal = () => {
-    setIsCartModalOpen(true);
-  };
-
-  const handleShowReservationForm = () => {
-    setIsCartModalOpen(false);
-    setIsReservationFormOpen(true);
   };
 
   const onMapLoad = useCallback((mapInstance) => setMap(mapInstance), []);
@@ -384,14 +312,6 @@ function HomePage() {
       </main>
 
       <PointDetailsSheet point={selectedPoint} isOpen={isSheetOpen} onOpenChange={setIsSheetOpen} onAddToCart={handleAddToCart} />
-      
-      <CartModal isOpen={isCartModalOpen} onClose={handleCloseCartModal} cartItems={cartItems} onRemoveFromCart={handleRemoveFromCart} onClearCart={handleClearCart} onUpdateCartItemPeriod={handleUpdateCartItemPeriod} onShowReservationForm={handleShowReservationForm} />
-
-      {isCartMinimized && (<FloatingCartButton itemCount={cartItems.length} onClick={handleOpenCartModal} />)}
-
-      <Modal isOpen={isReservationFormOpen} onClose={() => setIsReservationFormOpen(false)} title="Finalizar Reserva" description="Preencha seus dados para concluir a reserva dos pontos.">
-        <EnhancedReservationForm cartItems={cartItems} onClose={() => setIsReservationFormOpen(false)} onReservationSuccess={handleReservationSuccess} />
-      </Modal>
       
       <WhatsAppButton />
     </div>
