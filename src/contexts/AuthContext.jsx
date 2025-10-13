@@ -5,7 +5,6 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
-  const [authEvent, setAuthEvent] = useState(null); // State to track the auth event
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,15 +17,7 @@ export function AuthProvider({ children }) {
     getInitialSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        // When the user signs in via a recovery link, the URL hash contains `type=recovery`.
-        // We can use this to distinguish it from a normal login.
-        if (event === 'SIGNED_IN' && window.location.hash.includes('type=recovery')) {
-          // By setting a specific event type, we can prevent GuestRoute from redirecting.
-          setAuthEvent('PASSWORD_RECOVERY');
-        } else {
-          setAuthEvent(event);
-        }
+      (_event, session) => {
         setSession(session);
       }
     );
@@ -41,10 +32,9 @@ export function AuthProvider({ children }) {
   const value = useMemo(() => ({
     session,
     user: session?.user || null,
-    authEvent, // Expose the event
     signOut,
     loading,
-  }), [session, authEvent, signOut, loading]);
+  }), [session, signOut, loading]);
 
   return (
     <AuthContext.Provider value={value}>

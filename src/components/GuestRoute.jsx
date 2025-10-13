@@ -4,7 +4,7 @@ import { useUser } from '@/contexts/UserContext';
 import { Loader2 } from 'lucide-react';
 
 export function GuestRoute({ children }) {
-  const { user, authEvent, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useUser();
 
   const isLoading = authLoading || (user && profileLoading);
@@ -17,8 +17,8 @@ export function GuestRoute({ children }) {
     );
   }
 
-  // If the user is logged in (and it's not a password recovery session), redirect them.
-  if (user && profile && authEvent !== 'PASSWORD_RECOVERY') {
+  // If the user is logged in, redirect them.
+  if (user && profile) {
     const role = profile.role;
     let dashboardPath = '/';
     if (role === 'admin' || role === 'operations_manager') {
