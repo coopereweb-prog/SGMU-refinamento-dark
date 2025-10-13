@@ -160,7 +160,7 @@ function ClientDashboardPage() {
                     <div>
                       <h4 className="font-semibold mb-2">Itens do Pedido</h4>
                       {order.order_items.map(item => (
-                        <div key={item.id} className="text-sm flex flex-col md:flex-row justify-between items-start md:items-center bg-gray-50 p-3 rounded-md mb-2">
+                        <div key={item.id} className="text-sm flex flex-col md:flex-row justify-between items-start md:items-center bg-card p-3 rounded-md mb-2">
                           <span className="flex items-center font-medium mb-2 md:mb-0"><MapPin className="h-4 w-4 mr-2 text-gray-500" /> {item.points.name}</span>
                           <div className="flex items-center gap-2 w-full md:w-auto">
                             {updatingItemId === item.id && <Loader2 className="h-4 w-4 animate-spin" />}

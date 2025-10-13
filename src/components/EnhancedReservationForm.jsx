@@ -1,318 +1,269 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { supabase } from '../lib/supabase';
 import { createOrder } from '../lib/supabase.js';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
-export function EnhancedReservationForm({ cartItems, onClose, onReservationSuccess }) {
-  const [customerData, setCustomerData] = useState({ 
-    name: '', 
-    email: '', 
-    phone: '',
-    password: '',
-    confirmPassword: ''
-  });
+// Esquemas de validação para cada passo
+const emailSchema = z.object({
+  email: z.string().email({ message: 'Por favor, insira um e-mail válido.' }),
+});
+
+const loginSchema = z.object({
+  password: z.string().min(1, { message: 'A senha é obrigatória.' }),
+});
+
+const signUpSchema = z.object({
+  name: z.string().min(2, { message: 'O nome é obrigatório.' }),
+  phone: z.string().min(10, { message: 'O telefone é obrigatório.' }),
+  password: z.string().min(6, { message: 'A senha deve ter no mínimo 6 caracteres.' }),
+  confirmPassword: z.string(),
+}).refine(data => data.password === data.confirmPassword, {
+  message: 'As senhas não coincidem.',
+  path: ['confirmPassword'],
+});
+
+export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
+  const [step, setStep] = useState('loading'); // loading, logged_in, email, login, signup
+  const [userEmail, setUserEmail] = useState('');
+  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
-  const [view, setView] = useState('login'); // 'login', 'create', 'guest', 'forgot_password'
-  const [loginData, setLoginData] = useState({ email: '', password: '' });
-  const [showLoginPassword, setShowLoginPassword] = useState(false);
-  const [showCreatePassword, setShowCreatePassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  // Verificar se usuário já está logado
+  const form = useForm({
+    resolver: zodResolver(
+      step === 'email' ? emailSchema : step === 'login' ? loginSchema : signUpSchema
+    ),
+    defaultValues: { email: '', password: '', name: '', phone: '', confirmPassword: '' },
+  });
+
+  // 1. Checa se o usuário já está logado ao iniciar
   useEffect(() => {
-    const checkUserSession = async () => {
+    const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        // Se usuário está logado, preencher dados automaticamente
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('name, email, phone')
-          .eq('id', session.user.id)
-          .single();
-        
-        if (profile) {
-          setCustomerData(prev => ({
-            ...prev,
-            name: profile.name || session.user.user_metadata?.name || '',
-            email: profile.email || session.user.email,
-            phone: profile.phone || ''
-          }));
-        }
-        // Direcionar para a view de usuário logado
-        setView('logged_in');
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+        setUserData({
+          name: profile?.name || session.user.user_metadata?.name,
+          email: profile?.email || session.user.email,
+          phone: profile?.phone || '',
+        });
+        setStep('logged_in');
+      } else {
+        setStep('email');
       }
     };
-    
-    checkUserSession();
+    checkSession();
   }, []);
 
-  const handleLoginInputChange = (e) => {
-    const { name, value } = e.target;
-    setLoginData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  // 2. Handler para o passo de e-mail
+  const onEmailSubmit = async (values) => {
     setLoading(true);
     setError(null);
-
     try {
-      const { error: loginError } = await supabase.auth.signInWithPassword({
-        email: loginData.email,
-        password: loginData.password,
-      });
-      if (loginError) throw loginError;
-
-      // Após login, obter dados do perfil
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('name, email, phone')
-        .eq('id', user.id)
-        .single();
-
-      // Atualizar dados do cliente com informações do perfil
-      setCustomerData({
-        name: profile?.name || user.user_metadata?.name || '',
-        email: profile?.email || user.email,
-        phone: profile?.phone || '',
-        password: '',
-        confirmPassword: ''
-      });
-
-      // Criar pedido
-      await createOrder({
-        name: profile?.name || user.user_metadata?.name || '',
-        email: profile?.email || user.email,
-        phone: profile?.phone || ''
-      }, cartItems);
-
-      setSuccess(true);
-      onReservationSuccess();
+      const { data: userExists, error } = await supabase.rpc('user_exists', { user_email: values.email });
+      if (error) throw error;
       
-      setTimeout(() => navigate('/dashboard'), 2000);
+      setUserEmail(values.email);
+      if (userExists) {
+        setStep('login');
+      } else {
+        setStep('signup');
+      }
     } catch (err) {
-      setError('E-mail ou senha inválidos. Por favor, verifique suas credenciais.');
+      setError('Não foi possível verificar o e-mail. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 3. Handler para o passo de Login
+  const onLoginAndReserve = async (values) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: userEmail,
+        password: values.password,
+      });
+      if (signInError) throw signInError;
+      
+      const { data: profile } = await supabase.from('profiles').select('*').eq('email', userEmail).single();
+      await createOrder(profile, cartItems);
+      
+      toast.success('Reserva confirmada!', { description: 'Você será redirecionado para seu painel.' });
+      onReservationSuccess();
+      navigate('/dashboard');
+    } catch (err) {
+      setError('E-mail ou senha inválidos.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 4. Handler para o passo de Cadastro
+  const onSignUpAndReserve = async (values) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: userEmail,
+        password: values.password,
+        options: {
+          data: { name: values.name, phone: values.phone },
+        },
+      });
+      if (signUpError) throw signUpError;
+      
+      await createOrder({ name: values.name, email: userEmail, phone: values.phone }, cartItems);
+
+      toast.success('Conta criada e reserva confirmada!', { description: 'Verifique seu e-mail para ativar a conta. Você será redirecionado.' });
+      onReservationSuccess();
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message || 'Ocorreu um erro no cadastro.');
     } finally {
       setLoading(false);
     }
   };
   
-  const handlePasswordReset = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(loginData.email, {
-        redirectTo: `${import.meta.env.VITE_SITE_URL}/update-password`,
-      });
-      if (error) throw error;
-      toast.success('Verifique seu e-mail', {
-        description: `Se o e-mail ${loginData.email} estiver cadastrado, você receberá um link para redefinir sua senha.`,
-      });
-      setView('login');
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+  // 5. Handler para usuário que já está logado
+  const onLoggedInReserve = async () => {
+     setLoading(true);
+     setError(null);
+     try {
+       await createOrder(userData, cartItems);
+       toast.success('Reserva confirmada!', { description: 'Você será redirecionado para seu painel.' });
+       onReservationSuccess();
+       navigate('/dashboard');
+     } catch (err) {
+        setError(err.message || 'Ocorreu um erro ao criar sua reserva.');
+     } finally {
+       setLoading(false);
+     }
   };
 
-  const handleCreateAccountAndReserve = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    if (customerData.password !== customerData.confirmPassword) {
-      setError('As senhas não coincidem.');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const { error: signUpError } = await supabase.auth.signUp({
-        email: customerData.email,
-        password: customerData.password,
-        options: { data: { name: customerData.name } }
-      });
-      if (signUpError) throw signUpError;
-
-      await createOrder(customerData, cartItems);
-      setSuccess(true);
-      onReservationSuccess();
-      
-      setTimeout(() => navigate('/dashboard'), 3000);
-    } catch (err) {
-      if (err.message?.includes('User already registered')) {
-        setError('Este e-mail já está cadastrado. Por favor, faça login.');
-        setView('login');
-        setLoginData(prev => ({ ...prev, email: customerData.email }));
-      } else {
-        setError(err.message ?? 'Não foi possível completar sua reserva.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleReserveAsGuest = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    try {
-      await createOrder(customerData, cartItems);
-      setSuccess(true);
-      onReservationSuccess();
-    } catch (err) {
-      setError(err.message ?? 'Não foi possível completar sua reserva.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleReserveWithLoggedInUser = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    try {
-      await createOrder(customerData, cartItems);
-      setSuccess(true);
-      onReservationSuccess();
-    } catch (err) {
-      setError(err.message ?? 'Não foi possível completar sua reserva.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (success) {
-    return (
-      <Alert>
-        <CheckCircle className="h-4 w-4" />
-        <AlertTitle>Reserva Realizada com Sucesso!</AlertTitle>
-        <AlertDescription>Sua reserva foi confirmada. Em breve você será redirecionado.</AlertDescription>
-        <Button onClick={onClose} className="mt-4 w-full">Fechar</Button>
-      </Alert>
-    );
-  }
 
   const renderContent = () => {
-    switch (view) {
-      case 'forgot_password':
-        return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Redefinir Senha</h3>
-            <form onSubmit={handlePasswordReset} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="login-email">E-mail</Label>
-                <Input id="login-email" name="email" type="email" placeholder="seu@email.com" required value={loginData.email} onChange={handleLoginInputChange} disabled={loading} />
-              </div>
-              {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertTitle>Erro</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
-              <div className="flex flex-col space-y-3">
-                <Button type="submit" className="w-full" disabled={loading}>{loading ? <Loader2 className="animate-spin" /> : 'Enviar Link'}</Button>
-                <Button type="button" variant="link" onClick={() => { setView('login'); setError(null); }}>Voltar para o Login</Button>
-              </div>
-            </form>
-          </div>
-        );
-      case 'login':
-        return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Já tem uma conta?</h3>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="login-email">E-mail</Label>
-                <Input id="login-email" name="email" type="email" placeholder="seu@email.com" required value={loginData.email} onChange={handleLoginInputChange} disabled={loading} />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="login-password">Senha</Label>
-                  <Button type="button" variant="link" className="h-auto p-0 text-sm underline" onClick={() => setView('forgot_password')}>Esqueceu sua senha?</Button>
-                </div>
-                <div className="relative">
-                  <Input id="login-password" name="password" type={showLoginPassword ? 'text' : 'password'} required value={loginData.password} onChange={handleLoginInputChange} disabled={loading} className="pr-10" />
-                  <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-gray-500" onClick={() => setShowLoginPassword(!showLoginPassword)} disabled={loading}>
-                    {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
-              {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertTitle>Erro</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
-              <div className="flex flex-col space-y-3">
-                <Button type="submit" className="w-full" disabled={loading}>{loading ? <Loader2 className="animate-spin" /> : 'Entrar e Reservar'}</Button>
-                <Button type="button" variant="outline" onClick={() => { setView('guest'); setError(null); }}>Criar Conta ou Continuar como Convidado</Button>
-              </div>
-            </form>
-          </div>
-        );
-      case 'logged_in':
-        return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Confirmar Reserva</h3>
-            <div className="bg-muted p-4 rounded-lg">
-              <p className="font-medium">Dados do Cliente:</p>
-              <p>Nome: {customerData.name}</p>
-              <p>Email: {customerData.email}</p>
-              <p>Telefone: {customerData.phone}</p>
-            </div>
-            <form onSubmit={handleReserveWithLoggedInUser} className="space-y-4">
-              {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertTitle>Erro</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
-              <div className="flex justify-end space-x-4">
-                <Button type="button" variant="outline" onClick={() => setView('guest')} disabled={loading}>Alterar Dados</Button>
-                <Button type="submit" className="w-40" disabled={loading}>{loading ? <Loader2 className="animate-spin" /> : 'Confirmar Reserva'}</Button>
-              </div>
-            </form>
-          </div>
-        );
-      default: // 'create' or 'guest'
-        const isCreatingAccount = view === 'create';
-        return (
-          <>
-            <div className="flex space-x-2 mb-4">
-              <Button variant={isCreatingAccount ? "default" : "outline"} onClick={() => setView('create')} className="flex-1">Criar Conta</Button>
-              <Button variant={!isCreatingAccount ? "default" : "outline"} onClick={() => setView('guest')} className="flex-1">Sem Conta</Button>
-            </div>
-            <form onSubmit={isCreatingAccount ? handleCreateAccountAndReserve : handleReserveAsGuest} className="space-y-4">
-              <div className="space-y-2"><Label htmlFor="name">Nome Completo</Label><Input id="name" type="text" placeholder="Seu nome" required value={customerData.name} onChange={(e) => setCustomerData(p => ({...p, name: e.target.value}))} disabled={loading} /></div>
-              <div className="space-y-2"><Label htmlFor="email">E-mail</Label><Input id="email" type="email" placeholder="seu@email.com" required value={customerData.email} onChange={(e) => setCustomerData(p => ({...p, email: e.target.value}))} disabled={loading} /></div>
-              <div className="space-y-2"><Label htmlFor="phone">Telefone / WhatsApp</Label><Input id="phone" type="tel" placeholder="(19) 99999-9999" required value={customerData.phone} onChange={(e) => setCustomerData(p => ({...p, phone: e.target.value}))} disabled={loading} /></div>
-              {isCreatingAccount && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Senha</Label>
-                    <div className="relative">
-                      <Input id="password" type={showCreatePassword ? 'text' : 'password'} placeholder="Crie uma senha" required value={customerData.password} onChange={(e) => setCustomerData(p => ({...p, password: e.target.value}))} disabled={loading} className="pr-10" />
-                      <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-gray-500" onClick={() => setShowCreatePassword(!showCreatePassword)} disabled={loading}>{showCreatePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-                    <div className="relative">
-                      <Input id="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} placeholder="Confirme sua senha" required value={customerData.confirmPassword} onChange={(e) => setCustomerData(p => ({...p, confirmPassword: e.target.value}))} disabled={loading} className="pr-10" />
-                      <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-gray-500" onClick={() => setShowConfirmPassword(!showConfirmPassword)} disabled={loading}>{showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
-                    </div>
-                  </div>
-                </>
-              )}
-              {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertTitle>Erro</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
-              <div className="flex justify-end space-x-4">
-                <Button type="button" variant="outline" onClick={() => setView('login')} disabled={loading}>Já tenho conta</Button>
-                <Button type="submit" className="w-40" disabled={loading}>{loading ? <Loader2 className="animate-spin" /> : isCreatingAccount ? 'Criar e Reservar' : 'Reservar'}</Button>
-              </div>
-            </form>
-          </>
-        );
+    if (step === 'loading') {
+      return <div className="flex justify-center items-center h-48"><Loader2 className="animate-spin" /></div>;
     }
+    
+    if (step === 'logged_in') {
+      return (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Confirmar Reserva</h3>
+          <div className="bg-muted p-4 rounded-lg text-sm">
+            <p>Você está reservando como:</p>
+            <p className="font-bold">{userData.name}</p>
+            <p>{userData.email}</p>
+          </div>
+          {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertTitle>Erro</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+          <Button onClick={onLoggedInReserve} className="w-full" disabled={loading}>
+            {loading ? <Loader2 className="animate-spin" /> : 'Confirmar Reserva'}
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <Form {...form}>
+        <form 
+          onSubmit={form.handleSubmit(
+            step === 'email' ? onEmailSubmit : step === 'login' ? onLoginAndReserve : onSignUpAndReserve
+          )} 
+          className="space-y-4"
+        >
+          {step === 'email' && (
+            <FormField
+              control={form.control} name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl><Input placeholder="seu@email.com" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {(step === 'login' || step === 'signup') && (
+            <div className='text-sm'>
+              <p>Email: <span className="font-bold">{userEmail}</span></p>
+              <Button variant="link" className="p-0 h-auto" onClick={() => { setStep('email'); form.reset(); setError(null); }}>Trocar e-mail</Button>
+            </div>
+          )}
+
+          {step === 'login' && (
+            <FormField
+              control={form.control} name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center justify-between">
+                    <FormLabel>Senha</FormLabel>
+                    <Link 
+                      to="/forgot-password" 
+                      className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                      state={{ email: userEmail }}
+                    >
+                      Esqueceu sua senha?
+                    </Link>
+                  </div>
+                  <FormControl><Input type="password" placeholder="Sua senha" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {step === 'signup' && (
+            <>
+              <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input placeholder="Seu nome" {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Telefone / WhatsApp</FormLabel><FormControl><Input placeholder="(19) 99999-9999" {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField
+                control={form.control} name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Crie uma Senha</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input type={showPassword ? 'text' : 'password'} {...field} className="pr-10" />
+                        <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2" onClick={() => setShowPassword(!showPassword)}>
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField control={form.control} name="confirmPassword" render={({ field }) => (<FormItem><FormLabel>Confirme a Senha</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </>
+          )}
+          
+          {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertTitle>Erro</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? <Loader2 className="animate-spin" /> : 
+              step === 'email' ? 'Continuar' :
+              step === 'login' ? 'Entrar e Reservar' :
+              'Criar Conta e Reservar'
+            }
+          </Button>
+        </form>
+      </Form>
+    );
   };
 
   return <div className="space-y-4">{renderContent()}</div>;
