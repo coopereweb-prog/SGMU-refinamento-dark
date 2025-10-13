@@ -24,5 +24,8 @@ export function generateOptimizedRouteUrl(points) {
   
   const destinationStr = `${destination.latitude},${destination.longitude}`;
 
-  return `https://www.google.com/maps/dir/?api=1&destination=${destinationStr}&waypoints=${waypoints}&travelmode=driving`;
+  // Codifica a string de waypoints para garantir que caracteres especiais sejam tratados corretamente
+  const encodedWaypoints = encodeURIComponent(waypoints);
+
+  return `https://www.google.com/maps/dir/?api=1&destination=${destinationStr}&waypoints=${encodedWaypoints}&travelmode=driving`;
 }
