@@ -1,51 +1,30 @@
 import { useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { supabase } from '../lib/supabase';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
-import { WhatsAppButton } from '../components/WhatsAppButton';
+import { Loader2 } from 'lucide-react';
 
 function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || null;
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      if (data.user) {
-        const { data: profile, error: profileError } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
-        if (profileError) throw profileError;
-        if (from) {
-          navigate(from, { replace: true });
-          return;
-        }
-        switch (profile.role) {
-          case 'admin':
-          case 'operations_manager':
-            navigate('/admin');
-            break;
-          case 'client':
-            navigate('/dashboard');
-            break;
-          case 'field_technician':
-            navigate('/technician-panel');
-            break;
-          default:
-            navigate('/');
-        }
-      }
+      // O redirecionamento é tratado pelo GuestRoute ao detectar a mudança de sessão.
+      // Apenas navegamos para a home se não houver um 'from' específico.
+      const from = location.state?.from?.pathname || '/';
+      navigate(from, { replace: true });
     } catch (err) {
       toast.error('Falha no Login', { description: 'E-mail ou senha inválidos.' });
     } finally {
@@ -60,7 +39,7 @@ function LoginPage() {
           <img src="/logo.png" alt="SGMU Logo" className="w-32 mx-auto mb-4" />
           <h1 className="text-3xl font-bold">Área Restrita</h1>
           <p className="text-balance text-muted-foreground">
-            Insira suas credenciais para acessar o painel
+            Insira suas credenciais para acessar
           </p>
         </div>
         <Card>
@@ -78,12 +57,7 @@ function LoginPage() {
                     Esqueceu sua senha?
                   </Link>
                 </div>
-                <div className="relative">
-                  <Input id="password" type={showPassword ? 'text' : 'password'} required value={password} onChange={(e) => setPassword(e.target.value)} disabled={loading} className="pr-10" />
-                  <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-gray-500" onClick={() => setShowPassword(!showPassword)} disabled={loading}>
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
+                <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} disabled={loading} />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>{loading ? <Loader2 className="animate-spin" /> : 'Entrar'}</Button>
             </form>
@@ -94,7 +68,6 @@ function LoginPage() {
           <Link to="/signup" className="underline font-bold">Cadastre-se</Link>
         </div>
       </div>
-      <WhatsAppButton />
     </div>
   );
 }

@@ -6,21 +6,24 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [authEvent, setAuthEvent] = useState(null);
 
   useEffect(() => {
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setLoading(false);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+      } catch (error) {
+        console.error("Erro ao buscar sessão inicial:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     getInitialSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (_event, session) => {
         setSession(session);
-        setAuthEvent(event);
       }
     );
 
@@ -29,15 +32,16 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  const signOut = useCallback(() => supabase.auth.signOut(), []);
+  const signOut = useCallback(async () => {
+    await supabase.auth.signOut();
+  }, []);
 
   const value = useMemo(() => ({
     session,
-    user: session?.user || null,
+    user: session?.user ?? null,
     signOut,
     loading,
-    authEvent,
-  }), [session, signOut, loading, authEvent]);
+  }), [session, signOut, loading]);
 
   return (
     <AuthContext.Provider value={value}>
@@ -49,7 +53,7 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
   }
   return context;
 }
