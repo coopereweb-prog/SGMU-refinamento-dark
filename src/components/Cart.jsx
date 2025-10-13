@@ -5,7 +5,7 @@ import { Trash2, X } from 'lucide-react';
 
 export function Cart({ items, onRemove, onClear, onUpdatePeriod, onShowReservationForm }) {
   const total = useMemo(() => {
-    return items.reduce((sum, item) => sum + item.price, 0);
+    return items.reduce((sum, item) => sum + (item.price || 0), 0);
   }, [items]);
 
   const totalItems = items.length;
@@ -33,7 +33,7 @@ export function Cart({ items, onRemove, onClear, onUpdatePeriod, onShowReservati
                 <div className="flex-grow">
                   <p className="font-semibold">{item.name}</p>
                   <p className="text-sm text-status-available font-bold">
-                    {item.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    {(item.price || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   </p>
                   <div className="mt-2">
                     <Select

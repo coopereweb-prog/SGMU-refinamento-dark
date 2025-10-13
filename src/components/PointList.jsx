@@ -18,13 +18,13 @@ export function PointList({ points, onPointSelect, onAddToCart, cartItems }) {
               <CardContent>
                 <p className="text-sm text-muted-foreground">{point.description}</p>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {point.tags.map(tag => (
+                  {point.tags && point.tags.map(tag => (
                     <Badge key={tag.id} variant="secondary">{tag.name}</Badge>
                   ))}
                 </div>
               </CardContent>
               <CardFooter className="flex justify-between items-center">
-                <span className="text-lg font-bold">R$ {point.price.toFixed(2)} / ano</span>
+                <span className="text-lg font-bold">R$ {(point.price || 0).toFixed(2)} / ano</span>
                 <Button onClick={() => onAddToCart(point, 1)} disabled={isInCart}>
                   {isInCart ? 'No Carrinho' : 'Adicionar'}
                 </Button>
