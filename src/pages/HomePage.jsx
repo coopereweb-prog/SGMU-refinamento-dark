@@ -69,25 +69,22 @@ const getMarkerIcon = (status) => {
 };
 
 const getInCartMarkerIcon = () => {
-  const color = 'oklch(0.6 0.2 255)'; // Azul para destacar
-  const iconColor = 'oklch(1 0 0)'; // Branco para o ícone do carrinho
+  const circleFill = 'oklch(0.145 0 0)'; // Black
+  const iconFill = 'oklch(0.85 0.2 90)'; // Yellow (Primary color)
+  const ringColor = 'oklch(0.85 0.2 90 / 50%)'; // Primary color with 50% opacity for the ring
 
   const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
       <defs>
         <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="black" flood-opacity="0.5"/>
+          <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="black" flood-opacity="0.6"/>
         </filter>
       </defs>
-      <path 
-        d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" 
-        fill="${color}" 
-        stroke="oklch(0.145 0 0)" 
-        stroke-width="0.5"
-        filter="url(#shadow)"
-      />
-      <g transform="translate(12, 9) scale(0.45) translate(-12, -12)">
-        <path fill="${iconColor}" d="M9 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+      <g filter="url(#shadow)">
+        <circle cx="18" cy="18" r="16" fill="${circleFill}" stroke="${ringColor}" stroke-width="2"/>
+      </g>
+      <g transform="translate(18, 18) scale(0.6) translate(-12, -12)">
+        <path fill="${iconFill}" stroke="${iconFill}" stroke-width="1" stroke-linejoin="round" d="M9 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
       </g>
     </svg>
   `;
@@ -95,7 +92,7 @@ const getInCartMarkerIcon = () => {
   return {
     url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
     scaledSize: new window.google.maps.Size(36, 36),
-    anchor: new window.google.maps.Point(18, 36),
+    anchor: new window.google.maps.Point(18, 18), // Center of the circle
   };
 };
 
