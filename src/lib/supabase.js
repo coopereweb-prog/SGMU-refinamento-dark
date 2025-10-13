@@ -247,7 +247,7 @@ export const getInstallationTasks = async () => {
         orders ( id, customer_name )
       ),
       points ( name ),
-      profiles ( name )
+      technician:profiles ( name )
     `)
     .order('created_at', { ascending: false });
 
@@ -261,7 +261,7 @@ export const getInstallationTasks = async () => {
     ...task,
     customer_name: task.order_items?.orders?.customer_name,
     point_name: task.points?.name,
-    technician_name: task.profiles?.name,
+    technician_name: task.technician?.name,
   }));
 };
 
@@ -344,7 +344,7 @@ export const assignTaskToTechnician = async (taskId, technicianId) => {
       *,
       order_items ( orders ( id, customer_name ) ),
       points ( name ),
-      profiles ( name )
+      technician:profiles ( name )
     `)
     .single();
 
@@ -357,7 +357,7 @@ export const assignTaskToTechnician = async (taskId, technicianId) => {
     ...data,
     customer_name: data.order_items?.orders?.customer_name,
     point_name: data.points?.name,
-    technician_name: data.profiles?.name,
+    technician_name: data.technician?.name,
   };
 };
 
