@@ -247,7 +247,7 @@ export const getInstallationTasks = async () => {
         orders ( id, customer_name )
       ),
       points ( name ),
-      profiles ( full_name )
+      profiles ( name )
     `)
     .order('created_at', { ascending: false });
 
@@ -261,7 +261,7 @@ export const getInstallationTasks = async () => {
     ...task,
     customer_name: task.order_items?.orders?.customer_name,
     point_name: task.points?.name,
-    technician_name: task.profiles?.full_name,
+    technician_name: task.profiles?.name,
   }));
 };
 
@@ -276,4 +276,48 @@ export const updateInstallationTaskStatus = async (taskId, newStatus) => {
     console.error('Error updating task status:', error);
     throw error;
   }
+};
+
+// Nova função para buscar técnicos de campo
+export const getFieldTechnicians = async () => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, name')
+    .eq('role', 'field_technician');
+
+  if (error) {
+    console.error('Error fetching field technicians:', error);
+    throw error;
+  }
+  return data;
+};
+
+// Nova função para atribuir uma tarefa e atualizar seu status
+export const assignTaskToTechnician = async (taskId, technicianId) => {
+  const { data, error } = await supabase
+    .from('installation_tasks')
+    .update({ 
+      assigned_technician_id: technicianId,
+      status: 'assigned'
+    })
+    .eq('id', taskId)
+    .select(`
+      *,
+      order_items ( orders ( id, customer_name ) ),
+      points ( name ),
+      profiles ( name )
+    `)
+    .single();
+
+  if (error) {
+    console.error('Error assigning task:', error);
+    throw error;
+  }
+  
+  return {
+    ...data,
+    customer_name: data.order_items?.orders?.customer_name,
+    point_name: data.points?.name,
+    technician_name: data.profiles?.name,
+  };
 };

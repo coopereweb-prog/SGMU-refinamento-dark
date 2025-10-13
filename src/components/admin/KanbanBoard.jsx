@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { DndContext, DragOverlay, closestCorners } from '@dnd-kit/core';
-import { getInstallationTasks, updateInstallationTaskStatus } from '@/lib/supabase';
+import { getInstallationTasks, updateInstallationTaskStatus, getFieldTechnicians } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -18,22 +18,27 @@ const columnsConfig = [
 
 export function KanbanBoard() {
   const [tasks, setTasks] = useState([]);
+  const [technicians, setTechnicians] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTask, setActiveTask] = useState(null);
 
   useEffect(() => {
-    const fetchTasks = async () => {
+    const fetchInitialData = async () => {
       try {
         setLoading(true);
-        const tasksData = await getInstallationTasks();
+        const [tasksData, techniciansData] = await Promise.all([
+          getInstallationTasks(),
+          getFieldTechnicians()
+        ]);
         setTasks(tasksData);
+        setTechnicians(techniciansData);
       } catch (error) {
-        toast.error("Falha ao carregar tarefas", { description: error.message });
+        toast.error("Falha ao carregar dados do painel", { description: error.message });
       } finally {
         setLoading(false);
       }
     };
-    fetchTasks();
+    fetchInitialData();
   }, []);
 
   const tasksByColumn = useMemo(() => {
@@ -49,6 +54,12 @@ export function KanbanBoard() {
     return groupedTasks;
   }, [tasks]);
 
+  const handleTaskUpdate = (updatedTask) => {
+    setTasks(currentTasks => 
+      currentTasks.map(task => task.id === updatedTask.id ? updatedTask : task)
+    );
+  };
+
   const handleDragStart = (event) => {
     setActiveTask(event.active.data.current);
   };
@@ -57,16 +68,13 @@ export function KanbanBoard() {
     setActiveTask(null);
     const { active, over } = event;
 
-    if (!over || active.id === over.id) {
-      return;
-    }
+    if (!over || active.id === over.id) return;
 
     const taskId = active.id;
     const newStatus = over.id;
     const originalTask = tasks.find(t => t.id === taskId);
 
     if (originalTask && originalTask.status !== newStatus) {
-      // Optimistic UI update
       const originalTasks = [...tasks];
       setTasks(prevTasks =>
         prevTasks.map(task =>
@@ -79,7 +87,6 @@ export function KanbanBoard() {
         const newColumn = columnsConfig.find(c => c.id === newStatus);
         toast.success(`Tarefa movida para "${newColumn?.title || newStatus}"`);
       } catch (error) {
-        // Revert UI on failure
         setTasks(originalTasks);
         toast.error("Falha ao mover tarefa", { description: error.message });
       }
@@ -108,6 +115,8 @@ export function KanbanBoard() {
               key={column.id}
               column={column}
               tasks={tasksByColumn[column.id]}
+              technicians={technicians}
+              onTaskUpdate={handleTaskUpdate}
             />
           ))}
         </div>
