@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -24,6 +24,11 @@ function UpdatePasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Verificar se o usuário chegou aqui através de um link de redefinição de senha
+  const isPasswordRecovery = location.state?.from === 'PASSWORD_RECOVERY' || 
+    new URLSearchParams(location.search).get('type') === 'recovery';
 
   const form = useForm({
     resolver: zodResolver(updatePasswordSchema),
@@ -43,6 +48,7 @@ function UpdatePasswordPage() {
         description: 'Você será redirecionado para a página de login.',
       });
       
+      // Fazer logout para forçar login com nova senha
       await supabase.auth.signOut();
 
       setTimeout(() => {

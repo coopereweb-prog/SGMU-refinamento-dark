@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUser } from '@/contexts/UserContext';
 import { Loader2 } from 'lucide-react';
@@ -6,11 +6,14 @@ import { Loader2 } from 'lucide-react';
 export function GuestRoute({ children }) {
   const { user, authEvent, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useUser();
+  const location = useLocation();
 
   const isLoading = authLoading || (user && profileLoading);
   
-  // O fluxo de recuperação de senha é identificado pelo evento do Supabase.
-  const isPasswordRecovery = authEvent === 'PASSWORD_RECOVERY';
+  // O fluxo de recuperação de senha é identificado pelo evento do Supabase ou pela URL
+  const isPasswordRecovery = authEvent === 'PASSWORD_RECOVERY' || 
+    location.pathname === '/update-password' ||
+    new URLSearchParams(location.search).get('type') === 'recovery';
 
   if (isLoading) {
     return (

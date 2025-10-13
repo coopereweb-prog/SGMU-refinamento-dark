@@ -27,6 +27,34 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
+  // Verificar se usuário já está logado
+  useEffect(() => {
+    const checkUserSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        // Se usuário está logado, preencher dados automaticamente
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name, email, phone')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (profile) {
+          setCustomerData(prev => ({
+            ...prev,
+            name: profile.name || session.user.user_metadata?.name || '',
+            email: profile.email || session.user.email,
+            phone: profile.phone || ''
+          }));
+        }
+        // Direcionar para a view de usuário logado
+        setView('logged_in');
+      }
+    };
+    
+    checkUserSession();
+  }, []);
+
   const handleLoginInputChange = (e) => {
     const { name, value } = e.target;
     setLoginData((prev) => ({ ...prev, [name]: value }));
@@ -44,7 +72,30 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
       });
       if (loginError) throw loginError;
 
-      await createOrder(customerData, cartItems);
+      // Após login, obter dados do perfil
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name, email, phone')
+        .eq('id', user.id)
+        .single();
+
+      // Atualizar dados do cliente com informações do perfil
+      setCustomerData({
+        name: profile?.name || user.user_metadata?.name || '',
+        email: profile?.email || user.email,
+        phone: profile?.phone || '',
+        password: '',
+        confirmPassword: ''
+      });
+
+      // Criar pedido
+      await createOrder({
+        name: profile?.name || user.user_metadata?.name || '',
+        email: profile?.email || user.email,
+        phone: profile?.phone || ''
+      }, cartItems);
+
       setSuccess(true);
       onReservationSuccess();
       
@@ -62,7 +113,7 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
     setError(null);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(loginData.email, {
-        redirectTo: `${import.meta.env.VITE_SITE_URL}/login`,
+        redirectTo: `${import.meta.env.VITE_SITE_URL}/update-password`,
       });
       if (error) throw error;
       toast.success('Verifique seu e-mail', {
@@ -114,6 +165,22 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
   };
 
   const handleReserveAsGuest = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      await createOrder(customerData, cartItems);
+      setSuccess(true);
+      onReservationSuccess();
+    } catch (err) {
+      setError(err.message ?? 'Não foi possível completar sua reserva.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReserveWithLoggedInUser = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -184,6 +251,25 @@ export function EnhancedReservationForm({ cartItems, onClose, onReservationSucce
               <div className="flex flex-col space-y-3">
                 <Button type="submit" className="w-full" disabled={loading}>{loading ? <Loader2 className="animate-spin" /> : 'Entrar e Reservar'}</Button>
                 <Button type="button" variant="outline" onClick={() => { setView('guest'); setError(null); }}>Criar Conta ou Continuar como Convidado</Button>
+              </div>
+            </form>
+          </div>
+        );
+      case 'logged_in':
+        return (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Confirmar Reserva</h3>
+            <div className="bg-muted p-4 rounded-lg">
+              <p className="font-medium">Dados do Cliente:</p>
+              <p>Nome: {customerData.name}</p>
+              <p>Email: {customerData.email}</p>
+              <p>Telefone: {customerData.phone}</p>
+            </div>
+            <form onSubmit={handleReserveWithLoggedInUser} className="space-y-4">
+              {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertTitle>Erro</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+              <div className="flex justify-end space-x-4">
+                <Button type="button" variant="outline" onClick={() => setView('guest')} disabled={loading}>Alterar Dados</Button>
+                <Button type="submit" className="w-40" disabled={loading}>{loading ? <Loader2 className="animate-spin" /> : 'Confirmar Reserva'}</Button>
               </div>
             </form>
           </div>

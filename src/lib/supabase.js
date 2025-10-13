@@ -88,7 +88,13 @@ export const deleteTag = async (id) => {
 };
 
 export const createOrder = async (customerData, cartItems) => {
+  // Verificar se há um usuário logado
   const { data: { session } } = await supabase.auth.getSession();
+  let userId = null;
+  
+  if (session?.user) {
+    userId = session.user.id;
+  }
 
   const itemsForFunction = cartItems.map(item => ({
     point_id: item.point_id,
