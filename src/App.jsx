@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { UserProvider } from '@/contexts/UserContext';
-import { MapConfigProvider } from '@/contexts/MapConfigProvider';
+import { MapConfigProvider } from '@/contexts/MapConfigContext';
 
 import { AppLayout } from '@/components/AppLayout';
 import { AdminLayout } from '@/components/admin/AdminLayout';
