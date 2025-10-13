@@ -18,7 +18,7 @@ function ForgotPasswordPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const redirectToUrl = 'http://localhost:5173/update-password';
+      const redirectToUrl = `${window.location.origin}/update-password`;
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectToUrl,
