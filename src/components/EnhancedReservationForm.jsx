@@ -39,6 +39,7 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
   const form = useForm({
@@ -221,7 +222,14 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
                         Esqueceu sua senha?
                       </Link>
                     </div>
-                    <FormControl><Input type="password" placeholder="Sua senha" {...field} /></FormControl>
+                    <FormControl>
+                      <div className="relative">
+                        <Input type={showPassword ? 'text' : 'password'} placeholder="Sua senha" {...field} className="pr-10" />
+                        <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2" onClick={() => setShowPassword(!showPassword)}>
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -264,7 +272,23 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
                   </FormItem>
                 )}
               />
-              <FormField control={form.control} name="confirmPassword" render={({ field }) => (<FormItem><FormLabel>Confirme a Senha</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField
+                control={form.control} name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirme a Senha</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input type={showConfirmPassword ? 'text' : 'password'} {...field} className="pr-10" />
+                        <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </>
           )}
           
