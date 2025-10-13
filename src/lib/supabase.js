@@ -265,6 +265,45 @@ export const getInstallationTasks = async () => {
   }));
 };
 
+// Nova função para buscar tarefas de um técnico específico
+export const getTechnicianTasks = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from('installation_tasks')
+    .select(`
+      id,
+      points (id, name, installation_photo_url, latitude, longitude, installation_notes),
+      order_items ( orders ( customer_name ) )
+    `)
+    .eq('assigned_technician_id', user.id)
+    .eq('status', 'assigned');
+
+  if (error) {
+    console.error('Error fetching technician tasks:', error);
+    throw error;
+  }
+
+  return data.map(task => ({
+    ...task,
+    customer_name: task.order_items?.orders?.customer_name,
+  }));
+};
+
+// Nova função para completar uma tarefa de instalação
+export const completeInstallationTask = async (taskId) => {
+  const { error } = await supabase
+    .from('installation_tasks')
+    .update({ status: 'completed' })
+    .eq('id', taskId);
+
+  if (error) {
+    console.error('Error completing task:', error);
+    throw error;
+  }
+};
+
 // Nova função para atualizar o status de uma tarefa
 export const updateInstallationTaskStatus = async (taskId, newStatus) => {
   const { error } = await supabase

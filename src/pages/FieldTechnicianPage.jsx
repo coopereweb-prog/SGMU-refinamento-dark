@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { supabase, getTechnicianTasks, completeInstallationTask } from '../lib/supabase';
 import { compressImage } from '../lib/image-utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { LogOut, Camera, UploadCloud, User, Loader2 } from 'lucide-react';
-import { RouteGenerator } from '@/components/RouteGenerator'; // Importação
+import { RouteGenerator } from '@/components/RouteGenerator';
 
 function FieldTechnicianPage() {
   const [tasks, setTasks] = useState([]);
@@ -22,28 +22,15 @@ function FieldTechnicianPage() {
   useEffect(() => {
     const fetchTasks = async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          id, customer_name,
-          order_items (
-            id,
-            points (id, name, installation_photo_url, latitude, longitude, installation_notes)
-          )
-        `)
-        .eq('status', 'completed')
-        .order('created_at', { ascending: false });
-
-      if (error) {
+      try {
+        const tasksData = await getTechnicianTasks();
+        setTasks(tasksData);
+      } catch (error) {
         console.error("Error fetching tasks:", error);
         toast.error("Não foi possível carregar as tarefas.");
-      } else {
-        const pendingTasks = data.filter(order => 
-          order.order_items.some(item => !item.points.installation_photo_url)
-        );
-        setTasks(pendingTasks);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchTasks();
@@ -51,10 +38,8 @@ function FieldTechnicianPage() {
 
   const allPendingPoints = useMemo(() => {
     return tasks
-      .flatMap(order => order.order_items)
-      .filter(item => !item.points.installation_photo_url)
-      .map(item => item.points)
-      .filter(p => p.latitude && p.longitude);
+      .map(task => task.points)
+      .filter(p => p && p.latitude && p.longitude);
   }, [tasks]);
 
   const handleFileChange = async (pointId, file) => {
@@ -79,7 +64,7 @@ function FieldTechnicianPage() {
     setComments(prev => ({ ...prev, [pointId]: text }));
   };
 
-  const handleUpload = async (pointId, file, comment) => {
+  const handleUpload = async (taskId, pointId, file, comment) => {
     if (!file) {
       toast.warning('Por favor, selecione um arquivo primeiro.');
       return;
@@ -104,15 +89,11 @@ function FieldTechnicianPage() {
         .eq('id', pointId);
       if (updateError) throw updateError;
 
-      toast.success('Foto enviada com sucesso!');
-      setTasks(prevTasks => prevTasks.map(task => ({
-        ...task,
-        order_items: task.order_items.map(item => 
-          item.points.id === pointId 
-            ? { ...item, points: { ...item.points, installation_photo_url: publicUrl, installation_notes: comment } } 
-            : item
-        )
-      })));
+      await completeInstallationTask(taskId);
+
+      toast.success('Foto enviada e tarefa concluída!');
+      
+      setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
 
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -147,54 +128,54 @@ function FieldTechnicianPage() {
         {tasks.length === 0 ? (
           <div className="text-center text-gray-500 mt-16">
             <Camera className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-            <p>Nenhuma instalação com foto pendente no momento.</p>
+            <p>Nenhuma instalação pendente no momento.</p>
           </div>
         ) : (
           <div className="space-y-6">
             <RouteGenerator points={allPendingPoints} />
-            {tasks.map(order => (
-              <Card key={order.id}>
-                <CardHeader>
-                  <CardTitle>Pedido #{order.id.substring(0, 8)}</CardTitle>
-                  <CardDescription className="flex items-center pt-1">
-                    <User className="h-4 w-4 mr-2 text-gray-500" />
-                    Cliente: {order.customer_name}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {order.order_items.filter(item => !item.points.installation_photo_url).map(item => (
-                    <div key={item.id} className="p-3 border rounded-md bg-gray-50 space-y-4">
-                      <p className="font-medium">{item.points.name}</p>
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Input 
-                            type="file" 
-                            accept="image/*"
-                            className="flex-1" 
-                            onChange={(e) => handleFileChange(item.points.id, e.target.files[0])} 
-                            disabled={uploading[item.points.id] || compressing[item.points.id]} 
-                          />
-                          <Button 
-                            onClick={() => handleUpload(item.points.id, selectedFiles[item.points.id], comments[item.points.id])} 
-                            disabled={!selectedFiles[item.points.id] || uploading[item.points.id] || compressing[item.points.id]}
-                            className="w-32"
-                          >
-                            {uploading[item.points.id] ? <Loader2 className="animate-spin" /> : <><UploadCloud className="h-4 w-4 mr-2" /> Enviar</>}
-                          </Button>
-                        </div>
-                        {compressing[item.points.id] && <p className="text-sm text-gray-600 flex items-center"><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Comprimindo imagem...</p>}
-                        <Textarea 
-                          placeholder="Adicionar um comentário sobre a instalação (opcional)..."
-                          value={comments[item.points.id] || ''}
-                          onChange={(e) => handleCommentChange(item.points.id, e.target.value)}
-                          disabled={uploading[item.points.id]}
-                        />
-                      </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Minhas Tarefas de Instalação</CardTitle>
+                <CardDescription>
+                  Complete as tarefas abaixo enviando a foto da placa instalada.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {tasks.map(task => (
+                  <div key={task.id} className="p-3 border rounded-md bg-gray-50 space-y-4">
+                    <div>
+                      <p className="font-medium">{task.points.name}</p>
+                      <p className="text-sm text-gray-600">Cliente: {task.customer_name}</p>
                     </div>
-                  ))}
-                </CardContent>
-              </Card>
-            ))}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Input 
+                          type="file" 
+                          accept="image/*"
+                          className="flex-1" 
+                          onChange={(e) => handleFileChange(task.points.id, e.target.files[0])} 
+                          disabled={uploading[task.points.id] || compressing[task.points.id]} 
+                        />
+                        <Button 
+                          onClick={() => handleUpload(task.id, task.points.id, selectedFiles[task.points.id], comments[task.points.id])} 
+                          disabled={!selectedFiles[task.points.id] || uploading[task.points.id] || compressing[task.points.id]}
+                          className="w-32"
+                        >
+                          {uploading[task.points.id] ? <Loader2 className="animate-spin" /> : <><UploadCloud className="h-4 w-4 mr-2" /> Enviar</>}
+                        </Button>
+                      </div>
+                      {compressing[task.points.id] && <p className="text-sm text-gray-600 flex items-center"><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Comprimindo imagem...</p>}
+                      <Textarea 
+                        placeholder="Adicionar um comentário sobre a instalação (opcional)..."
+                        value={comments[task.points.id] || ''}
+                        onChange={(e) => handleCommentChange(task.points.id, e.target.value)}
+                        disabled={uploading[task.points.id]}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
           </div>
         )}
       </main>
