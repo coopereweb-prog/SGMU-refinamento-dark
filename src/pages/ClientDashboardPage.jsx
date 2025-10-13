@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase, updateOrderItemPeriod } from '../lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,7 +30,21 @@ function ClientDashboardPage() {
   const [isEditModalOpen, setIsEditModal] = useState(false);
   const [selectedOrderForEdit, setSelectedOrderForEdit] = useState(null);
   const [updatingItemId, setUpdatingItemId] = useState(null);
+  const [activeTab, setActiveTab] = useState('orders');
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const visitationPlannerRef = useRef(null);
+
+  useEffect(() => {
+    const feature = searchParams.get('feature');
+    if (feature === 'visitation_route') {
+      setActiveTab('points');
+      // Usamos um pequeno timeout para garantir que a aba mudou e o componente está visível antes de rolar
+      setTimeout(() => {
+        visitationPlannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [searchParams]);
 
   const fetchOrders = async () => {
     setLoadingOrders(true);
@@ -106,7 +120,6 @@ function ClientDashboardPage() {
     return orders.filter(order => order.status === 'completed');
   }, [orders]);
 
-  // Esta é a lista "achatada" de pontos necessária para ambos os componentes
   const contractedPoints = useMemo(() => {
     if (!completedOrders) return [];
     return completedOrders.flatMap(order => 
@@ -132,7 +145,7 @@ function ClientDashboardPage() {
         <p className="text-gray-600">Gerencie seus pedidos e informações</p>
       </div>
 
-      <Tabs defaultValue="orders" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="orders">Meus Pedidos</TabsTrigger>
           <TabsTrigger value="points">Meus Pontos Contratados</TabsTrigger>
@@ -231,7 +244,7 @@ function ClientDashboardPage() {
         </TabsContent>
 
         <TabsContent value="points">
-          <div className="space-y-6 mt-6">
+          <div ref={visitationPlannerRef} className="space-y-6 mt-6">
             <VisitationRoutePlanner points={contractedPoints} />
             <ContractedPointsView orders={completedOrders} profile={profile} />
           </div>
