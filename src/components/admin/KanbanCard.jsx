@@ -43,17 +43,17 @@ export function KanbanCard({ task, technicians, onTaskUpdate }) {
       )}
     >
       <CardHeader className="p-3">
-        <CardTitle className="text-sm font-semibold">{task.point_name || 'Ponto não encontrado'}</CardTitle>
+        <CardTitle className="text-sm font-semibold break-words">{task.point_name || 'Ponto não encontrado'}</CardTitle>
       </CardHeader>
       <CardContent className="p-3 pt-0 text-xs text-muted-foreground space-y-2">
-        <div className="flex items-center">
-          <User className="h-3 w-3 mr-2" />
-          <span>{task.customer_name || 'Cliente não encontrado'}</span>
+        <div className="flex items-center min-w-0">
+          <User className="h-3 w-3 mr-2 flex-shrink-0" />
+          <span className="break-words">{task.customer_name || 'Cliente não encontrado'}</span>
         </div>
         {task.technician_name && (
-          <div className="flex items-center">
-            <MapPin className="h-3 w-3 mr-2" />
-            <span>Téc: {task.technician_name}</span>
+          <div className="flex items-center min-w-0">
+            <MapPin className="h-3 w-3 mr-2 flex-shrink-0" />
+            <span className="break-words">Téc: {task.technician_name}</span>
           </div>
         )}
         {task.status === 'pending_assignment' && (
