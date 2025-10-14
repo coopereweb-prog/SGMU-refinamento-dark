@@ -50,7 +50,7 @@ export function KanbanCard({ task, technicians, onTaskUpdate, onOpenModal, isOve
       >
         <GripVertical className="h-5 w-5" />
       </div>
-      <div className="flex-grow border-l">
+      <div className="flex-grow border-l min-w-0">
         <CardHeader className="p-3">
           <CardTitle className="text-sm font-semibold break-words">{task.point_name || 'Ponto não encontrado'}</CardTitle>
         </CardHeader>
