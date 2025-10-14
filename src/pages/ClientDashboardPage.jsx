@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Calendar, Loader2, ShoppingCart, Edit } from 'lucide-react';
+import { MapPin, Calendar, Loader2, ShoppingCart, Edit, Menu } from 'lucide-react';
 import { EditOrderDialog } from '../components/EditOrderDialog';
 import {
   Select,
@@ -22,6 +22,7 @@ import { RouteGenerator } from '@/components/RouteGenerator';
 import { ContractedPointsView } from '../components/ContractedPointsView';
 import { VisitationRoutePlanner } from '../components/VisitationRoutePlanner';
 import { addYears } from 'date-fns';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 function ClientDashboardPage() {
   const { profile, loading: userProfileLoading } = useUser();
@@ -34,12 +35,12 @@ function ClientDashboardPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const visitationPlannerRef = useRef(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     const feature = searchParams.get('feature');
     if (feature === 'visitation_route') {
       setActiveTab('points');
-      // Usamos um pequeno timeout para garantir que a aba mudou e o componente está visível antes de rolar
       setTimeout(() => {
         visitationPlannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
@@ -136,6 +137,11 @@ function ClientDashboardPage() {
 
   if (userProfileLoading || loadingOrders) return <div className="flex items-center justify-center h-full">Carregando...</div>;
 
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setIsMenuOpen(false);
+  };
+
   return (
     <>
       <div className="mb-8">
@@ -146,11 +152,52 @@ function ClientDashboardPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        {/* Desktop Tabs */}
+        <TabsList className="hidden md:grid w-full grid-cols-3">
           <TabsTrigger value="orders">Meus Pedidos</TabsTrigger>
           <TabsTrigger value="points">Meus Pontos Contratados</TabsTrigger>
           <TabsTrigger value="profile">Meu Perfil</TabsTrigger>
         </TabsList>
+
+        {/* Mobile Menu */}
+        <div className="md:hidden mb-4">
+          <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline">
+                <Menu className="h-4 w-4 mr-2" />
+                Menu
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[250px]">
+              <SheetHeader>
+                <SheetTitle>Dashboard</SheetTitle>
+              </SheetHeader>
+              <nav className="flex flex-col space-y-2 mt-4">
+                <Button
+                  variant={activeTab === 'orders' ? 'secondary' : 'ghost'}
+                  onClick={() => handleTabChange('orders')}
+                  className="justify-start"
+                >
+                  Meus Pedidos
+                </Button>
+                <Button
+                  variant={activeTab === 'points' ? 'secondary' : 'ghost'}
+                  onClick={() => handleTabChange('points')}
+                  className="justify-start"
+                >
+                  Meus Pontos Contratados
+                </Button>
+                <Button
+                  variant={activeTab === 'profile' ? 'secondary' : 'ghost'}
+                  onClick={() => handleTabChange('profile')}
+                  className="justify-start"
+                >
+                  Meu Perfil
+                </Button>
+              </nav>
+            </SheetContent>
+          </Sheet>
+        </div>
 
         <TabsContent value="orders">
           {orders.length === 0 ? (
