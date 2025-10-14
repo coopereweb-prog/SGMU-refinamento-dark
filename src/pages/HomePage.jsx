@@ -166,14 +166,18 @@ function HomePage() {
     const fetchPoints = async () => {
       setLoadingPoints(true);
       try {
-        // MODIFICAÇÃO: Simplificando a query para testar o RLS da tabela 'points' isoladamente.
         const { data, error } = await supabase
           .from('points')
-          .select(`*`);
+          .select(`
+            *,
+            tags (id, name),
+            pricing_tiers (*)
+          `);
         if (error) throw error;
-        // Adicionando dados de tags e tiers vazios para evitar que o resto do código quebre
-        const validPoints = data.filter(p => p.latitude && p.longitude).map(p => ({ ...p, tags: [], pricing_tiers: null }));
+        
+        const validPoints = data.filter(p => p.latitude && p.longitude);
         setPoints(validPoints);
+        setFilteredPoints(validPoints.filter(p => activeFilters.statuses.includes(p.status)));
       } catch (error) {
         console.error('Error fetching points:', error);
         toast.error("Falha ao carregar os pontos do mapa.", { description: error.message });
