@@ -10,7 +10,7 @@ import { TaskDetailsModal } from './TaskDetailsModal';
 
 const columnsConfig = [
   { id: 'pending_art', title: 'Aprovação da Arte' },
-  { id: 'art_approved', title: 'Arte Aprovada' },
+  { id: 'art_approved', title: 'Impressão dos Adesivos' },
   { id: 'pending_assignment', title: 'Pronto para Atribuir' },
   { id: 'assigned', title: 'Em Campo' },
   { id: 'completed', title: 'Concluído' },
