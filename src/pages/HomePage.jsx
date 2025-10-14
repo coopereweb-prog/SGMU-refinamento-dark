@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, MarkerClustererF } from '@react-google-maps/api';
 import { supabase } from '@/lib/supabase';
 import { PointDetailsSheet } from '@/components/PointDetailsSheet';
@@ -152,6 +152,7 @@ function HomePage() {
   const [markerAnimation, setMarkerAnimation] = useState(null);
   const [activeFilters, setActiveFilters] = useState({ statuses: ['available'], tags: [], tiers: [] });
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+  const initialLoadDoneRef = useRef(false); // Ref para controlar o carregamento inicial
 
   const { rules, loading: loadingConfig } = useMapConfig();
   const { cartItems, addToCart } = useCart();
@@ -166,16 +167,18 @@ function HomePage() {
     const fetchPoints = async () => {
       setLoadingPoints(true);
       try {
-        // ALTERAÇÃO: Simplificando a query para buscar apenas os pontos.
-        const { data, error } = await supabase.from('points').select('*');
+        const { data, error } = await supabase
+          .from('points')
+          .select(`
+            *,
+            tags (id, name),
+            pricing_tiers (*)
+          `);
         if (error) throw error;
         
         const validPoints = data.filter(p => p.latitude && p.longitude);
-        // Adicionando 'tags' e 'pricing_tiers' vazios para evitar que o resto do código quebre
-        const pointsWithStubs = validPoints.map(p => ({ ...p, tags: [], pricing_tiers: null }));
-        
-        setPoints(pointsWithStubs);
-        setFilteredPoints(pointsWithStubs.filter(p => activeFilters.statuses.includes(p.status)));
+        setPoints(validPoints);
+        setFilteredPoints(validPoints.filter(p => activeFilters.statuses.includes(p.status)));
       } catch (error) {
         console.error('Error fetching points:', error);
         toast.error("Falha ao carregar os pontos do mapa.", { description: error.message });
@@ -195,7 +198,7 @@ function HomePage() {
   }, [points]);
 
   useEffect(() => {
-    if (map && points.length > 0) {
+    if (map && points.length > 0 && !initialLoadDoneRef.current) {
       if (points.length === 1) {
         map.setCenter({ lat: points[0].latitude, lng: points[0].longitude });
         map.setZoom(15);
@@ -213,9 +216,8 @@ function HomePage() {
     setActiveFilters(filters);
     let newFilteredPoints = points;
     if (filters.statuses.length > 0) newFilteredPoints = newFilteredPoints.filter(point => filters.statuses.includes(point.status));
-    // Filtros de tags e tiers desabilitados temporariamente
-    // if (filters.tags.length > 0) newFilteredPoints = newFilteredPoints.filter(point => point.tags && point.tags.some(tag => filters.tags.includes(tag.id)));
-    // if (filters.tiers.length > 0) newFilteredPoints = newFilteredPoints.filter(point => point.pricing_tiers && filters.tiers.includes(point.pricing_tiers.id));
+    if (filters.tags.length > 0) newFilteredPoints = newFilteredPoints.filter(point => point.tags && point.tags.some(tag => filters.tags.includes(tag.id)));
+    if (filters.tiers.length > 0) newFilteredPoints = newFilteredPoints.filter(point => point.pricing_tiers && filters.tiers.includes(point.pricing_tiers.id));
     setFilteredPoints(newFilteredPoints);
   }, [points]);
 
@@ -231,6 +233,17 @@ function HomePage() {
 
   const onMapLoad = useCallback((mapInstance) => setMap(mapInstance), []);
   const onZoomChanged = useCallback(() => { if (map) setCurrentZoom(map.getZoom()); }, [map]);
+
+  // Handler para o evento 'idle', que dispara quando o mapa para de se mover
+  const onIdle = useCallback(() => {
+    if (map && !initialLoadDoneRef.current) {
+      // Pega o zoom atual DEPOIS do fitBounds e atualiza o estado
+      const newZoom = map.getZoom();
+      setCurrentZoom(newZoom);
+      // Marca o carregamento inicial como concluído para não repetir
+      initialLoadDoneRef.current = true;
+    }
+  }, [map]);
 
   const activeRule = useMemo(() => {
     if (loadingConfig || !rules.length) return { display_mode: currentZoom > 14 ? 'individual' : 'cluster', cluster_radius: 60, min_cluster_size: 2 };
@@ -301,7 +314,7 @@ function HomePage() {
           onFilterChange={handleFilterChange}
         />
 
-        <GoogleMap mapContainerStyle={mapContainerStyle} center={defaultCenter} zoom={currentZoom} options={mapOptions} onLoad={onMapLoad} onZoomChanged={onZoomChanged}>
+        <GoogleMap mapContainerStyle={mapContainerStyle} center={defaultCenter} zoom={currentZoom} options={mapOptions} onLoad={onMapLoad} onZoomChanged={onZoomChanged} onIdle={onIdle}>
           {activeRule.display_mode === 'cluster' ? (
             <MarkerClustererF options={{ gridSize: activeRule.cluster_radius, minimumClusterSize: activeRule.min_cluster_size, styles: clusterStyles }} calculator={clustererCalculator}>
               {(clusterer) => filteredPoints.map((point) => (
