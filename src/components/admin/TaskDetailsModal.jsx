@@ -11,6 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { toast } from 'sonner';
 import { Loader2, UploadCloud } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { compressImage } from '@/lib/image-utils';
 
 const taskSchema = z.object({
   notes: z.string().optional(),
@@ -51,9 +52,10 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
     if (artFile) {
       setIsUploading(true);
       try {
-        const fileExt = artFile.name.split('.').pop();
+        const compressedFile = await compressImage(artFile, { maxWidth: 1920, quality: 0.8 });
+        const fileExt = compressedFile.name.split('.').pop();
         const fileName = `art-files/${task.id}-${Date.now()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage.from('installation-photos').upload(fileName, artFile);
+        const { error: uploadError } = await supabase.storage.from('installation-photos').upload(fileName, compressedFile);
         if (uploadError) throw uploadError;
         
         const { data: urlData } = supabase.storage.from('installation-photos').getPublicUrl(fileName);

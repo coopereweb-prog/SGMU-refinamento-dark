@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, MapPin, UserPlus, Loader2, GripVertical } from 'lucide-react';
+import { User, MapPin, UserPlus, Loader2, GripVertical, FileImage } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
@@ -59,6 +59,18 @@ export function KanbanCard({ task, technicians, onTaskUpdate, onOpenModal, isOve
             <User className="h-3 w-3 mr-2 flex-shrink-0" />
             <span className="break-words">{task.customer_name || 'Cliente não encontrado'}</span>
           </div>
+          {task.art_file_url && (
+            <a 
+              href={task.art_file_url} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              onClick={(e) => e.stopPropagation()} 
+              className="flex items-center min-w-0 text-blue-400 hover:underline"
+            >
+              <FileImage className="h-3 w-3 mr-2 flex-shrink-0" />
+              <span className="break-words">Ver Arte</span>
+            </a>
+          )}
           {task.technician_name && (
             <div className="flex items-center min-w-0">
               <MapPin className="h-3 w-3 mr-2 flex-shrink-0" />
