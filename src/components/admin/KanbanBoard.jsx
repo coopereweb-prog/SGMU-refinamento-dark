@@ -82,7 +82,15 @@ export function KanbanBoard() {
     const newStatus = over.id;
     const originalTask = tasks.find(t => t.id === taskId);
 
-    if (originalTask && originalTask.status !== newStatus) {
+    if (!originalTask) return;
+
+    // Lógica para impedir o avanço sem técnico
+    if (originalTask.status === 'pending_assignment' && newStatus === 'assigned' && !originalTask.assigned_technician_id) {
+      toast.warning("Atribua um técnico antes de mover a tarefa para 'Em Campo'.");
+      return;
+    }
+
+    if (originalTask.status !== newStatus) {
       const originalTasks = [...tasks];
       setTasks(prevTasks =>
         prevTasks.map(task =>
@@ -133,7 +141,7 @@ export function KanbanBoard() {
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
         <DragOverlay>
-          {activeTask ? <KanbanCard task={activeTask} isOverlay /> : null}
+          {activeTask ? <KanbanCard task={activeTask} technicians={technicians} isOverlay /> : null}
         </DragOverlay>
       </DndContext>
       

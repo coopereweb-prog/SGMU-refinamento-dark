@@ -80,7 +80,7 @@ export function KanbanCard({ task, technicians, onTaskUpdate, onOpenModal, isOve
                     <CommandList>
                       <CommandEmpty>Nenhum técnico encontrado.</CommandEmpty>
                       <CommandGroup>
-                        {technicians.map((tech) => (
+                        {(technicians || []).map((tech) => (
                           <CommandItem
                             key={tech.id}
                             value={tech.name}
