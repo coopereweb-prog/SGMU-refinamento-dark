@@ -166,11 +166,13 @@ function HomePage() {
     const fetchPoints = async () => {
       setLoadingPoints(true);
       try {
+        // MODIFICAÇÃO: Simplificando a query para testar o RLS da tabela 'points' isoladamente.
         const { data, error } = await supabase
           .from('points')
-          .select(`*, tags(id, name), pricing_tiers(id, name)`);
+          .select(`*`);
         if (error) throw error;
-        const validPoints = data.filter(p => p.latitude && p.longitude);
+        // Adicionando dados de tags e tiers vazios para evitar que o resto do código quebre
+        const validPoints = data.filter(p => p.latitude && p.longitude).map(p => ({ ...p, tags: [], pricing_tiers: null }));
         setPoints(validPoints);
       } catch (error) {
         console.error('Error fetching points:', error);
