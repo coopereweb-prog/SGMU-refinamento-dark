@@ -3,7 +3,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { KanbanCard } from './KanbanCard';
 import { cn } from '@/lib/utils';
 
-export function KanbanColumn({ column, tasks, technicians, onTaskUpdate }) {
+export function KanbanColumn({ column, tasks, technicians, onTaskUpdate, onOpenModal }) {
   const { setNodeRef, isOver } = useDroppable({
     id: column.id,
   });
@@ -31,6 +31,7 @@ export function KanbanColumn({ column, tasks, technicians, onTaskUpdate }) {
                 task={task} 
                 technicians={technicians}
                 onTaskUpdate={onTaskUpdate}
+                onOpenModal={onOpenModal}
               />
             ))
           ) : (

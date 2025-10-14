@@ -1,0 +1,123 @@
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { supabase } from '@/lib/supabase';
+import { Modal } from '@/components/Modal';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { toast } from 'sonner';
+import { Loader2, UploadCloud } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+const taskSchema = z.object({
+  notes: z.string().optional(),
+  due_date: z.string().optional(),
+});
+
+export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
+  const [artFile, setArtFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const form = useForm({
+    resolver: zodResolver(taskSchema),
+    defaultValues: {
+      notes: '',
+      due_date: '',
+    },
+  });
+
+  useEffect(() => {
+    if (task) {
+      form.reset({
+        notes: task.notes || '',
+        due_date: task.due_date ? task.due_date.split('T')[0] : '',
+      });
+    }
+  }, [task, form]);
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setArtFile(e.target.files[0]);
+    }
+  };
+
+  const handleSave = async (values) => {
+    if (!task) return;
+    let updatedData = { ...values };
+
+    if (artFile) {
+      setIsUploading(true);
+      try {
+        const fileExt = artFile.name.split('.').pop();
+        const fileName = `art-files/${task.id}-${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('installation-photos').upload(fileName, artFile);
+        if (uploadError) throw uploadError;
+        
+        const { data: urlData } = supabase.storage.from('installation-photos').getPublicUrl(fileName);
+        updatedData.art_file_url = urlData.publicUrl;
+      } catch (error) {
+        toast.error("Falha no upload do arquivo de arte.", { description: error.message });
+        setIsUploading(false);
+        return;
+      }
+      setIsUploading(false);
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('installation_tasks')
+        .update(updatedData)
+        .eq('id', task.id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      toast.success("Tarefa atualizada com sucesso!");
+      onUpdate(data); // Atualiza o estado no painel Kanban
+      onClose();
+    } catch (error) {
+      toast.error("Erro ao salvar alterações.", { description: error.message });
+    }
+  };
+
+  if (!task) return null;
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Detalhes da Tarefa">
+      <div className="space-y-4">
+        <div className="text-sm">
+          <p><strong>Ponto:</strong> {task.point_name}</p>
+          <p><strong>Cliente:</strong> {task.customer_name}</p>
+          <p><strong>Pedido:</strong> <Button variant="link" asChild className="p-0 h-auto"><Link to={`/admin/orders/${task.order_items.orders.id}`}>#{task.order_items.orders.id.substring(0, 8)}</Link></Button></p>
+        </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
+            <FormField control={form.control} name="notes" render={({ field }) => (
+              <FormItem><FormLabel>Notas</FormLabel><FormControl><Textarea placeholder="Adicione observações sobre a tarefa..." {...field} /></FormControl><FormMessage /></FormItem>
+            )} />
+            <FormField control={form.control} name="due_date" render={({ field }) => (
+              <FormItem><FormLabel>Data de Entrega</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
+            )} />
+            
+            <FormItem>
+              <FormLabel>Arquivo da Arte</FormLabel>
+              <FormControl><Input type="file" onChange={handleFileChange} /></FormControl>
+              {task.art_file_url && !artFile && <a href={task.art_file_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-500 hover:underline">Ver arte atual</a>}
+            </FormItem>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+              <Button type="submit" disabled={form.formState.isSubmitting || isUploading}>
+                {(form.formState.isSubmitting || isUploading) ? <Loader2 className="animate-spin" /> : 'Salvar'}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </div>
+    </Modal>
+  );
+}

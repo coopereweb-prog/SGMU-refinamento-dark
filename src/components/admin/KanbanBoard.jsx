@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { KanbanColumn } from './KanbanColumn';
 import { KanbanCard } from './KanbanCard';
+import { TaskDetailsModal } from './TaskDetailsModal';
 
 const columnsConfig = [
   { id: 'pending_art', title: 'Aprovação da Arte' },
@@ -21,6 +22,8 @@ export function KanbanBoard() {
   const [technicians, setTechnicians] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTask, setActiveTask] = useState(null);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -56,8 +59,13 @@ export function KanbanBoard() {
 
   const handleTaskUpdate = (updatedTask) => {
     setTasks(currentTasks => 
-      currentTasks.map(task => task.id === updatedTask.id ? updatedTask : task)
+      currentTasks.map(task => task.id === updatedTask.id ? { ...task, ...updatedTask } : task)
     );
+  };
+
+  const handleOpenModal = (task) => {
+    setSelectedTask(task);
+    setIsModalOpen(true);
   };
 
   const handleDragStart = (event) => {
@@ -103,28 +111,38 @@ export function KanbanBoard() {
   }
 
   return (
-    <DndContext
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      collisionDetection={closestCorners}
-    >
-      <ScrollArea className="w-full whitespace-nowrap">
-        <div className="flex gap-4 p-4 h-[calc(100vh-200px)]">
-          {columnsConfig.map(column => (
-            <KanbanColumn
-              key={column.id}
-              column={column}
-              tasks={tasksByColumn[column.id]}
-              technicians={technicians}
-              onTaskUpdate={handleTaskUpdate}
-            />
-          ))}
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
-      <DragOverlay>
-        {activeTask ? <KanbanCard task={activeTask} /> : null}
-      </DragOverlay>
-    </DndContext>
+    <>
+      <DndContext
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        collisionDetection={closestCorners}
+      >
+        <ScrollArea className="w-full whitespace-nowrap">
+          <div className="flex gap-4 p-4 h-[calc(100vh-200px)]">
+            {columnsConfig.map(column => (
+              <KanbanColumn
+                key={column.id}
+                column={column}
+                tasks={tasksByColumn[column.id]}
+                technicians={technicians}
+                onTaskUpdate={handleTaskUpdate}
+                onOpenModal={handleOpenModal}
+              />
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+        <DragOverlay>
+          {activeTask ? <KanbanCard task={activeTask} isOverlay /> : null}
+        </DragOverlay>
+      </DndContext>
+      
+      <TaskDetailsModal
+        task={selectedTask}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onUpdate={handleTaskUpdate}
+      />
+    </>
   );
 }
