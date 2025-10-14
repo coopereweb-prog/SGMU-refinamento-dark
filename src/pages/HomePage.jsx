@@ -152,7 +152,7 @@ function HomePage() {
   const [markerAnimation, setMarkerAnimation] = useState(null);
   const [activeFilters, setActiveFilters] = useState({ statuses: ['available'], tags: [], tiers: [] });
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
-  const initialLoadDoneRef = useRef(false); // Ref para controlar o carregamento inicial
+  const initialLoadDoneRef = useRef(false);
 
   const { rules, loading: loadingConfig } = useMapConfig();
   const { cartItems, addToCart } = useCart();
@@ -202,15 +202,26 @@ function HomePage() {
       if (points.length === 1) {
         map.setCenter({ lat: points[0].latitude, lng: points[0].longitude });
         map.setZoom(15);
+        initialLoadDoneRef.current = true;
       } else {
         const bounds = new window.google.maps.LatLngBounds();
         points.forEach(point => {
           bounds.extend({ lat: point.latitude, lng: point.longitude });
         });
         map.fitBounds(bounds);
+        
+        // CORREÇÃO: Adiciona um ouvinte para o evento 'idle' que só dispara UMA VEZ.
+        // Isso garante que o zoom seja atualizado após o 'fitBounds' terminar.
+        window.google.maps.event.addListenerOnce(map, 'idle', () => {
+          const newZoom = map.getZoom();
+          if (newZoom !== currentZoom) {
+            setCurrentZoom(newZoom);
+          }
+          initialLoadDoneRef.current = true;
+        });
       }
     }
-  }, [map, points]);
+  }, [map, points, currentZoom]);
 
   const handleFilterChange = useCallback((filters) => {
     setActiveFilters(filters);
@@ -233,17 +244,6 @@ function HomePage() {
 
   const onMapLoad = useCallback((mapInstance) => setMap(mapInstance), []);
   const onZoomChanged = useCallback(() => { if (map) setCurrentZoom(map.getZoom()); }, [map]);
-
-  // Handler para o evento 'idle', que dispara quando o mapa para de se mover
-  const onIdle = useCallback(() => {
-    if (map && !initialLoadDoneRef.current) {
-      // Pega o zoom atual DEPOIS do fitBounds e atualiza o estado
-      const newZoom = map.getZoom();
-      setCurrentZoom(newZoom);
-      // Marca o carregamento inicial como concluído para não repetir
-      initialLoadDoneRef.current = true;
-    }
-  }, [map]);
 
   const activeRule = useMemo(() => {
     if (loadingConfig || !rules.length) return { display_mode: currentZoom > 14 ? 'individual' : 'cluster', cluster_radius: 60, min_cluster_size: 2 };
@@ -314,7 +314,7 @@ function HomePage() {
           onFilterChange={handleFilterChange}
         />
 
-        <GoogleMap mapContainerStyle={mapContainerStyle} center={defaultCenter} zoom={currentZoom} options={mapOptions} onLoad={onMapLoad} onZoomChanged={onZoomChanged} onIdle={onIdle}>
+        <GoogleMap mapContainerStyle={mapContainerStyle} center={defaultCenter} zoom={currentZoom} options={mapOptions} onLoad={onMapLoad} onZoomChanged={onZoomChanged}>
           {activeRule.display_mode === 'cluster' ? (
             <MarkerClustererF options={{ gridSize: activeRule.cluster_radius, minimumClusterSize: activeRule.min_cluster_size, styles: clusterStyles }} calculator={clustererCalculator}>
               {(clusterer) => filteredPoints.map((point) => (
