@@ -86,7 +86,7 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
     if (artFile) {
       setIsUploading(true);
       try {
-        const compressedFile = await compressImage(artFile, { maxWidth: 320, maxHeight: 240, quality: 0.8 });
+        const compressedFile = await compressImage(artFile, { maxWidth: 1024, quality: 0.9 });
         const fileExt = compressedFile.name.split('.').pop();
         const fileName = `art-files/${task.id}-${Date.now()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage.from('installation-photos').upload(fileName, compressedFile);
