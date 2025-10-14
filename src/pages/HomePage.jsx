@@ -166,18 +166,16 @@ function HomePage() {
     const fetchPoints = async () => {
       setLoadingPoints(true);
       try {
-        const { data, error } = await supabase
-          .from('points')
-          .select(`
-            *,
-            tags (id, name),
-            pricing_tiers (*)
-          `);
+        // ALTERAÇÃO: Simplificando a query para buscar apenas os pontos.
+        const { data, error } = await supabase.from('points').select('*');
         if (error) throw error;
         
         const validPoints = data.filter(p => p.latitude && p.longitude);
-        setPoints(validPoints);
-        setFilteredPoints(validPoints.filter(p => activeFilters.statuses.includes(p.status)));
+        // Adicionando 'tags' e 'pricing_tiers' vazios para evitar que o resto do código quebre
+        const pointsWithStubs = validPoints.map(p => ({ ...p, tags: [], pricing_tiers: null }));
+        
+        setPoints(pointsWithStubs);
+        setFilteredPoints(pointsWithStubs.filter(p => activeFilters.statuses.includes(p.status)));
       } catch (error) {
         console.error('Error fetching points:', error);
         toast.error("Falha ao carregar os pontos do mapa.", { description: error.message });
@@ -215,8 +213,9 @@ function HomePage() {
     setActiveFilters(filters);
     let newFilteredPoints = points;
     if (filters.statuses.length > 0) newFilteredPoints = newFilteredPoints.filter(point => filters.statuses.includes(point.status));
-    if (filters.tags.length > 0) newFilteredPoints = newFilteredPoints.filter(point => point.tags && point.tags.some(tag => filters.tags.includes(tag.id)));
-    if (filters.tiers.length > 0) newFilteredPoints = newFilteredPoints.filter(point => point.pricing_tiers && filters.tiers.includes(point.pricing_tiers.id));
+    // Filtros de tags e tiers desabilitados temporariamente
+    // if (filters.tags.length > 0) newFilteredPoints = newFilteredPoints.filter(point => point.tags && point.tags.some(tag => filters.tags.includes(tag.id)));
+    // if (filters.tiers.length > 0) newFilteredPoints = newFilteredPoints.filter(point => point.pricing_tiers && filters.tiers.includes(point.pricing_tiers.id));
     setFilteredPoints(newFilteredPoints);
   }, [points]);
 
