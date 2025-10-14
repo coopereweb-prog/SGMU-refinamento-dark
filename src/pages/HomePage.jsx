@@ -210,8 +210,6 @@ function HomePage() {
         });
         map.fitBounds(bounds);
         
-        // CORREÇÃO: Adiciona um ouvinte para o evento 'idle' que só dispara UMA VEZ.
-        // Isso garante que o zoom seja atualizado após o 'fitBounds' terminar.
         window.google.maps.event.addListenerOnce(map, 'idle', () => {
           const newZoom = map.getZoom();
           if (newZoom !== currentZoom) {
@@ -316,7 +314,7 @@ function HomePage() {
 
         <GoogleMap mapContainerStyle={mapContainerStyle} center={defaultCenter} zoom={currentZoom} options={mapOptions} onLoad={onMapLoad} onZoomChanged={onZoomChanged}>
           {activeRule.display_mode === 'cluster' ? (
-            <MarkerClustererF options={{ gridSize: activeRule.cluster_radius, minimumClusterSize: activeRule.min_cluster_size, styles: clusterStyles }} calculator={clustererCalculator}>
+            <MarkerClustererF key={currentZoom} options={{ gridSize: activeRule.cluster_radius, minimumClusterSize: activeRule.min_cluster_size, styles: clusterStyles }} calculator={clustererCalculator}>
               {(clusterer) => filteredPoints.map((point) => (
                 <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} onClick={() => handleMarkerClick(point)} clusterer={clusterer} icon={getDynamicMarkerIcon(point, cartItems)} animation={markerAnimation} {...{point_status: point.status}} />
               ))}
