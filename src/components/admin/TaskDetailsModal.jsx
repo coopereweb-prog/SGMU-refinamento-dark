@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { toast } from 'sonner';
-import { Loader2, UploadCloud } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { compressImage } from '@/lib/image-utils';
 
@@ -21,6 +21,7 @@ const taskSchema = z.object({
 export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
   const [artFile, setArtFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDeletingArt, setIsDeletingArt] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(taskSchema),
@@ -37,11 +38,44 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
         due_date: task.due_date ? task.due_date.split('T')[0] : '',
       });
     }
-  }, [task, form]);
+    // Limpa o arquivo selecionado ao abrir o modal
+    setArtFile(null);
+  }, [task, form, isOpen]);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setArtFile(e.target.files[0]);
+    }
+  };
+
+  const handleRemoveArtFile = async () => {
+    if (!task?.art_file_url) return;
+
+    setIsDeletingArt(true);
+    try {
+      // Extrai o caminho do arquivo da URL
+      const filePath = task.art_file_url.split('/installation-photos/')[1];
+      if (!filePath) throw new Error("URL do arquivo inválida.");
+
+      // 1. Deleta o arquivo do Storage
+      const { error: storageError } = await supabase.storage.from('installation-photos').remove([filePath]);
+      if (storageError) throw storageError;
+
+      // 2. Limpa a URL no banco de dados
+      const { data, error: dbError } = await supabase
+        .from('installation_tasks')
+        .update({ art_file_url: null })
+        .eq('id', task.id)
+        .select()
+        .single();
+      if (dbError) throw dbError;
+
+      toast.success("Arquivo de arte removido com sucesso.");
+      onUpdate(data); // Atualiza o estado no painel Kanban
+    } catch (error) {
+      toast.error("Falha ao remover o arquivo.", { description: error.message });
+    } finally {
+      setIsDeletingArt(false);
     }
   };
 
@@ -52,7 +86,7 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
     if (artFile) {
       setIsUploading(true);
       try {
-        const compressedFile = await compressImage(artFile, { maxWidth: 1920, quality: 0.8 });
+        const compressedFile = await compressImage(artFile, { maxWidth: 320, maxHeight: 240, quality: 0.8 });
         const fileExt = compressedFile.name.split('.').pop();
         const fileName = `art-files/${task.id}-${Date.now()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage.from('installation-photos').upload(fileName, compressedFile);
@@ -79,7 +113,7 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
       if (error) throw error;
       
       toast.success("Tarefa atualizada com sucesso!");
-      onUpdate(data); // Atualiza o estado no painel Kanban
+      onUpdate(data);
       onClose();
     } catch (error) {
       toast.error("Erro ao salvar alterações.", { description: error.message });
@@ -108,7 +142,14 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
             <FormItem>
               <FormLabel>Arquivo da Arte</FormLabel>
               <FormControl><Input type="file" onChange={handleFileChange} /></FormControl>
-              {task.art_file_url && !artFile && <a href={task.art_file_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-500 hover:underline">Ver arte atual</a>}
+              {task.art_file_url && !artFile && (
+                <div className="flex items-center gap-2 mt-2">
+                  <a href={task.art_file_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-500 hover:underline">Ver arte atual</a>
+                  <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={handleRemoveArtFile} disabled={isDeletingArt}>
+                    {isDeletingArt ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4 text-red-500" />}
+                  </Button>
+                </div>
+              )}
             </FormItem>
 
             <div className="flex justify-end gap-2 pt-4">
