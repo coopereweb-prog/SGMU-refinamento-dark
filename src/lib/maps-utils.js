@@ -1,38 +1,34 @@
 /**
  * Gera uma URL do Google Maps para uma rota com múltiplos pontos,
- * garantindo que o primeiro ponto seja o início da rota e que cada
- * ponto seja exibido como um marcador (pin) no mapa.
- * @param {Array<{latitude: number, longitude: number}>} points - Uma lista de objetos de ponto, cada um com latitude e longitude.
+ * usando a localização atual do usuário como ponto de partida.
+ * @param {Array<{latitude: number, longitude: number}>} points - Uma lista de objetos de ponto.
  * @returns {string|null} A URL do Google Maps ou null se não houver pontos.
  */
 export function generateOptimizedRouteUrl(points) {
-  // Se não houver pontos ou a lista for inválida, retorna nulo.
   if (!points || points.length === 0) {
     return null;
   }
 
-  // Se houver apenas um ponto, o ideal é usar o modo de "pesquisa", que coloca um pino grande no local.
-  if (points.length === 1) {
-    const { latitude, longitude } = points[0];
-    return `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
-  }
-
-  // Para múltiplos pontos, usamos a URL de direções padrão.
-  // O primeiro ponto é a origem, o último é o destino, e os do meio são waypoints (pontos de parada).
-  // Isso garante que todos os pontos sejam exibidos no mapa.
-  const origin = points[0];
+  // O destino é sempre o último ponto da lista.
   const destination = points[points.length - 1];
-  const waypoints = points.slice(1, -1);
-
-  const originStr = `${origin.latitude},${origin.longitude}`;
   const destinationStr = `${destination.latitude},${destination.longitude}`;
+
+  // Todos os outros pontos (se houver) são paradas intermediárias (waypoints).
+  const waypoints = points.slice(0, -1);
   
   const waypointsStr = waypoints
     .map(p => `${p.latitude},${p.longitude}`)
     .join('|');
 
-  // Codifica os parâmetros para garantir que a URL seja válida
   const encodedWaypoints = encodeURIComponent(waypointsStr);
 
-  return `https://www.google.com/maps/dir/?api=1&origin=${originStr}&destination=${destinationStr}&waypoints=${encodedWaypoints}&travelmode=driving`;
+  // Ao omitir o parâmetro 'origin', o Google Maps usa a localização atual do usuário.
+  // Isso faz com que o botão "Iniciar" da navegação apareça.
+  let url = `https://www.google.com/maps/dir/?api=1&destination=${destinationStr}&travelmode=driving`;
+
+  if (waypoints.length > 0) {
+    url += `&waypoints=${encodedWaypoints}`;
+  }
+
+  return url;
 }
