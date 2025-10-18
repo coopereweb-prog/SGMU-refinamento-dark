@@ -126,7 +126,7 @@ export function KanbanBoard() {
         collisionDetection={closestCorners}
       >
         {/* Layout para Desktop */}
-        <div className="hidden md:flex h-[calc(100vh-200px)]">
+        <div className="hidden md:flex h-full">
           <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex gap-4 p-4 h-full">
               {columnsConfig.map(column => (
