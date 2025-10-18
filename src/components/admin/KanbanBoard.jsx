@@ -48,7 +48,8 @@ export function KanbanBoard() {
   const tasksByColumn = useMemo(() => {
     const groupedTasks = {};
     columnsConfig.forEach(col => {
-      groupedTasks[col.id] = [];
+      // Inicializa cada coluna com um array vazio
+      groupedTasks[col.id] = []; 
     });
     tasks.forEach(task => {
       // Garante que só tarefas com status válido sejam incluídas
@@ -88,11 +89,7 @@ export function KanbanBoard() {
 
     if (!originalTask) return;
 
-    // ********************************************
-    // CORREÇÃO DE LÓGICA:
-    // Garante que, ao mover para 'assigned', a tarefa tenha um técnico.
-    // O código original só verificava a saída de 'pending_assignment'.
-    // ********************************************
+    // **LÓGICA CORRIGIDA:** Garante que qualquer transição para 'Em Campo' tenha um técnico atribuído.
     if (newStatus === 'assigned' && !originalTask.assigned_technician_id) {
       toast.warning("Atribua um técnico antes de mover a tarefa para 'Em Campo'.");
       return;
@@ -144,7 +141,7 @@ export function KanbanBoard() {
                 <KanbanColumn
                   key={column.id}
                   column={column}
-                  tasks={tasksByColumn[column.id] || []}
+                  tasks={tasksByColumn[column.id] || []} // Fallback garantido para array vazio
                   technicians={technicians}
                   onTaskUpdate={handleTaskUpdate}
                   onOpenModal={handleOpenModal}
@@ -155,7 +152,7 @@ export function KanbanBoard() {
           </ScrollArea>
         </div>
 
-        {/* Layout para Mobile (Nota: Arrastar para colunas não visíveis pode falhar devido à natureza do Tabs) */}
+        {/* Layout para Mobile */}
         <div className="block md:hidden h-full">
           <Tabs defaultValue="pending_art" className="h-full flex flex-col">
             <TabsList className="w-full sticky top-0 z-10 bg-background/90 backdrop-blur-sm">
@@ -175,10 +172,6 @@ export function KanbanBoard() {
                 <TabsContent 
                     key={column.id} 
                     value={column.id} 
-                    // Removido flex-grow, o conteúdo é gerenciado pelo ScrollArea pai
-                    // Importante: Em muitas implementações de Tabs, apenas o conteúdo ativo é montado,
-                    // o que pode desabilitar o Drag and Drop para colunas não visíveis.
-                    // Para fins deste código, estamos assumindo que a TabsContent é renderizada.
                     className="h-full"
                 >
                     <KanbanColumn
@@ -205,8 +198,6 @@ export function KanbanBoard() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onUpdate={handleTaskUpdate}
-        technicians={technicians} // Passando technicians para o modal, caso necessário
-        columnsConfig={columnsConfig} // Passando colunas para o modal, caso necessário
       />
     </div>
   );
