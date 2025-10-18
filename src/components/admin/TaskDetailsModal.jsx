@@ -141,8 +141,8 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
               {task.art_file_url && !artFile && (
                 <div className="flex items-center gap-2 mt-2">
                   <a href={task.art_file_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-500 hover:underline">Ver arte atual</a>
-                  <Button type="button" variant="destructive" size="sm" onClick={handleRemoveArtFile} disabled={isDeletingArt}>
-                    {isDeletingArt ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Remover Arte'}
+                  <Button type="button" variant="destructive" size="icon" className="h-7 w-7" onClick={handleRemoveArtFile} disabled={isDeletingArt}>
+                    {isDeletingArt ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
                   </Button>
                 </div>
               )}
