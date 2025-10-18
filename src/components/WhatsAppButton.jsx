@@ -22,7 +22,7 @@ export const WhatsAppButton = () => {
       href={whatsappUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed top-1/2 -translate-y-1/2 right-6 bg-green-600 text-white p-3 rounded-full shadow-2xl hover:bg-green-700 transition-transform hover:scale-110 z-[100] ring-2 ring-white/20 hover:ring-white/40"
+      className="fixed top-1/2 -translate-y-1/2 right-6 bg-green-600 text-white p-3 rounded-full shadow-lg hover:bg-green-700 transition-transform hover:scale-110 z-[100] ring-2 ring-white/20 hover:ring-white/40"
       aria-label="Contactar no WhatsApp"
     >
       <img 
