@@ -27,24 +27,6 @@ export function KanbanCard({ task, technicians, onTaskUpdate, onOpenModal, onTas
     }
   };
 
-  const getThumbnailUrl = (originalUrl) => {
-    if (!originalUrl) return '#';
-    try {
-      const url = new URL(originalUrl);
-      const pathParts = url.pathname.split('/');
-      // Encontra o índice de 'public' para reconstruir a URL de renderização
-      const publicIndex = pathParts.findIndex(part => part === 'public');
-      if (publicIndex === -1 || publicIndex + 1 >= pathParts.length) return originalUrl;
-
-      const bucketAndPath = pathParts.slice(publicIndex + 1).join('/');
-      const transformParams = 'width=300&height=300&resize=contain';
-      
-      return `${url.origin}/storage/v1/render/image/public/${bucketAndPath}?${transformParams}`;
-    } catch (e) {
-      return originalUrl; // Retorna a URL original se houver erro no parsing
-    }
-  };
-
   return (
     <Card
       className="mb-2 bg-card/80 transition-all cursor-pointer hover:bg-accent"
@@ -85,7 +67,7 @@ export function KanbanCard({ task, technicians, onTaskUpdate, onOpenModal, onTas
         </div>
         {task.art_file_url && (
           <a 
-            href={getThumbnailUrl(task.art_file_url)} 
+            href={task.art_file_url} 
             target="_blank" 
             rel="noopener noreferrer" 
             onClick={(e) => e.stopPropagation()} 
