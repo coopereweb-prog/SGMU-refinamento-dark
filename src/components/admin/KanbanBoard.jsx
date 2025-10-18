@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { DndContext, DragOverlay, closestCorners } from '@dnd-kit/core';
+import { DndContext, DragOverlay, pointerWithin } from '@dnd-kit/core';
 import { getInstallationTasks, updateInstallationTaskStatus, getFieldTechnicians } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
@@ -127,7 +127,7 @@ export function KanbanBoard() {
       <DndContext
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
-        collisionDetection={closestCorners}
+        collisionDetection={pointerWithin}
       >
         {/* Layout para Desktop */}
         <div className="hidden md:flex h-full">
