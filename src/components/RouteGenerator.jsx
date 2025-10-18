@@ -7,9 +7,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Map, Share2, Copy, Mail, MessageSquare } from 'lucide-react';
 import { generateOptimizedRouteUrl } from '@/lib/maps-utils';
 import { toast } from 'sonner';
+import { RoutePlannerModal } from './RoutePlannerModal'; // Importação do novo modal
 
 export function RouteGenerator({ points }) {
   const [selectedPointIds, setSelectedPointIds] = useState(new Set());
+  const [isPlannerOpen, setIsPlannerOpen] = useState(false); // Estado para controlar o modal
 
   const handleToggleAll = (checked) => {
     if (checked) {
@@ -33,17 +35,14 @@ export function RouteGenerator({ points }) {
     return points.filter(p => selectedPointIds.has(p.id));
   }, [points, selectedPointIds]);
 
-  const routeUrl = useMemo(() => {
-    return generateOptimizedRouteUrl(selectedPoints);
-  }, [selectedPoints]);
-
   const handleGenerateRoute = () => {
-    if (routeUrl) {
-      window.open(routeUrl, '_blank');
+    if (selectedPoints.length > 0) {
+      setIsPlannerOpen(true); // Abre o modal
     }
   };
 
   const handleShare = async (platform) => {
+    const routeUrl = generateOptimizedRouteUrl(selectedPoints); // Gera URL simples para compartilhamento
     if (!routeUrl) return;
 
     const shareText = `Confira esta rota otimizada: ${routeUrl}`;
@@ -74,52 +73,59 @@ export function RouteGenerator({ points }) {
   }
 
   return (
-    <Card className="mt-4">
-      <CardHeader>
-        <CardTitle className="text-base">Gerador de Rota</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="select-all-points"
-              checked={selectedPointIds.size === points.length && points.length > 0}
-              onCheckedChange={handleToggleAll}
-            />
-            <Label htmlFor="select-all-points" className="font-semibold">Selecionar Todos os Pontos</Label>
+    <>
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle className="text-base">Gerador de Rota</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="select-all-points"
+                checked={selectedPointIds.size === points.length && points.length > 0}
+                onCheckedChange={handleToggleAll}
+              />
+              <Label htmlFor="select-all-points" className="font-semibold">Selecionar Todos os Pontos</Label>
+            </div>
+            <div className="space-y-2 max-h-48 overflow-y-auto border p-2 rounded-md">
+              {points.map(point => (
+                <div key={point.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`point-${point.id}`}
+                    checked={selectedPointIds.has(point.id)}
+                    onCheckedChange={(checked) => handleToggleOne(point.id, checked)}
+                  />
+                  <Label htmlFor={`point-${point.id}`} className="text-sm font-normal">{point.name}</Label>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button onClick={handleGenerateRoute} disabled={selectedPoints.length === 0} className="flex-1">
+                <Map className="h-4 w-4 mr-2" /> Gerar Rota
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" disabled={selectedPoints.length === 0}>
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleShare('native')}><Share2 className="h-4 w-4 mr-2" />Compartilhar...</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleShare('copy')}><Copy className="h-4 w-4 mr-2" />Copiar Link</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleShare('whatsapp')}><MessageSquare className="h-4 w-4 mr-2" />WhatsApp</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleShare('email')}><Mail className="h-4 w-4 mr-2" />Email</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-          <div className="space-y-2 max-h-48 overflow-y-auto border p-2 rounded-md">
-            {points.map(point => (
-              <div key={point.id} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`point-${point.id}`}
-                  checked={selectedPointIds.has(point.id)}
-                  onCheckedChange={(checked) => handleToggleOne(point.id, checked)}
-                />
-                <Label htmlFor={`point-${point.id}`} className="text-sm font-normal">{point.name}</Label>
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-2 pt-2">
-            <Button onClick={handleGenerateRoute} disabled={selectedPoints.length === 0} className="flex-1">
-              <Map className="h-4 w-4 mr-2" /> Gerar Rota
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" disabled={selectedPoints.length === 0}>
-                  <Share2 className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleShare('native')}><Share2 className="h-4 w-4 mr-2" />Compartilhar...</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleShare('copy')}><Copy className="h-4 w-4 mr-2" />Copiar Link</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleShare('whatsapp')}><MessageSquare className="h-4 w-4 mr-2" />WhatsApp</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleShare('email')}><Mail className="h-4 w-4 mr-2" />Email</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+      <RoutePlannerModal
+        isOpen={isPlannerOpen}
+        onClose={() => setIsPlannerOpen(false)}
+        points={selectedPoints}
+      />
+    </>
   );
 }

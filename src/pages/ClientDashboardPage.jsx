@@ -20,7 +20,6 @@ import { ClientProfileForm } from '../components/ClientProfileForm';
 import { WhatsAppButton } from '../components/WhatsAppButton';
 import { RouteGenerator } from '@/components/RouteGenerator';
 import { ContractedPointsView } from '../components/ContractedPointsView';
-import { VisitationRoutePlanner } from '../components/VisitationRoutePlanner';
 import { addYears } from 'date-fns';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
@@ -34,7 +33,7 @@ function ClientDashboardPage() {
   const [activeTab, setActiveTab] = useState('orders');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const visitationPlannerRef = useRef(null);
+  const pointsTabRef = useRef(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -42,7 +41,7 @@ function ClientDashboardPage() {
     if (feature === 'visitation_route') {
       setActiveTab('points');
       setTimeout(() => {
-        visitationPlannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        pointsTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
     }
   }, [searchParams]);
@@ -120,20 +119,6 @@ function ClientDashboardPage() {
   const completedOrders = useMemo(() => {
     return orders.filter(order => order.status === 'completed');
   }, [orders]);
-
-  const contractedPoints = useMemo(() => {
-    if (!completedOrders) return [];
-    return completedOrders.flatMap(order => 
-      order.order_items.map(item => ({
-        ...item.points,
-        uniqueId: `${order.id}-${item.id}`, 
-        price: item.price,
-        period_years: item.period_years,
-        startDate: new Date(order.updated_at), 
-        endDate: addYears(new Date(order.updated_at), item.period_years),
-      }))
-    );
-  }, [completedOrders]);
 
   if (userProfileLoading || loadingOrders) return <div className="flex items-center justify-center h-full">Carregando...</div>;
 
@@ -291,8 +276,7 @@ function ClientDashboardPage() {
         </TabsContent>
 
         <TabsContent value="points">
-          <div ref={visitationPlannerRef} className="space-y-6 mt-6">
-            <VisitationRoutePlanner points={contractedPoints} />
+          <div ref={pointsTabRef} className="space-y-6 mt-6">
             <ContractedPointsView orders={completedOrders} profile={profile} />
           </div>
         </TabsContent>

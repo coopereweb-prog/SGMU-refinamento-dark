@@ -6,17 +6,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { PrintablePointsReport } from '@/components/PrintablePointsReport';
-import { FileText, Info, Map, Share2, Copy, Mail, MessageSquare } from 'lucide-react';
+import { FileText, Info, Map } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { generateOptimizedRouteUrl } from '@/lib/maps-utils';
-import { toast } from 'sonner';
+import { RoutePlannerModal } from './RoutePlannerModal';
 
-// Reduzido para 9, um número mais seguro para a API de URL do Google Maps
 const ROUTE_CHUNK_SIZE = 9;
 
 export function ContractedPointsView({ orders, profile }) {
   const [selectedPointIds, setSelectedPointIds] = useState(new Set());
   const [reportData, setReportData] = useState(null);
+  const [isPlannerOpen, setIsPlannerOpen] = useState(false);
+  const [pointsForPlanner, setPointsForPlanner] = useState([]);
 
   const contractedPoints = useMemo(() => {
     if (!orders) return [];
@@ -74,9 +74,9 @@ export function ContractedPointsView({ orders, profile }) {
   
   const handleGenerateRoute = (pointsToRoute) => {
     const pointsWithCoords = pointsToRoute.filter(p => p.latitude && p.longitude);
-    const routeUrl = generateOptimizedRouteUrl(pointsWithCoords);
-    if (routeUrl) {
-      window.open(routeUrl, '_blank');
+    if (pointsWithCoords.length > 0) {
+      setPointsForPlanner(pointsWithCoords);
+      setIsPlannerOpen(true);
     }
   };
 
@@ -98,90 +98,97 @@ export function ContractedPointsView({ orders, profile }) {
   }
 
   return (
-    <div className="space-y-6 mt-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Meus Pontos Contratados</CardTitle>
-          <CardDescription>
-            Aqui está uma lista consolidada de todos os seus pontos de pedidos concluídos. Selecione os pontos abaixo para gerar rotas ou relatórios.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-2 mb-4">
-            <Button onClick={handleGenerateReport} disabled={selectedPoints.length === 0}>
-              <FileText className="h-4 w-4 mr-2" /> Gerar Relatório
-            </Button>
-            
-            {selectedPoints.length > 0 && (
-              <>
-                {selectedPoints.length <= ROUTE_CHUNK_SIZE ? (
-                  <Button onClick={() => handleGenerateRoute(selectedPoints)}>
-                    <Map className="h-4 w-4 mr-2" /> Gerar Rota
-                  </Button>
-                ) : (
-                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button>
-                        <Map className="h-4 w-4 mr-2" /> Gerar Rotas ({pointChunks.length})
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start">
-                      {pointChunks.map((chunk, index) => {
-                        const startPointNumber = index * ROUTE_CHUNK_SIZE + 1;
-                        const endPointNumber = startPointNumber + chunk.length - 1;
-                        return (
-                          <DropdownMenuItem key={index} onClick={() => handleGenerateRoute(chunk)}>
-                            Rota {index + 1} (Pontos {startPointNumber} a {endPointNumber})
-                          </DropdownMenuItem>
-                        );
-                      })}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </>
-            )}
-          </div>
-          <div className="border rounded-lg overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="p-2">
-                    <Checkbox
-                      checked={selectedPointIds.size === contractedPoints.length && contractedPoints.length > 0}
-                      onCheckedChange={handleSelectAll}
-                    />
-                  </TableHead>
-                  <TableHead>Ponto</TableHead>
-                  <TableHead>Vigência</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {contractedPoints.map(point => (
-                  <TableRow key={point.uniqueId}>
-                    <TableCell className="p-2">
+    <>
+      <div className="space-y-6 mt-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Meus Pontos Contratados</CardTitle>
+            <CardDescription>
+              Aqui está uma lista consolidada de todos os seus pontos de pedidos concluídos. Selecione os pontos abaixo para gerar rotas ou relatórios.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-2 mb-4">
+              <Button onClick={handleGenerateReport} disabled={selectedPoints.length === 0}>
+                <FileText className="h-4 w-4 mr-2" /> Gerar Relatório
+              </Button>
+              
+              {selectedPoints.length > 0 && (
+                <>
+                  {selectedPoints.length <= ROUTE_CHUNK_SIZE ? (
+                    <Button onClick={() => handleGenerateRoute(selectedPoints)}>
+                      <Map className="h-4 w-4 mr-2" /> Gerar Rota
+                    </Button>
+                  ) : (
+                     <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button>
+                          <Map className="h-4 w-4 mr-2" /> Gerar Rotas ({pointChunks.length})
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        {pointChunks.map((chunk, index) => {
+                          const startPointNumber = index * ROUTE_CHUNK_SIZE + 1;
+                          const endPointNumber = startPointNumber + chunk.length - 1;
+                          return (
+                            <DropdownMenuItem key={index} onClick={() => handleGenerateRoute(chunk)}>
+                              Rota {index + 1} (Pontos {startPointNumber} a {endPointNumber})
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </>
+              )}
+            </div>
+            <div className="border rounded-lg overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="p-2">
                       <Checkbox
-                        checked={selectedPointIds.has(point.uniqueId)}
-                        onCheckedChange={(checked) => handleSelectOne(point.uniqueId, checked)}
+                        checked={selectedPointIds.size === contractedPoints.length && contractedPoints.length > 0}
+                        onCheckedChange={handleSelectAll}
                       />
-                    </TableCell>
-                    <TableCell className="font-medium">{point.name}</TableCell>
-                    <TableCell>
-                      {format(point.startDate, 'dd/MM/yy', { locale: ptBR })} - {format(point.endDate, 'dd/MM/yy', { locale: ptBR })}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {Number(point.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </TableCell>
+                    </TableHead>
+                    <TableHead>Ponto</TableHead>
+                    <TableHead>Vigência</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-      <div className="hidden print:block">
-        {reportData && <PrintablePointsReport {...reportData} />}
+                </TableHeader>
+                <TableBody>
+                  {contractedPoints.map(point => (
+                    <TableRow key={point.uniqueId}>
+                      <TableCell className="p-2">
+                        <Checkbox
+                          checked={selectedPointIds.has(point.uniqueId)}
+                          onCheckedChange={(checked) => handleSelectOne(point.uniqueId, checked)}
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">{point.name}</TableCell>
+                      <TableCell>
+                        {format(point.startDate, 'dd/MM/yy', { locale: ptBR })} - {format(point.endDate, 'dd/MM/yy', { locale: ptBR })}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {Number(point.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+        <div className="hidden print:block">
+          {reportData && <PrintablePointsReport {...reportData} />}
+        </div>
       </div>
-    </div>
+      <RoutePlannerModal
+        isOpen={isPlannerOpen}
+        onClose={() => setIsPlannerOpen(false)}
+        points={pointsForPlanner}
+      />
+    </>
   );
 }
