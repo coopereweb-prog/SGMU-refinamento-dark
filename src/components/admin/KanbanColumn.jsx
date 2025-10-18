@@ -17,13 +17,18 @@ export function KanbanColumn({ column, tasks, technicians, onTaskUpdate, onOpenM
         </span>
       </div>
       <ScrollArea
-        ref={setNodeRef}
+        ref={setNodeRef} // O ScrollArea é o Droppable
         className={cn(
           "h-full bg-muted/50 rounded-b-lg transition-colors",
           isOver && "bg-primary/10"
         )}
       >
-        <div className="p-2 space-y-2">
+        {/* CORREÇÃO FUNCIONAL: Adiciona minHeight para garantir que a coluna seja detectada
+           mesmo quando está vazia ou no limite da ScrollArea. */}
+        <div 
+          className="p-2 space-y-2"
+          style={{ minHeight: '150px' }} 
+        >
           {tasks.length > 0 ? (
             tasks.map(task => (
               <KanbanCard 
@@ -35,7 +40,10 @@ export function KanbanColumn({ column, tasks, technicians, onTaskUpdate, onOpenM
               />
             ))
           ) : (
-            <p className="text-xs text-center text-muted-foreground p-4">Nenhuma tarefa aqui.</p>
+            // Placeholder para manter a altura quando não houver tarefas
+            <div className="flex items-center justify-center h-full" style={{ minHeight: '150px' }}>
+                <p className="text-xs text-center text-muted-foreground p-4">Nenhuma tarefa aqui.</p>
+            </div>
           )}
         </div>
       </ScrollArea>

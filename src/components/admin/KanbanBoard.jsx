@@ -23,6 +23,8 @@ export function KanbanBoard() {
   const [technicians, setTechnicians] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTask, setActiveTask] = useState(null);
+  // NOVO: Estado para capturar as dimensões do card flutuante (CORREÇÃO VISUAL)
+  const [activeDragRect, setActiveDragRect] = useState(null); 
   const [selectedTask, setSelectedTask] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -48,11 +50,9 @@ export function KanbanBoard() {
   const tasksByColumn = useMemo(() => {
     const groupedTasks = {};
     columnsConfig.forEach(col => {
-      // Inicializa cada coluna com um array vazio
       groupedTasks[col.id] = []; 
     });
     tasks.forEach(task => {
-      // Garante que só tarefas com status válido sejam incluídas
       if (groupedTasks.hasOwnProperty(task.status)) {
         groupedTasks[task.status].push(task);
       }
@@ -72,24 +72,25 @@ export function KanbanBoard() {
   };
 
   const handleDragStart = (event) => {
-    // Armazena o objeto completo da tarefa ativa para uso no DragOverlay
     setActiveTask(event.active.data.current);
+    // CORREÇÃO VISUAL: Captura as dimensões do elemento arrastado
+    setActiveDragRect(event.active.rect.current); 
   };
 
   const handleDragEnd = async (event) => {
     setActiveTask(null);
+    setActiveDragRect(null); // Limpa as dimensões após soltar
     const { active, over } = event;
 
-    // Se não soltou sobre um droppable ou soltou no próprio local
     if (!over || active.id === over.id) return;
 
     const taskId = active.id;
-    const newStatus = over.id; // O id do droppable (KanbanColumn) é o novo status
+    const newStatus = over.id; 
     const originalTask = tasks.find(t => t.id === taskId);
 
     if (!originalTask) return;
 
-    // **LÓGICA CORRIGIDA:** Garante que qualquer transição para 'Em Campo' tenha um técnico atribuído.
+    // Lógica Corrigida: Checa se um técnico é necessário para 'assigned'
     if (newStatus === 'assigned' && !originalTask.assigned_technician_id) {
       toast.warning("Atribua um técnico antes de mover a tarefa para 'Em Campo'.");
       return;
@@ -98,7 +99,6 @@ export function KanbanBoard() {
     if (originalTask.status !== newStatus) {
       const originalTasks = [...tasks];
       
-      // Otimisticamente atualiza o estado
       setTasks(prevTasks =>
         prevTasks.map(task =>
           task.id === taskId ? { ...task, status: newStatus } : task
@@ -110,7 +110,6 @@ export function KanbanBoard() {
         const newColumn = columnsConfig.find(c => c.id === newStatus);
         toast.success(`Tarefa movida para "${newColumn?.title || newStatus}"`);
       } catch (error) {
-        // Reverte o estado em caso de falha na API
         setTasks(originalTasks);
         toast.error("Falha ao mover tarefa", { description: error.message });
       }
@@ -135,13 +134,14 @@ export function KanbanBoard() {
       >
         {/* Layout para Desktop */}
         <div className="hidden md:flex h-full">
-          <ScrollArea className="w-full whitespace-nowrap">
+          <ScrollArea className="w-full whitespace-nowrap h-full">
+            {/* O h-full aqui é crítico para a detecção correta do droppable */}
             <div className="flex gap-4 p-4 h-full">
               {columnsConfig.map(column => (
                 <KanbanColumn
                   key={column.id}
                   column={column}
-                  tasks={tasksByColumn[column.id] || []} // Fallback garantido para array vazio
+                  tasks={tasksByColumn[column.id] || []}
                   technicians={technicians}
                   onTaskUpdate={handleTaskUpdate}
                   onOpenModal={handleOpenModal}
@@ -167,12 +167,12 @@ export function KanbanBoard() {
                 <ScrollBar orientation="horizontal" />
               </ScrollArea>
             </TabsList>
-            <div className="flex-grow overflow-y-auto p-4 pt-0">
+            <div className="flex-grow overflow-hidden">
                 {columnsConfig.map(column => (
                 <TabsContent 
                     key={column.id} 
                     value={column.id} 
-                    className="h-full"
+                    className="h-full mt-0 p-4 pt-0"
                 >
                     <KanbanColumn
                         column={column}
@@ -187,9 +187,18 @@ export function KanbanBoard() {
           </Tabs>
         </div>
 
-        {/* DragOverlay para exibir o cartão flutuante durante o arrasto */}
+        {/* CORREÇÃO VISUAL: DragOverlay com dimensões explícitas */}
         <DragOverlay>
-          {activeTask ? <KanbanCard task={activeTask} technicians={technicians} isOverlay /> : null}
+          {activeTask && activeDragRect ? (
+            // Usa as dimensões capturadas para corrigir o "expande e fica transparente"
+            <div style={{ width: activeDragRect.width, height: activeDragRect.height }}>
+                <KanbanCard 
+                    task={activeTask} 
+                    technicians={technicians} 
+                    isOverlay 
+                />
+            </div>
+          ) : null}
         </DragOverlay>
       </DndContext>
       
