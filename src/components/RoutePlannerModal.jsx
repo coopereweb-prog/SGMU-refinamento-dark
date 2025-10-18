@@ -43,14 +43,20 @@ export function RoutePlannerModal({ isOpen, onClose, points }) {
       toast.info("Aguardando o serviço de mapas carregar...");
       return;
     }
-    if (!cep.replace(/\D/g, '')) {
-      toast.warning('Por favor, insira um CEP de partida.');
+    const sanitizedCep = cep.replace(/\D/g, '');
+    if (sanitizedCep.length !== 8) {
+      toast.warning('CEP inválido.', { description: 'Por favor, insira um CEP com 8 dígitos.' });
       return;
     }
     setIsLoading(true);
 
     const geocoder = new window.google.maps.Geocoder();
-    geocoder.geocode({ address: `${cep}, Brasil` }, (results, status) => {
+    geocoder.geocode({
+      componentRestrictions: {
+        country: 'BR',
+        postalCode: sanitizedCep,
+      },
+    }, (results, status) => {
       if (status === 'OK' && results[0]) {
         const location = results[0].geometry.location;
         const address = results[0].formatted_address;
