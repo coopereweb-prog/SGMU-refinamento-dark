@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { MapPin, Check, ChevronDown, Loader2, Navigation, RotateCcw } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { MapPin, Check, ChevronDown, Loader2, Navigation, RotateCcw, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Função para calcular a distância Haversine entre duas coordenadas
@@ -30,10 +31,11 @@ export function VisitationRoutePlanner({ points }) {
   const [cep, setCep] = useState('');
   const [unvisitedPoints, setUnvisitedPoints] = useState([]);
   const [visitedPoints, setVisitedPoints] = useState([]);
-  const [isRouteGenerated, setIsRouteGenerated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [step, setStep] = useState('input'); // 'input', 'confirm', 'generated'
+  const [startLocationInfo, setStartLocationInfo] = useState(null);
 
-  const handleGenerateRouteFromCep = () => {
+  const handleCepSearch = () => {
     if (!cep.replace(/\D/g, '')) {
       toast.warning('Por favor, insira um CEP de partida.');
       return;
@@ -42,36 +44,45 @@ export function VisitationRoutePlanner({ points }) {
 
     const geocoder = new window.google.maps.Geocoder();
     geocoder.geocode({ address: `${cep}, Brasil` }, (results, status) => {
-      if (status === 'OK') {
+      if (status === 'OK' && results[0]) {
         const location = results[0].geometry.location;
-        const startLocation = {
-          latitude: location.lat(),
-          longitude: location.lng(),
-        };
-
-        const sortedPoints = [...points]
-          .map(point => ({
-            ...point,
-            distance: haversineDistance(startLocation, point),
-          }))
-          .sort((a, b) => a.distance - b.distance);
-
-        setUnvisitedPoints(sortedPoints);
-        setVisitedPoints([]);
-        setIsRouteGenerated(true);
-        setIsLoading(false);
-        toast.success('Rota de visitação gerada a partir do CEP informado!');
+        const address = results[0].formatted_address;
+        setStartLocationInfo({
+          address: address,
+          coords: {
+            latitude: location.lat(),
+            longitude: location.lng(),
+          }
+        });
+        setStep('confirm');
       } else {
         toast.error('CEP não encontrado.', {
           description: 'Não foi possível encontrar a localização para o CEP informado. Verifique e tente novamente.',
         });
-        setIsLoading(false);
       }
+      setIsLoading(false);
     });
   };
 
+  const handleConfirmAndGenerate = () => {
+    if (!startLocationInfo) return;
+
+    const sortedPoints = [...points]
+      .map(point => ({
+        ...point,
+        distance: haversineDistance(startLocationInfo.coords, point),
+      }))
+      .sort((a, b) => a.distance - b.distance);
+
+    setUnvisitedPoints(sortedPoints);
+    setVisitedPoints([]);
+    setStep('generated');
+    toast.success('Rota de visitação gerada!');
+  };
+
   const handleReset = () => {
-    setIsRouteGenerated(false);
+    setStep('input');
+    setStartLocationInfo(null);
     setUnvisitedPoints([]);
     setVisitedPoints([]);
     setCep('');
@@ -90,18 +101,10 @@ export function VisitationRoutePlanner({ points }) {
     return null;
   }
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Planejador de Rota de Visitação</CardTitle>
-        {isRouteGenerated && (
-          <CardDescription>
-            Esta é a ordem de visitação mais eficiente a partir do CEP informado.
-          </CardDescription>
-        )}
-      </CardHeader>
-      <CardContent>
-        {!isRouteGenerated ? (
+  const renderContent = () => {
+    switch (step) {
+      case 'input':
+        return (
           <div className="space-y-4">
             <p className="text-muted-foreground">
               Insira um CEP de partida para criar uma rota otimizada e visitar seus pontos contratados.
@@ -117,13 +120,36 @@ export function VisitationRoutePlanner({ points }) {
                   disabled={isLoading}
                 />
               </div>
-              <Button onClick={handleGenerateRouteFromCep} disabled={isLoading} className="w-full sm:w-auto">
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Navigation className="mr-2 h-4 w-4" />}
-                Gerar Rota
+              <Button onClick={handleCepSearch} disabled={isLoading} className="w-full sm:w-auto">
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+                Buscar Endereço
               </Button>
             </div>
           </div>
-        ) : (
+        );
+      case 'confirm':
+        return (
+          <div className="space-y-4">
+            <Alert>
+              <MapPin className="h-4 w-4" />
+              <AlertTitle>Confirme o Endereço de Partida</AlertTitle>
+              <AlertDescription>
+                O endereço encontrado para o CEP informado é: <br />
+                <strong className="font-semibold">{startLocationInfo?.address}</strong>
+              </AlertDescription>
+            </Alert>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button onClick={handleConfirmAndGenerate} className="w-full sm:w-auto flex-1">
+                <Navigation className="mr-2 h-4 w-4" /> Confirmar e Gerar Rota
+              </Button>
+              <Button variant="outline" onClick={handleReset} className="w-full sm:w-auto">
+                Alterar CEP
+              </Button>
+            </div>
+          </div>
+        );
+      case 'generated':
+        return (
           <div className="space-y-6">
             <div>
               <h3 className="font-semibold mb-2">Próximos Pontos a Visitar</h3>
@@ -154,7 +180,6 @@ export function VisitationRoutePlanner({ points }) {
                 </p>
               )}
             </div>
-
             {visitedPoints.length > 0 && (
               <Collapsible>
                 <CollapsibleTrigger asChild>
@@ -181,7 +206,24 @@ export function VisitationRoutePlanner({ points }) {
               </Button>
             </div>
           </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Planejador de Rota de Visitação</CardTitle>
+        {step === 'generated' && (
+          <CardDescription>
+            Esta é a ordem de visitação mais eficiente a partir do local informado.
+          </CardDescription>
         )}
+      </CardHeader>
+      <CardContent>
+        {renderContent()}
       </CardContent>
     </Card>
   );
