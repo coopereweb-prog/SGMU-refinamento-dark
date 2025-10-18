@@ -38,7 +38,6 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
         due_date: task.due_date ? task.due_date.split('T')[0] : '',
       });
     }
-    // Limpa o arquivo selecionado ao abrir o modal
     setArtFile(null);
   }, [task, form, isOpen]);
 
@@ -53,15 +52,12 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
 
     setIsDeletingArt(true);
     try {
-      // Extrai o caminho do arquivo da URL
-      const filePath = task.art_file_url.split('/installation-photos/')[1];
+      const filePath = new URL(task.art_file_url).pathname.split('/installation-photos/')[1];
       if (!filePath) throw new Error("URL do arquivo inválida.");
 
-      // 1. Deleta o arquivo do Storage
       const { error: storageError } = await supabase.storage.from('installation-photos').remove([filePath]);
       if (storageError) throw storageError;
 
-      // 2. Limpa a URL no banco de dados
       const { data, error: dbError } = await supabase
         .from('installation_tasks')
         .update({ art_file_url: null })
@@ -71,7 +67,7 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
       if (dbError) throw dbError;
 
       toast.success("Arquivo de arte removido com sucesso.");
-      onUpdate(data); // Atualiza o estado no painel Kanban
+      onUpdate(data);
     } catch (error) {
       toast.error("Falha ao remover o arquivo.", { description: error.message });
     } finally {
@@ -86,7 +82,7 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
     if (artFile) {
       setIsUploading(true);
       try {
-        const compressedFile = await compressImage(artFile, { maxWidth: 1024, quality: 0.9 });
+        const compressedFile = await compressImage(artFile, { maxWidth: 1000, quality: 0.85 });
         const fileExt = compressedFile.name.split('.').pop();
         const fileName = `art-files/${task.id}-${Date.now()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage.from('installation-photos').upload(fileName, compressedFile);
@@ -145,8 +141,8 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
               {task.art_file_url && !artFile && (
                 <div className="flex items-center gap-2 mt-2">
                   <a href={task.art_file_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-500 hover:underline">Ver arte atual</a>
-                  <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={handleRemoveArtFile} disabled={isDeletingArt}>
-                    {isDeletingArt ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4 text-red-500" />}
+                  <Button type="button" variant="destructive" size="sm" onClick={handleRemoveArtFile} disabled={isDeletingArt}>
+                    {isDeletingArt ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Remover Arte'}
                   </Button>
                 </div>
               )}

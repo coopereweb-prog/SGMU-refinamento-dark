@@ -1,22 +1,27 @@
-import { useState, useEffect, useMemo } from 'react';
-import { getInstallationTasks, updateInstallationTaskStatus, getFieldTechnicians } from '@/lib/supabase';
-import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { useState, useEffect, useMemo } from "react";
+import {
+  getInstallationTasks,
+  updateInstallationTaskStatus,
+  getFieldTechnicians,
+} from "@/lib/supabase";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { KanbanColumn } from './KanbanColumn';
-import { TaskDetailsModal } from './TaskDetailsModal';
+import { KanbanColumn } from "./KanbanColumn";
+import { TaskDetailsModal } from "./TaskDetailsModal";
+import { cn } from "@/lib/utils";
 
 const columnsConfig = [
-  { id: 'pending_art', title: 'Aprovação da Arte' },
-  { id: 'art_approved', title: 'Impressão dos Adesivos' },
-  { id: 'pending_assignment', title: 'Pronto para Atribuir' },
-  { id: 'assigned', title: 'Em Campo' },
-  { id: 'completed', title: 'Concluído' },
-  { id: 'on_hold', title: 'Em Espera' },
+  { id: "pending_art", title: "Aprovação da Arte" },
+  { id: "art_approved", title: "Impressão dos Adesivos" },
+  { id: "pending_assignment", title: "Pronto para Atribuir" },
+  { id: "assigned", title: "Em Campo" },
+  { id: "completed", title: "Concluído" },
+  { id: "on_hold", title: "Em Espera" }
 ];
 
-export function KanbanBoard() {
+export function KanbanBoard({ className }) {
   const [tasks, setTasks] = useState([]);
   const [technicians, setTechnicians] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,7 +39,9 @@ export function KanbanBoard() {
         setTasks(tasksData);
         setTechnicians(techniciansData);
       } catch (error) {
-        toast.error("Falha ao carregar dados do painel", { description: error.message });
+        toast.error("Falha ao carregar dados do painel", {
+          description: error.message
+        });
       } finally {
         setLoading(false);
       }
@@ -43,21 +50,19 @@ export function KanbanBoard() {
   }, []);
 
   const tasksByColumn = useMemo(() => {
-    const groupedTasks = {};
-    columnsConfig.forEach(col => {
-      groupedTasks[col.id] = []; 
-    });
-    tasks.forEach(task => {
-      if (groupedTasks.hasOwnProperty(task.status)) {
-        groupedTasks[task.status].push(task);
+    const grouped = {};
+    for (const c of columnsConfig) grouped[c.id] = [];
+    for (const t of tasks) {
+      if (Object.prototype.hasOwnProperty.call(grouped, t.status)) {
+        grouped[t.status].push(t);
       }
-    });
-    return groupedTasks;
+    }
+    return grouped;
   }, [tasks]);
 
   const handleTaskUpdate = (updatedTask) => {
-    setTasks(currentTasks => 
-      currentTasks.map(task => task.id === updatedTask.id ? { ...task, ...updatedTask } : task)
+    setTasks((cur) =>
+      cur.map((t) => (t.id === updatedTask.id ? { ...t, ...updatedTask } : t))
     );
   };
 
@@ -67,27 +72,27 @@ export function KanbanBoard() {
   };
 
   const handleTaskMove = async (taskId, newStatus) => {
-    const originalTask = tasks.find(t => t.id === taskId);
+    const originalTask = tasks.find((t) => t.id === taskId);
     if (!originalTask || originalTask.status === newStatus) return;
 
-    if (newStatus === 'assigned' && !originalTask.assigned_technician_id) {
-      toast.warning("Atribua um técnico antes de mover a tarefa para 'Em Campo'.");
+    if (newStatus === "assigned" && !originalTask.assigned_technician_id) {
+      toast.warning(
+        "Atribua um técnico antes de mover a tarefa para 'Em Campo'."
+      );
       return;
     }
 
-    const originalTasks = [...tasks];
-    setTasks(prevTasks =>
-      prevTasks.map(task =>
-        task.id === taskId ? { ...task, status: newStatus } : task
-      )
+    const snapshot = [...tasks];
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
     );
 
     try {
       await updateInstallationTaskStatus(taskId, newStatus);
-      const newColumn = columnsConfig.find(c => c.id === newStatus);
-      toast.success(`Tarefa movida para "${newColumn?.title || newStatus}"`);
+      const col = columnsConfig.find((c) => c.id === newStatus);
+      toast.success(`Tarefa movida para "${col ? col.title : newStatus}"`);
     } catch (error) {
-      setTasks(originalTasks);
+      setTasks(snapshot);
       toast.error("Falha ao mover tarefa", { description: error.message });
     }
   };
@@ -102,12 +107,11 @@ export function KanbanBoard() {
   }
 
   return (
-    <div className="h-full">
-      {/* Layout para Desktop */}
-      <div className="hidden md:flex h-full">
-        <ScrollArea className="w-full whitespace-nowrap h-full">
-          <div className="flex gap-4 p-4 h-full">
-            {columnsConfig.map(column => (
+    <div className={cn("h-full min-h-0", className)}>
+      <div className="hidden md:flex h-full min-h-0">
+        <ScrollArea className="w-full h-full min-h-0">
+          <div className="flex gap-4 p-4 h-full min-h-0 min-w-fit">
+            {columnsConfig.map((column) => (
               <KanbanColumn
                 key={column.id}
                 column={column}
@@ -124,14 +128,17 @@ export function KanbanBoard() {
         </ScrollArea>
       </div>
 
-      {/* Layout para Mobile */}
-      <div className="block md:hidden h-full">
-        <Tabs defaultValue="pending_art" className="h-full flex flex-col">
+      <div className="block md:hidden h-full min-h-0">
+        <Tabs defaultValue="pending_art" className="h-full flex flex-col min-h-0">
           <TabsList className="w-full sticky top-0 z-10 bg-background/90 backdrop-blur-sm">
-            <ScrollArea className="w-full whitespace-nowrap">
+            <ScrollArea className="w-full">
               <div className="flex">
-                {columnsConfig.map(column => (
-                  <TabsTrigger key={column.id} value={column.id} className="flex-shrink-0">
+                {columnsConfig.map((column) => (
+                  <TabsTrigger
+                    key={column.id}
+                    value={column.id}
+                    className="flex-shrink-0"
+                  >
                     {column.title} ({tasksByColumn[column.id]?.length || 0})
                   </TabsTrigger>
                 ))}
@@ -139,28 +146,29 @@ export function KanbanBoard() {
               <ScrollBar orientation="horizontal" />
             </ScrollArea>
           </TabsList>
+
           <div className="flex-grow overflow-hidden">
-              {columnsConfig.map(column => (
-              <TabsContent 
-                  key={column.id} 
-                  value={column.id} 
-                  className="h-full mt-0 p-4 pt-0"
+            {columnsConfig.map((column) => (
+              <TabsContent
+                key={column.id}
+                value={column.id}
+                className="h-full mt-0 p-4 pt-0"
               >
-                  <KanbanColumn
-                      column={column}
-                      tasks={tasksByColumn[column.id] || []}
-                      technicians={technicians}
-                      onTaskUpdate={handleTaskUpdate}
-                      onOpenModal={handleOpenModal}
-                      onTaskMove={handleTaskMove}
-                      allColumns={columnsConfig}
-                  />
+                <KanbanColumn
+                  column={column}
+                  tasks={tasksByColumn[column.id] || []}
+                  technicians={technicians}
+                  onTaskUpdate={handleTaskUpdate}
+                  onOpenModal={handleOpenModal}
+                  onTaskMove={handleTaskMove}
+                  allColumns={columnsConfig}
+                />
               </TabsContent>
-              ))}
+            ))}
           </div>
         </Tabs>
       </div>
-      
+
       <TaskDetailsModal
         task={selectedTask}
         isOpen={isModalOpen}
