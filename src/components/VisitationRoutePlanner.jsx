@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { MapPin, Check, ChevronDown, Loader2, Navigation } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { MapPin, Check, ChevronDown, Loader2, Navigation, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Função para calcular a distância Haversine entre duas coordenadas
@@ -25,30 +27,32 @@ const haversineDistance = (coords1, coords2) => {
 };
 
 export function VisitationRoutePlanner({ points }) {
+  const [cep, setCep] = useState('');
   const [unvisitedPoints, setUnvisitedPoints] = useState([]);
   const [visitedPoints, setVisitedPoints] = useState([]);
   const [isRouteGenerated, setIsRouteGenerated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleGenerateRoute = () => {
-    setIsLoading(true);
-    if (!navigator.geolocation) {
-      toast.error('Geolocalização não é suportada pelo seu navegador.');
-      setIsLoading(false);
+  const handleGenerateRouteFromCep = () => {
+    if (!cep.replace(/\D/g, '')) {
+      toast.warning('Por favor, insira um CEP de partida.');
       return;
     }
+    setIsLoading(true);
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const userLocation = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ address: `${cep}, Brasil` }, (results, status) => {
+      if (status === 'OK') {
+        const location = results[0].geometry.location;
+        const startLocation = {
+          latitude: location.lat(),
+          longitude: location.lng(),
         };
 
         const sortedPoints = [...points]
           .map(point => ({
             ...point,
-            distance: haversineDistance(userLocation, point),
+            distance: haversineDistance(startLocation, point),
           }))
           .sort((a, b) => a.distance - b.distance);
 
@@ -56,15 +60,21 @@ export function VisitationRoutePlanner({ points }) {
         setVisitedPoints([]);
         setIsRouteGenerated(true);
         setIsLoading(false);
-        toast.success('Rota de visitação gerada com base na sua localização!');
-      },
-      () => {
-        toast.error('Não foi possível obter sua localização.', {
-          description: 'Por favor, habilite a permissão de localização no seu navegador.',
+        toast.success('Rota de visitação gerada a partir do CEP informado!');
+      } else {
+        toast.error('CEP não encontrado.', {
+          description: 'Não foi possível encontrar a localização para o CEP informado. Verifique e tente novamente.',
         });
         setIsLoading(false);
       }
-    );
+    });
+  };
+
+  const handleReset = () => {
+    setIsRouteGenerated(false);
+    setUnvisitedPoints([]);
+    setVisitedPoints([]);
+    setCep('');
   };
 
   const handleMarkAsVisited = (pointToVisit) => {
@@ -84,17 +94,34 @@ export function VisitationRoutePlanner({ points }) {
     <Card>
       <CardHeader>
         <CardTitle>Planejador de Rota de Visitação</CardTitle>
+        {isRouteGenerated && (
+          <CardDescription>
+            Esta é a ordem de visitação mais eficiente a partir do CEP informado.
+          </CardDescription>
+        )}
       </CardHeader>
       <CardContent>
         {!isRouteGenerated ? (
-          <div className="text-center">
-            <p className="mb-4 text-muted-foreground">
-              Crie uma rota otimizada para visitar seus pontos contratados, começando pelos mais próximos de você.
+          <div className="space-y-4">
+            <p className="text-muted-foreground">
+              Insira um CEP de partida para criar uma rota otimizada e visitar seus pontos contratados.
             </p>
-            <Button onClick={handleGenerateRoute} disabled={isLoading}>
-              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Navigation className="mr-2 h-4 w-4" />}
-              Gerar Rota de Visitação
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex-grow">
+                <Label htmlFor="cep-start" className="sr-only">CEP de Partida</Label>
+                <Input
+                  id="cep-start"
+                  placeholder="Digite o CEP de partida"
+                  value={cep}
+                  onChange={(e) => setCep(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+              <Button onClick={handleGenerateRouteFromCep} disabled={isLoading} className="w-full sm:w-auto">
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Navigation className="mr-2 h-4 w-4" />}
+                Gerar Rota
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="space-y-6">
@@ -131,7 +158,7 @@ export function VisitationRoutePlanner({ points }) {
             {visitedPoints.length > 0 && (
               <Collapsible>
                 <CollapsibleTrigger asChild>
-                  <Button variant="ghost" className="w-full">
+                  <Button variant="ghost" className="w-full text-muted-foreground">
                     Ver Pontos Visitados ({visitedPoints.length})
                     <ChevronDown className="h-4 w-4 ml-2" />
                   </Button>
@@ -148,6 +175,11 @@ export function VisitationRoutePlanner({ points }) {
                 </CollapsibleContent>
               </Collapsible>
             )}
+            <div className="pt-4 border-t">
+              <Button variant="outline" onClick={handleReset}>
+                <RotateCcw className="h-4 w-4 mr-2" /> Gerar Nova Rota
+              </Button>
+            </div>
           </div>
         )}
       </CardContent>
