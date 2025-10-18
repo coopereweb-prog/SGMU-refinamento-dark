@@ -64,19 +64,57 @@ export function VisitationRoutePlanner({ points }) {
     });
   };
 
-  const handleConfirmAndGenerate = () => {
-    if (!startLocationInfo) return;
+  const handleUseCurrentLocation = () => {
+    setIsLoading(true);
+    if (!navigator.geolocation) {
+      toast.error('Geolocalização não é suportada pelo seu navegador.');
+      setIsLoading(false);
+      return;
+    }
 
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const userLocation = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+        
+        // Define as informações de localização para consistência, mesmo que não haja etapa de confirmação
+        setStartLocationInfo({
+          address: "Sua localização atual",
+          coords: userLocation,
+        });
+
+        // Gera a rota diretamente
+        generateRouteFromCoords(userLocation);
+        toast.success('Rota de visitação gerada com base na sua localização!');
+      },
+      () => {
+        toast.error('Não foi possível obter sua localização.', {
+          description: 'Por favor, habilite a permissão de localização no seu navegador.',
+        });
+        setIsLoading(false);
+      }
+    );
+  };
+
+  const generateRouteFromCoords = (startCoords) => {
     const sortedPoints = [...points]
       .map(point => ({
         ...point,
-        distance: haversineDistance(startLocationInfo.coords, point),
+        distance: haversineDistance(startCoords, point),
       }))
       .sort((a, b) => a.distance - b.distance);
 
     setUnvisitedPoints(sortedPoints);
     setVisitedPoints([]);
     setStep('generated');
+    setIsLoading(false);
+  };
+
+  const handleConfirmAndGenerate = () => {
+    if (!startLocationInfo) return;
+    generateRouteFromCoords(startLocationInfo.coords);
     toast.success('Rota de visitação gerada!');
   };
 
@@ -107,7 +145,7 @@ export function VisitationRoutePlanner({ points }) {
         return (
           <div className="space-y-4">
             <p className="text-muted-foreground">
-              Insira um CEP de partida para criar uma rota otimizada e visitar seus pontos contratados.
+              Insira um CEP ou use sua localização para criar uma rota otimizada.
             </p>
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex-grow">
@@ -121,10 +159,19 @@ export function VisitationRoutePlanner({ points }) {
                 />
               </div>
               <Button onClick={handleCepSearch} disabled={isLoading} className="w-full sm:w-auto">
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-                Buscar Endereço
+                {isLoading && cep ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+                Buscar por CEP
               </Button>
             </div>
+            <div className="relative flex items-center my-4">
+              <div className="flex-grow border-t border-gray-300"></div>
+              <span className="flex-shrink mx-4 text-xs text-gray-500 uppercase">OU</span>
+              <div className="flex-grow border-t border-gray-300"></div>
+            </div>
+            <Button onClick={handleUseCurrentLocation} variant="outline" className="w-full" disabled={isLoading}>
+              {isLoading && !cep ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-4 w-4" />}
+              Usar Minha Localização Atual
+            </Button>
           </div>
         );
       case 'confirm':
