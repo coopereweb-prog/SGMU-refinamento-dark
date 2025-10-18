@@ -128,7 +128,7 @@ export function KanbanBoard() {
         {/* Layout para Desktop */}
         <div className="hidden md:flex h-full">
           <ScrollArea className="w-full whitespace-nowrap">
-            <div className="flex gap-4 p-4 h-full">
+            <div className="flex gap-4 p-4">
               {columnsConfig.map(column => (
                 <KanbanColumn
                   key={column.id}
