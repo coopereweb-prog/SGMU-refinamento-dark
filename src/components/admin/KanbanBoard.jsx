@@ -119,7 +119,7 @@ export function KanbanBoard() {
   }
 
   return (
-    <>
+    <div className="h-full">
       <DndContext
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
@@ -184,6 +184,6 @@ export function KanbanBoard() {
         onClose={() => setIsModalOpen(false)}
         onUpdate={handleTaskUpdate}
       />
-    </>
+    </div>
   );
 }
