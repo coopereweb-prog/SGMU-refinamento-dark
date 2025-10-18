@@ -4,6 +4,7 @@ import { getInstallationTasks, updateInstallationTaskStatus, getFieldTechnicians
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KanbanColumn } from './KanbanColumn';
 import { KanbanCard } from './KanbanCard';
 import { TaskDetailsModal } from './TaskDetailsModal';
@@ -84,7 +85,6 @@ export function KanbanBoard() {
 
     if (!originalTask) return;
 
-    // Lógica para impedir o avanço sem técnico
     if (originalTask.status === 'pending_assignment' && newStatus === 'assigned' && !originalTask.assigned_technician_id) {
       toast.warning("Atribua um técnico antes de mover a tarefa para 'Em Campo'.");
       return;
@@ -125,21 +125,54 @@ export function KanbanBoard() {
         onDragEnd={handleDragEnd}
         collisionDetection={closestCorners}
       >
-        <ScrollArea className="w-full whitespace-nowrap">
-          <div className="flex gap-4 p-4 h-[calc(100vh-200px)]">
+        {/* Layout para Desktop */}
+        <div className="hidden md:flex h-[calc(100vh-200px)]">
+          <ScrollArea className="w-full whitespace-nowrap">
+            <div className="flex gap-4 p-4 h-full">
+              {columnsConfig.map(column => (
+                <KanbanColumn
+                  key={column.id}
+                  column={column}
+                  tasks={tasksByColumn[column.id]}
+                  technicians={technicians}
+                  onTaskUpdate={handleTaskUpdate}
+                  onOpenModal={handleOpenModal}
+                />
+              ))}
+            </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </div>
+
+        {/* Layout para Mobile */}
+        <div className="block md:hidden h-full">
+          <Tabs defaultValue="pending_art" className="h-full flex flex-col">
+            <TabsList className="w-full">
+              <ScrollArea className="w-full whitespace-nowrap">
+                <div className="flex">
+                  {columnsConfig.map(column => (
+                    <TabsTrigger key={column.id} value={column.id} className="flex-shrink-0">
+                      {column.title}
+                    </TabsTrigger>
+                  ))}
+                </div>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+            </TabsList>
             {columnsConfig.map(column => (
-              <KanbanColumn
-                key={column.id}
-                column={column}
-                tasks={tasksByColumn[column.id]}
-                technicians={technicians}
-                onTaskUpdate={handleTaskUpdate}
-                onOpenModal={handleOpenModal}
-              />
+              <TabsContent key={column.id} value={column.id} className="flex-grow overflow-hidden">
+                <KanbanColumn
+                  column={column}
+                  tasks={tasksByColumn[column.id]}
+                  technicians={technicians}
+                  onTaskUpdate={handleTaskUpdate}
+                  onOpenModal={handleOpenModal}
+                />
+              </TabsContent>
             ))}
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+          </Tabs>
+        </div>
+
         <DragOverlay>
           {activeTask ? <KanbanCard task={activeTask} technicians={technicians} isOverlay /> : null}
         </DragOverlay>
