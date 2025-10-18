@@ -13,8 +13,9 @@ export function generateOptimizedRouteUrl(points, startCoords = null) {
   const destinationStr = `${destination.latitude},${destination.longitude}`;
 
   const waypoints = points.slice(0, -1);
-  // Adiciona 'optimize:true' para que o Google Maps calcule a melhor ordem para as paradas.
-  const waypointsStr = 'optimize:true|' + waypoints
+  // A otimização é feita pelo próprio Google Maps ao receber múltiplos waypoints.
+  // O parâmetro 'optimize:true' estava sendo interpretado como um local.
+  const waypointsStr = waypoints
     .map(p => `${p.latitude},${p.longitude}`)
     .join('|');
   const encodedWaypoints = encodeURIComponent(waypointsStr);
