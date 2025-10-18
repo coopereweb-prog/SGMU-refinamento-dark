@@ -23,7 +23,6 @@ export function KanbanBoard() {
   const [technicians, setTechnicians] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTask, setActiveTask] = useState(null);
-  // NOVO: Estado para capturar as dimensões do card flutuante (CORREÇÃO VISUAL)
   const [activeDragRect, setActiveDragRect] = useState(null); 
   const [selectedTask, setSelectedTask] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -73,13 +72,12 @@ export function KanbanBoard() {
 
   const handleDragStart = (event) => {
     setActiveTask(event.active.data.current);
-    // CORREÇÃO VISUAL: Captura as dimensões do elemento arrastado
     setActiveDragRect(event.active.rect.current); 
   };
 
   const handleDragEnd = async (event) => {
     setActiveTask(null);
-    setActiveDragRect(null); // Limpa as dimensões após soltar
+    setActiveDragRect(null);
     const { active, over } = event;
 
     if (!over || active.id === over.id) return;
@@ -90,7 +88,6 @@ export function KanbanBoard() {
 
     if (!originalTask) return;
 
-    // Lógica Corrigida: Checa se um técnico é necessário para 'assigned'
     if (newStatus === 'assigned' && !originalTask.assigned_technician_id) {
       toast.warning("Atribua um técnico antes de mover a tarefa para 'Em Campo'.");
       return;
@@ -135,7 +132,6 @@ export function KanbanBoard() {
         {/* Layout para Desktop */}
         <div className="hidden md:flex h-full">
           <ScrollArea className="w-full whitespace-nowrap h-full">
-            {/* O h-full aqui é crítico para a detecção correta do droppable */}
             <div className="flex gap-4 p-4 h-full">
               {columnsConfig.map(column => (
                 <KanbanColumn
@@ -187,10 +183,8 @@ export function KanbanBoard() {
           </Tabs>
         </div>
 
-        {/* CORREÇÃO VISUAL: DragOverlay com dimensões explícitas */}
         <DragOverlay>
           {activeTask && activeDragRect ? (
-            // Usa as dimensões capturadas para corrigir o "expande e fica transparente"
             <div style={{ width: activeDragRect.width, height: activeDragRect.height }}>
                 <KanbanCard 
                     task={activeTask} 
