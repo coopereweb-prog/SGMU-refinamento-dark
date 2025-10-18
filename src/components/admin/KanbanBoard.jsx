@@ -1,12 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
-import { DndContext, DragOverlay, pointerWithin } from '@dnd-kit/core';
 import { getInstallationTasks, updateInstallationTaskStatus, getFieldTechnicians } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KanbanColumn } from './KanbanColumn';
-import { KanbanCard } from './KanbanCard';
 import { TaskDetailsModal } from './TaskDetailsModal';
 
 const columnsConfig = [
@@ -22,8 +20,6 @@ export function KanbanBoard() {
   const [tasks, setTasks] = useState([]);
   const [technicians, setTechnicians] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTask, setActiveTask] = useState(null);
-  const [activeDragRect, setActiveDragRect] = useState(null); 
   const [selectedTask, setSelectedTask] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -70,46 +66,29 @@ export function KanbanBoard() {
     setIsModalOpen(true);
   };
 
-  const handleDragStart = (event) => {
-    setActiveTask(event.active.data.current);
-    setActiveDragRect(event.active.rect.current); 
-  };
-
-  const handleDragEnd = async (event) => {
-    setActiveTask(null);
-    setActiveDragRect(null);
-    const { active, over } = event;
-
-    if (!over || active.id === over.id) return;
-
-    const taskId = active.id;
-    const newStatus = over.id; 
+  const handleTaskMove = async (taskId, newStatus) => {
     const originalTask = tasks.find(t => t.id === taskId);
-
-    if (!originalTask) return;
+    if (!originalTask || originalTask.status === newStatus) return;
 
     if (newStatus === 'assigned' && !originalTask.assigned_technician_id) {
       toast.warning("Atribua um técnico antes de mover a tarefa para 'Em Campo'.");
       return;
     }
 
-    if (originalTask.status !== newStatus) {
-      const originalTasks = [...tasks];
-      
-      setTasks(prevTasks =>
-        prevTasks.map(task =>
-          task.id === taskId ? { ...task, status: newStatus } : task
-        )
-      );
+    const originalTasks = [...tasks];
+    setTasks(prevTasks =>
+      prevTasks.map(task =>
+        task.id === taskId ? { ...task, status: newStatus } : task
+      )
+    );
 
-      try {
-        await updateInstallationTaskStatus(taskId, newStatus);
-        const newColumn = columnsConfig.find(c => c.id === newStatus);
-        toast.success(`Tarefa movida para "${newColumn?.title || newStatus}"`);
-      } catch (error) {
-        setTasks(originalTasks);
-        toast.error("Falha ao mover tarefa", { description: error.message });
-      }
+    try {
+      await updateInstallationTaskStatus(taskId, newStatus);
+      const newColumn = columnsConfig.find(c => c.id === newStatus);
+      toast.success(`Tarefa movida para "${newColumn?.title || newStatus}"`);
+    } catch (error) {
+      setTasks(originalTasks);
+      toast.error("Falha ao mover tarefa", { description: error.message });
     }
   };
 
@@ -124,77 +103,63 @@ export function KanbanBoard() {
 
   return (
     <div className="h-full">
-      <DndContext
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        collisionDetection={pointerWithin}
-      >
-        {/* Layout para Desktop */}
-        <div className="hidden md:flex h-full">
-          <ScrollArea className="w-full whitespace-nowrap h-full">
-            <div className="flex gap-4 p-4 h-full">
-              {columnsConfig.map(column => (
-                <KanbanColumn
-                  key={column.id}
-                  column={column}
-                  tasks={tasksByColumn[column.id] || []}
-                  technicians={technicians}
-                  onTaskUpdate={handleTaskUpdate}
-                  onOpenModal={handleOpenModal}
-                />
-              ))}
-            </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-        </div>
+      {/* Layout para Desktop */}
+      <div className="hidden md:flex h-full">
+        <ScrollArea className="w-full whitespace-nowrap h-full">
+          <div className="flex gap-4 p-4 h-full">
+            {columnsConfig.map(column => (
+              <KanbanColumn
+                key={column.id}
+                column={column}
+                tasks={tasksByColumn[column.id] || []}
+                technicians={technicians}
+                onTaskUpdate={handleTaskUpdate}
+                onOpenModal={handleOpenModal}
+                onTaskMove={handleTaskMove}
+                allColumns={columnsConfig}
+              />
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      </div>
 
-        {/* Layout para Mobile */}
-        <div className="block md:hidden h-full">
-          <Tabs defaultValue="pending_art" className="h-full flex flex-col">
-            <TabsList className="w-full sticky top-0 z-10 bg-background/90 backdrop-blur-sm">
-              <ScrollArea className="w-full whitespace-nowrap">
-                <div className="flex">
-                  {columnsConfig.map(column => (
-                    <TabsTrigger key={column.id} value={column.id} className="flex-shrink-0">
-                      {column.title} ({tasksByColumn[column.id]?.length || 0})
-                    </TabsTrigger>
-                  ))}
-                </div>
-                <ScrollBar orientation="horizontal" />
-              </ScrollArea>
-            </TabsList>
-            <div className="flex-grow overflow-hidden">
+      {/* Layout para Mobile */}
+      <div className="block md:hidden h-full">
+        <Tabs defaultValue="pending_art" className="h-full flex flex-col">
+          <TabsList className="w-full sticky top-0 z-10 bg-background/90 backdrop-blur-sm">
+            <ScrollArea className="w-full whitespace-nowrap">
+              <div className="flex">
                 {columnsConfig.map(column => (
-                <TabsContent 
-                    key={column.id} 
-                    value={column.id} 
-                    className="h-full mt-0 p-4 pt-0"
-                >
-                    <KanbanColumn
-                        column={column}
-                        tasks={tasksByColumn[column.id] || []}
-                        technicians={technicians}
-                        onTaskUpdate={handleTaskUpdate}
-                        onOpenModal={handleOpenModal}
-                    />
-                </TabsContent>
+                  <TabsTrigger key={column.id} value={column.id} className="flex-shrink-0">
+                    {column.title} ({tasksByColumn[column.id]?.length || 0})
+                  </TabsTrigger>
                 ))}
-            </div>
-          </Tabs>
-        </div>
-
-        <DragOverlay>
-          {activeTask && activeDragRect ? (
-            <div style={{ width: activeDragRect.width, height: activeDragRect.height }}>
-                <KanbanCard 
-                    task={activeTask} 
-                    technicians={technicians} 
-                    isOverlay 
-                />
-            </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          </TabsList>
+          <div className="flex-grow overflow-hidden">
+              {columnsConfig.map(column => (
+              <TabsContent 
+                  key={column.id} 
+                  value={column.id} 
+                  className="h-full mt-0 p-4 pt-0"
+              >
+                  <KanbanColumn
+                      column={column}
+                      tasks={tasksByColumn[column.id] || []}
+                      technicians={technicians}
+                      onTaskUpdate={handleTaskUpdate}
+                      onOpenModal={handleOpenModal}
+                      onTaskMove={handleTaskMove}
+                      allColumns={columnsConfig}
+                  />
+              </TabsContent>
+              ))}
+          </div>
+        </Tabs>
+      </div>
       
       <TaskDetailsModal
         task={selectedTask}

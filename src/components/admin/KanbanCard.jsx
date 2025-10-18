@@ -1,19 +1,15 @@
 import { useState } from 'react';
-import { useDraggable } from '@dnd-kit/core';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, MapPin, UserPlus, Loader2, GripVertical, FileImage } from 'lucide-react';
+import { User, MapPin, UserPlus, Loader2, FileImage, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
 import { assignTaskToTechnician } from '@/lib/supabase';
 import { toast } from 'sonner';
 
-export function KanbanCard({ task, technicians, onTaskUpdate, onOpenModal, isOverlay }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: task.id,
-    data: task,
-  });
+export function KanbanCard({ task, technicians, onTaskUpdate, onOpenModal, onTaskMove, allColumns }) {
   const [assigning, setAssigning] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
 
@@ -34,25 +30,37 @@ export function KanbanCard({ task, technicians, onTaskUpdate, onOpenModal, isOve
 
   return (
     <Card
-      ref={setNodeRef}
-      className={cn(
-        "mb-2 bg-card/80 transition-all flex items-stretch",
-        isDragging || isOverlay ? "opacity-50 shadow-lg scale-105" : "hover:bg-accent",
-        !isOverlay && "cursor-pointer"
-      )}
-      onClick={() => !isOverlay && onOpenModal(task)}
+      className="mb-2 bg-card/80 transition-all flex items-stretch cursor-pointer hover:bg-accent"
+      onClick={() => onOpenModal(task)}
     >
-      <div 
-        {...listeners} 
-        {...attributes} 
-        className="flex items-center justify-center p-2 text-muted-foreground cursor-grab touch-none"
-        onClick={(e) => e.stopPropagation()} // Impede que o clique no handle abra o modal
-      >
-        <GripVertical className="h-5 w-5" />
-      </div>
-      <div className="flex-grow border-l min-w-0">
-        <CardHeader className="p-3">
-          <CardTitle className="text-sm font-semibold break-words">{task.point_name || 'Ponto não encontrado'}</CardTitle>
+      <div className="flex-grow min-w-0">
+        <CardHeader className="p-3 flex-row items-start justify-between">
+          <CardTitle className="text-sm font-semibold break-words pr-2">{task.point_name || 'Ponto não encontrado'}</CardTitle>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Mover para...</DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                    {allColumns.map(col => (
+                      <DropdownMenuItem 
+                        key={col.id} 
+                        disabled={col.id === task.status}
+                        onSelect={() => onTaskMove(task.id, col.id)}
+                      >
+                        {col.title}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </CardHeader>
         <CardContent className="p-3 pt-0 text-xs text-muted-foreground space-y-2">
           <div className="flex items-center min-w-0">

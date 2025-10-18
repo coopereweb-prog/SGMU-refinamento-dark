@@ -1,13 +1,8 @@
-import { useDroppable } from '@dnd-kit/core';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { KanbanCard } from './KanbanCard';
 import { cn } from '@/lib/utils';
 
-export function KanbanColumn({ column, tasks, technicians, onTaskUpdate, onOpenModal }) {
-  const { setNodeRef, isOver } = useDroppable({
-    id: column.id,
-  });
-
+export function KanbanColumn({ column, tasks, technicians, onTaskUpdate, onOpenModal, onTaskMove, allColumns }) {
   return (
     <div className="flex flex-col w-72 flex-shrink-0 h-full">
       <div className="flex items-center justify-between p-3 bg-muted rounded-t-lg border-b">
@@ -17,11 +12,7 @@ export function KanbanColumn({ column, tasks, technicians, onTaskUpdate, onOpenM
         </span>
       </div>
       <ScrollArea
-        ref={setNodeRef}
-        className={cn(
-          "h-full bg-muted/50 rounded-b-lg transition-colors",
-          isOver && "bg-primary/10"
-        )}
+        className="h-full bg-muted/50 rounded-b-lg"
       >
         <div 
           className="p-2 space-y-2"
@@ -35,6 +26,8 @@ export function KanbanColumn({ column, tasks, technicians, onTaskUpdate, onOpenM
                 technicians={technicians}
                 onTaskUpdate={onTaskUpdate}
                 onOpenModal={onOpenModal}
+                onTaskMove={onTaskMove}
+                allColumns={allColumns}
               />
             ))
           ) : (
