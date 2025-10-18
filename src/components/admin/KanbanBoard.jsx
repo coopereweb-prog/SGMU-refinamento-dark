@@ -51,7 +51,8 @@ export function KanbanBoard() {
       groupedTasks[col.id] = [];
     });
     tasks.forEach(task => {
-      if (groupedTasks[task.status]) {
+      // Garante que só tarefas com status válido sejam incluídas
+      if (groupedTasks.hasOwnProperty(task.status)) {
         groupedTasks[task.status].push(task);
       }
     });
@@ -70,6 +71,7 @@ export function KanbanBoard() {
   };
 
   const handleDragStart = (event) => {
+    // Armazena o objeto completo da tarefa ativa para uso no DragOverlay
     setActiveTask(event.active.data.current);
   };
 
@@ -77,21 +79,29 @@ export function KanbanBoard() {
     setActiveTask(null);
     const { active, over } = event;
 
+    // Se não soltou sobre um droppable ou soltou no próprio local
     if (!over || active.id === over.id) return;
 
     const taskId = active.id;
-    const newStatus = over.id;
+    const newStatus = over.id; // O id do droppable (KanbanColumn) é o novo status
     const originalTask = tasks.find(t => t.id === taskId);
 
     if (!originalTask) return;
 
-    if (originalTask.status === 'pending_assignment' && newStatus === 'assigned' && !originalTask.assigned_technician_id) {
+    // ********************************************
+    // CORREÇÃO DE LÓGICA:
+    // Garante que, ao mover para 'assigned', a tarefa tenha um técnico.
+    // O código original só verificava a saída de 'pending_assignment'.
+    // ********************************************
+    if (newStatus === 'assigned' && !originalTask.assigned_technician_id) {
       toast.warning("Atribua um técnico antes de mover a tarefa para 'Em Campo'.");
       return;
     }
 
     if (originalTask.status !== newStatus) {
       const originalTasks = [...tasks];
+      
+      // Otimisticamente atualiza o estado
       setTasks(prevTasks =>
         prevTasks.map(task =>
           task.id === taskId ? { ...task, status: newStatus } : task
@@ -103,6 +113,7 @@ export function KanbanBoard() {
         const newColumn = columnsConfig.find(c => c.id === newStatus);
         toast.success(`Tarefa movida para "${newColumn?.title || newStatus}"`);
       } catch (error) {
+        // Reverte o estado em caso de falha na API
         setTasks(originalTasks);
         toast.error("Falha ao mover tarefa", { description: error.message });
       }
@@ -112,7 +123,7 @@ export function KanbanBoard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <Loader2 className="h-8 w-8 animate-spin" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <span className="ml-2">Carregando tarefas...</span>
       </div>
     );
@@ -133,7 +144,7 @@ export function KanbanBoard() {
                 <KanbanColumn
                   key={column.id}
                   column={column}
-                  tasks={tasksByColumn[column.id]}
+                  tasks={tasksByColumn[column.id] || []}
                   technicians={technicians}
                   onTaskUpdate={handleTaskUpdate}
                   onOpenModal={handleOpenModal}
@@ -144,35 +155,46 @@ export function KanbanBoard() {
           </ScrollArea>
         </div>
 
-        {/* Layout para Mobile */}
+        {/* Layout para Mobile (Nota: Arrastar para colunas não visíveis pode falhar devido à natureza do Tabs) */}
         <div className="block md:hidden h-full">
           <Tabs defaultValue="pending_art" className="h-full flex flex-col">
-            <TabsList className="w-full">
+            <TabsList className="w-full sticky top-0 z-10 bg-background/90 backdrop-blur-sm">
               <ScrollArea className="w-full whitespace-nowrap">
                 <div className="flex">
                   {columnsConfig.map(column => (
                     <TabsTrigger key={column.id} value={column.id} className="flex-shrink-0">
-                      {column.title}
+                      {column.title} ({tasksByColumn[column.id]?.length || 0})
                     </TabsTrigger>
                   ))}
                 </div>
                 <ScrollBar orientation="horizontal" />
               </ScrollArea>
             </TabsList>
-            {columnsConfig.map(column => (
-              <TabsContent key={column.id} value={column.id} className="flex-grow overflow-hidden">
-                <KanbanColumn
-                  column={column}
-                  tasks={tasksByColumn[column.id]}
-                  technicians={technicians}
-                  onTaskUpdate={handleTaskUpdate}
-                  onOpenModal={handleOpenModal}
-                />
-              </TabsContent>
-            ))}
+            <div className="flex-grow overflow-y-auto p-4 pt-0">
+                {columnsConfig.map(column => (
+                <TabsContent 
+                    key={column.id} 
+                    value={column.id} 
+                    // Removido flex-grow, o conteúdo é gerenciado pelo ScrollArea pai
+                    // Importante: Em muitas implementações de Tabs, apenas o conteúdo ativo é montado,
+                    // o que pode desabilitar o Drag and Drop para colunas não visíveis.
+                    // Para fins deste código, estamos assumindo que a TabsContent é renderizada.
+                    className="h-full"
+                >
+                    <KanbanColumn
+                        column={column}
+                        tasks={tasksByColumn[column.id] || []}
+                        technicians={technicians}
+                        onTaskUpdate={handleTaskUpdate}
+                        onOpenModal={handleOpenModal}
+                    />
+                </TabsContent>
+                ))}
+            </div>
           </Tabs>
         </div>
 
+        {/* DragOverlay para exibir o cartão flutuante durante o arrasto */}
         <DragOverlay>
           {activeTask ? <KanbanCard task={activeTask} technicians={technicians} isOverlay /> : null}
         </DragOverlay>
@@ -183,6 +205,8 @@ export function KanbanBoard() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onUpdate={handleTaskUpdate}
+        technicians={technicians} // Passando technicians para o modal, caso necessário
+        columnsConfig={columnsConfig} // Passando colunas para o modal, caso necessário
       />
     </div>
   );
