@@ -1,1 +1,1 @@
-export const GOOGLE_MAPS_LIBRARIES = ['marker'];
+export const GOOGLE_MAPS_LIBRARIES = ['marker', 'geocoding'];

@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useJsApiLoader } from '@react-google-maps/api';
+import { GOOGLE_MAPS_LIBRARIES } from '@/config/googleMaps';
 import { Modal } from '@/components/Modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +16,19 @@ export function RoutePlannerModal({ isOpen, onClose, points }) {
   const [step, setStep] = useState('input'); // 'input', 'confirm'
   const [startLocationInfo, setStartLocationInfo] = useState(null);
 
+  const { isLoaded, loadError } = useJsApiLoader({
+    id: 'google-map-script-planner',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    libraries: GOOGLE_MAPS_LIBRARIES,
+  });
+
+  useEffect(() => {
+    if (loadError) {
+      toast.error("Erro ao carregar o serviço de mapas.", { description: "Verifique sua conexão com a internet." });
+      onClose();
+    }
+  }, [loadError, onClose]);
+
   // Reseta o estado interno quando o modal é fechado
   const handleClose = () => {
     setStep('input');
@@ -24,6 +39,10 @@ export function RoutePlannerModal({ isOpen, onClose, points }) {
   };
 
   const handleCepSearch = () => {
+    if (!isLoaded) {
+      toast.info("Aguardando o serviço de mapas carregar...");
+      return;
+    }
     if (!cep.replace(/\D/g, '')) {
       toast.warning('Por favor, insira um CEP de partida.');
       return;
@@ -53,6 +72,10 @@ export function RoutePlannerModal({ isOpen, onClose, points }) {
   };
 
   const handleUseCurrentLocation = () => {
+    if (!isLoaded) {
+      toast.info("Aguardando o serviço de mapas carregar...");
+      return;
+    }
     setIsLoading(true);
     if (!navigator.geolocation) {
       toast.error('Geolocalização não é suportada pelo seu navegador.');
@@ -94,6 +117,15 @@ export function RoutePlannerModal({ isOpen, onClose, points }) {
   };
 
   const renderContent = () => {
+    if (!isLoaded) {
+      return (
+        <div className="flex flex-col items-center justify-center h-48">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="mt-4 text-sm text-muted-foreground">Carregando serviço de mapas...</p>
+        </div>
+      );
+    }
+
     if (step === 'confirm') {
       return (
         <div className="space-y-4">
