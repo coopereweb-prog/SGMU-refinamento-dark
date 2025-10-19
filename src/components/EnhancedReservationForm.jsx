@@ -80,10 +80,11 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
     setLoading(true);
     setError(null);
     try {
-      const { data: userExists, error } = await supabase.rpc('user_exists', { user_email: values.email });
+      const normalizedEmail = values.email.toLowerCase();
+      const { data: userExists, error } = await supabase.rpc('user_exists', { user_email: normalizedEmail });
       if (error) throw error;
       
-      setUserEmail(values.email);
+      setUserEmail(normalizedEmail);
       if (userExists) {
         setStep('login');
       } else {
