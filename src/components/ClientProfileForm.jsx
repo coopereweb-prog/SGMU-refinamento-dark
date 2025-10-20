@@ -85,7 +85,8 @@ export function ClientProfileForm({ profile, onSave }) {
 
   const onSubmit = async (values) => {
     try {
-      await updateClientProfile(profile.id, values);
+      const { email, ...updateData } = values; // Exclui o e-mail do objeto de atualização
+      await updateClientProfile(profile.id, updateData);
       toast.success('Perfil atualizado com sucesso!');
       onSave(); // Recarrega o perfil no componente pai
     } catch (error) {

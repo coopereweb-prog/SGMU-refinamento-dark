@@ -24,7 +24,7 @@ import { addYears } from 'date-fns';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 function ClientDashboardPage() {
-  const { profile, loading: userProfileLoading } = useUser();
+  const { profile, loading: userProfileLoading, refreshProfile } = useUser();
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [isEditModalOpen, setIsEditModal] = useState(false);
@@ -113,7 +113,9 @@ function ClientDashboardPage() {
   };
 
   const handleProfileSave = async () => {
-    // O UserContext já lida com a atualização do perfil.
+    if (refreshProfile) {
+      await refreshProfile();
+    }
   };
 
   const completedOrders = useMemo(() => {
