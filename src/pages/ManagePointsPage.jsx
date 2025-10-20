@@ -17,49 +17,6 @@ import { PlusCircle, Edit, Trash2, XCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGoogleMapsLoader } from '@/contexts/GoogleMapsLoaderContext';
 
-// Componente AdvancedMarkerElement (simulado, pois não podemos importar diretamente)
-const AdvancedMarkerElement = (props) => {
-  const { position, map, content, onClick, icon, ...rest } = props;
-  const markerRef = useRef(null);
-  const contentRef = useRef(null);
-
-  useEffect(() => {
-    if (!map || !window.google?.maps?.marker?.AdvancedMarkerElement) return;
-
-    // Cria o elemento de conteúdo (se não existir)
-    if (!contentRef.current) {
-      contentRef.current = document.createElement('div');
-      // Usar o ícone padrão do Google Maps para o modo de edição
-      contentRef.current.innerHTML = `<img src="${icon?.url || 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'}" style="width: 36px; height: 36px; transform: translate(-50%, -100%);" />`;
-      if (onClick) {
-        contentRef.current.style.cursor = 'pointer';
-        contentRef.current.addEventListener('click', onClick);
-      }
-    }
-
-    // Cria o marcador avançado
-    const marker = new window.google.maps.marker.AdvancedMarkerElement({
-      map,
-      position,
-      content: contentRef.current,
-      ...rest,
-    });
-
-    markerRef.current = marker;
-
-    return () => {
-      if (markerRef.current) {
-        markerRef.current.map = null;
-        if (onClick && contentRef.current) {
-          contentRef.current.removeEventListener('click', onClick);
-        }
-      }
-    };
-  }, [map, position, content, onClick, icon]);
-
-  return null;
-};
-
 const mapContainerStyle = {
   width: '100%',
   height: '100%',
@@ -80,7 +37,6 @@ export function ManagePointsPage() {
   const [pointToDelete, setPointToDelete] = useState(null);
   const [isAddingMode, setIsAddingMode] = useState(false);
   const [newPointCoords, setNewPointCoords] = useState(null);
-  const [map, setMap] = useState(null);
 
   const { isLoaded } = useGoogleMapsLoader();
 
@@ -112,7 +68,7 @@ export function ManagePointsPage() {
   };
 
   const handleMapClick = (e) => {
-    if (!isAddingMode || !map) return;
+    if (!isAddingMode) return;
     const lat = e.latLng.lat();
     const lng = e.latLng.lng();
     setNewPointCoords({ lat, lng });
@@ -194,8 +150,6 @@ export function ManagePointsPage() {
     }
   };
 
-  const onMapLoad = useCallback((mapInstance) => setMap(mapInstance), []);
-
   return (
     <div className="container mx-auto p-4 space-y-6">
       <div className="flex justify-between items-center">
@@ -223,20 +177,14 @@ export function ManagePointsPage() {
                 center={center}
                 zoom={14}
                 onClick={handleMapClick}
-                onLoad={onMapLoad}
                 options={{ draggableCursor: 'crosshair' }}
               >
                 {points.map(point => (
-                  <AdvancedMarkerElement 
-                    key={point.id} 
-                    position={{ lat: point.latitude, lng: point.longitude }} 
-                    map={map}
-                  />
+                  <Marker key={point.id} position={{ lat: point.latitude, lng: point.longitude }} />
                 ))}
                 {newPointCoords && (
-                  <AdvancedMarkerElement 
+                  <Marker 
                     position={newPointCoords} 
-                    map={map}
                     icon={{ url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png' }}
                   />
                 )}
