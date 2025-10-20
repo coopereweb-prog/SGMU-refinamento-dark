@@ -5,7 +5,7 @@ export function PrintableOrder({ order }) {
   if (!order) return null;
 
   return (
-    <div className="p-8 font-sans">
+    <div className="font-sans">
       <header className="flex justify-between items-center border-b pb-4 mb-8">
         <div className="flex items-center space-x-4">
           <img src="/lightsquare-logo.png" alt="Lightsquare Logo" className="h-20" />
