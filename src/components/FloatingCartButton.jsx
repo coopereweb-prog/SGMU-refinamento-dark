@@ -5,7 +5,7 @@ export function FloatingCartButton({ itemCount, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="fixed top-20 sm:top-24 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-black shadow-2xl ring-2 ring-primary/50 transition-transform hover:scale-110 animate-slow-scale-pulse"
+      className="fixed top-20 sm:top-24 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-black shadow-2xl ring-2 ring-primary/50 transition-transform hover:scale-110 animate-slow-scale-pulse print:hidden"
       aria-label="Abrir carrinho de compras"
     >
       <ShoppingCart className="h-8 w-8 text-primary" />
