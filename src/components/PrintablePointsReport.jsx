@@ -7,18 +7,18 @@ export function PrintablePointsReport({ points, profile }) {
   const totalAmount = points.reduce((sum, point) => sum + Number(point.price), 0);
 
   return (
-    <div className="font-sans">
+    <div className="font-sans text-gray-800">
       <header className="flex justify-between items-start border-b pb-4 mb-8">
         <div className="flex items-center space-x-4">
           <img src="/lightsquare-logo.png" alt="Lightsquare Logo" className="h-20" />
           <div>
             <h1 className="text-2xl font-bold">SGMU</h1>
-            <p className="text-gray-600 text-sm">Sistema de Gestão de<br />Mobiliário Urbano</p>
+            <p className="text-sm">Sistema de Gestão de<br />Mobiliário Urbano</p>
           </div>
         </div>
         <div className="text-right">
           <h2 className="text-xl font-semibold">Relatório de Pontos</h2>
-          <p className="text-gray-500 text-sm">
+          <p className="text-sm">
             Gerado em: {format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
           </p>
         </div>
@@ -68,7 +68,7 @@ export function PrintablePointsReport({ points, profile }) {
         </section>
       </main>
 
-      <footer className="mt-16 text-center text-gray-500 text-sm">
+      <footer className="mt-16 text-center text-sm">
         <p>Este relatório é um resumo dos pontos selecionados e seus respectivos períodos de contratação.</p>
       </footer>
     </div>
