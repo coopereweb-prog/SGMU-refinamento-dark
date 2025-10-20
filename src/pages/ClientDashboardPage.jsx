@@ -129,7 +129,7 @@ function ClientDashboardPage() {
 
   return (
     <>
-      <div className="mb-8">
+      <div className="mb-8 print:hidden">
         <h1 className="text-3xl font-bold text-gray-800">
           {profile?.name ? `Olá, ${profile.name}!` : 'Minha Conta'}
         </h1>
@@ -138,14 +138,14 @@ function ClientDashboardPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         {/* Desktop Tabs */}
-        <TabsList className="hidden md:grid w-full grid-cols-3">
+        <TabsList className="hidden md:grid w-full grid-cols-3 print:hidden">
           <TabsTrigger value="orders">Meus Pedidos</TabsTrigger>
           <TabsTrigger value="points">Meus Pontos Contratados</TabsTrigger>
           <TabsTrigger value="profile">Meu Perfil</TabsTrigger>
         </TabsList>
 
         {/* Mobile Menu */}
-        <div className="md:hidden mb-4">
+        <div className="md:hidden mb-4 print:hidden">
           <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="outline">
@@ -184,7 +184,7 @@ function ClientDashboardPage() {
           </Sheet>
         </div>
 
-        <TabsContent value="orders">
+        <TabsContent value="orders" className="print:hidden">
           {orders.length === 0 ? (
             <Card className="mt-6">
               <CardContent className="text-center py-12">
@@ -281,7 +281,7 @@ function ClientDashboardPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="profile">
+        <TabsContent value="profile" className="print:hidden">
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>Informações do Perfil</CardTitle>
