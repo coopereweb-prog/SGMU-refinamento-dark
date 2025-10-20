@@ -75,10 +75,10 @@ export function EditOrderDialog({ order, isOpen, onClose, onSave }) {
                   checked={itemsToKeep.includes(item.id)}
                   onCheckedChange={() => handleToggleItem(item.id)}
                 />
-                <Label htmlFor={`item-${item.id}`} className="flex-1 cursor-pointer">
-                  <div className="flex justify-between">
-                    <span>{item.points.name}</span>
-                    <span className="font-mono">R$ {parseFloat(item.price).toFixed(2)}</span>
+                <Label htmlFor={`item-${item.id}`} className="flex-1 cursor-pointer min-w-0">
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="truncate" title={item.points.name}>{item.points.name}</span>
+                    <span className="font-mono flex-shrink-0">R$ {parseFloat(item.price).toFixed(2)}</span>
                   </div>
                 </Label>
               </div>
