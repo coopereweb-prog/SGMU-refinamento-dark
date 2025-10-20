@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from 'lucide-react';
 import { updateClientProfile } from '../lib/supabase';
@@ -151,6 +151,7 @@ export function ClientProfileForm({ profile, onSave }) {
                 <FormItem>
                   <FormLabel>CPF</FormLabel>
                   <FormControl><Input placeholder="00000000000" {...field} /></FormControl>
+                  <FormDescription>Digite apenas números.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -187,6 +188,7 @@ export function ClientProfileForm({ profile, onSave }) {
                 <FormItem>
                   <FormLabel>CNPJ</FormLabel>
                   <FormControl><Input placeholder="00000000000000" {...field} /></FormControl>
+                  <FormDescription>Digite apenas números.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -210,6 +212,7 @@ export function ClientProfileForm({ profile, onSave }) {
                 <FormItem>
                   <FormLabel>CPF do Signatário</FormLabel>
                   <FormControl><Input placeholder="00000000000" {...field} /></FormControl>
+                  <FormDescription>Digite apenas números.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -295,6 +298,7 @@ export function ClientProfileForm({ profile, onSave }) {
             <FormItem>
               <FormLabel>CEP</FormLabel>
               <FormControl><Input placeholder="00000-000" {...field} /></FormControl>
+              <FormDescription>Digite apenas números.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
