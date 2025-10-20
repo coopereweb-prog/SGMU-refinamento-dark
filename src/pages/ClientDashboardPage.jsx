@@ -1,12 +1,23 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase, updateOrderItemPeriod } from '../lib/supabase';
+import { supabase, updateOrderItemPeriod, cancelOrder } from '../lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Calendar, Loader2, ShoppingCart, Edit, Menu } from 'lucide-react';
+import { MapPin, Calendar, Loader2, ShoppingCart, Edit, Menu, XCircle } from 'lucide-react';
 import { EditOrderDialog } from '../components/EditOrderDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -109,6 +120,16 @@ function ClientDashboardPage() {
       toast.error('Falha ao atualizar o item', { description: error.message });
     } finally {
       setUpdatingItemId(null);
+    }
+  };
+
+  const handleCancelOrder = async (orderId) => {
+    try {
+      await cancelOrder(orderId);
+      toast.success("Pedido cancelado com sucesso!");
+      fetchOrders();
+    } catch (error) {
+      toast.error("Erro ao cancelar pedido", { description: error.message });
     }
   };
 
@@ -265,10 +286,28 @@ function ClientDashboardPage() {
                         <Edit className="h-4 w-4 mr-2" />
                         Remover Itens
                       </Button>
-                      <Button variant="outline" className="flex-1" onClick={() => navigate('/')}>
-                        <ShoppingCart className="h-4 w-4 mr-2" />
-                        Continuar Comprando
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" className="flex-1">
+                            <XCircle className="h-4 w-4 mr-2" />
+                            Cancelar Pedido
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta ação irá cancelar todo o seu pedido. Os pontos selecionados voltarão a ficar disponíveis para outros clientes.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Voltar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleCancelOrder(order.id)}>
+                              Sim, cancelar pedido
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   )}
                 </Card>
