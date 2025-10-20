@@ -25,12 +25,14 @@ export function ProtectedRoute({ children, allowedRoles }) {
 
   // Se a rota exige papéis específicos e o perfil do usuário não está na lista,
   // nega o acesso.
-  if (allowedRoles && !allowedRoles.includes(profile?.role)) {
+  // Adicionamos a verificação `profile` para garantir que o toast só seja exibido
+  // se o perfil estiver carregado e a função for realmente negada.
+  if (allowedRoles && profile && !allowedRoles.includes(profile.role)) {
     toast.error('Acesso Negado', {
       description: 'Você não tem permissão para acessar esta página.',
     });
     // Redireciona para a página inicial ou para o dashboard do cliente se ele tiver um.
-    return <Navigate to={profile?.role === 'client' ? '/dashboard' : '/'} replace />;
+    return <Navigate to={profile.role === 'client' ? '/dashboard' : '/'} replace />;
   }
 
   return children;

@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { GoogleMap, Marker, MarkerClustererF } from '@react-google-maps/api';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { GoogleMap, MarkerClustererF } from '@react-google-maps/api';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { toast } from "sonner";
@@ -8,6 +8,49 @@ import { ZoomTimeline } from '@/components/ZoomTimeline';
 import { MapSettingsForm } from '@/components/MapSettingsForm';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGoogleMapsLoader } from '@/contexts/GoogleMapsLoaderContext';
+
+// Componente AdvancedMarkerElement (simulado, pois não podemos importar diretamente)
+const AdvancedMarkerElement = (props) => {
+  const { position, map, content, onClick, ...rest } = props;
+  const markerRef = useRef(null);
+  const contentRef = useRef(null);
+
+  useEffect(() => {
+    if (!map || !window.google?.maps?.marker?.AdvancedMarkerElement) return;
+
+    // Cria o elemento de conteúdo (se não existir)
+    if (!contentRef.current) {
+      contentRef.current = document.createElement('div');
+      // Usar um ponto simples para visualização no painel de admin
+      contentRef.current.innerHTML = `<div style="width: 10px; height: 10px; background-color: #10b981; border-radius: 50%; border: 2px solid white; transform: translate(-50%, -50%);"></div>`;
+      if (onClick) {
+        contentRef.current.style.cursor = 'pointer';
+        contentRef.current.addEventListener('click', onClick);
+      }
+    }
+
+    // Cria o marcador avançado
+    const marker = new window.google.maps.marker.AdvancedMarkerElement({
+      map,
+      position,
+      content: contentRef.current,
+      ...rest,
+    });
+
+    markerRef.current = marker;
+
+    return () => {
+      if (markerRef.current) {
+        markerRef.current.map = null;
+        if (onClick && contentRef.current) {
+          contentRef.current.removeEventListener('click', onClick);
+        }
+      }
+    };
+  }, [map, position, content, onClick]);
+
+  return null;
+};
 
 const mapContainerStyle = {
   width: '100%',
@@ -163,9 +206,10 @@ export function ManageMapSettingsPage() {
                 >
                   {(clusterer) =>
                     points.map((point) => (
-                      <Marker
+                      <AdvancedMarkerElement
                         key={point.id}
                         position={{ lat: point.latitude, lng: point.longitude }}
+                        map={map}
                         clusterer={clusterer}
                         // @ts-ignore
                         point_status={point.status}
@@ -175,9 +219,10 @@ export function ManageMapSettingsPage() {
                 </MarkerClustererF>
               ) : (
                 points.map((point) => (
-                  <Marker
+                  <AdvancedMarkerElement
                     key={point.id}
                     position={{ lat: point.latitude, lng: point.longitude }}
+                    map={map}
                   />
                 ))
               )}
