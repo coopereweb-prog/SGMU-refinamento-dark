@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { addYears, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -46,23 +46,6 @@ export function ContractedPointsView({ orders, profile }) {
     return chunks;
   }, [selectedPoints]);
 
-  // This effect handles the printing process reliably.
-  useEffect(() => {
-    if (reportData) {
-      // Define a function to clean up after printing.
-      const handleAfterPrint = () => {
-        setReportData(null); // Clear the report data.
-        window.removeEventListener('afterprint', handleAfterPrint); // Remove the listener to avoid memory leaks.
-      };
-
-      // Listen for the 'afterprint' event, which fires after the print dialog is closed.
-      window.addEventListener('afterprint', handleAfterPrint);
-      
-      // Trigger the print dialog.
-      window.print();
-    }
-  }, [reportData]); // This effect runs only when reportData changes.
-
   const handleSelectAll = (checked) => {
     if (checked) {
       setSelectedPointIds(new Set(contractedPoints.map(p => p.uniqueId)));
@@ -81,9 +64,12 @@ export function ContractedPointsView({ orders, profile }) {
     setSelectedPointIds(newSet);
   };
 
-  // This function now only sets the data, triggering the useEffect above.
   const handleGenerateReport = () => {
     setReportData({ points: selectedPoints, profile });
+    setTimeout(() => {
+      window.print();
+      setReportData(null);
+    }, 100);
   };
   
   const handleGenerateRoute = (pointsToRoute) => {
