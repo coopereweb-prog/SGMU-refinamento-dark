@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, MarkerClustererF } from '@react-google-maps/api';
+import { GoogleMap, Marker, MarkerClustererF } from '@react-google-maps/api';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { toast } from "sonner";
@@ -7,7 +7,7 @@ import { Save, Loader2 } from 'lucide-react';
 import { ZoomTimeline } from '@/components/ZoomTimeline';
 import { MapSettingsForm } from '@/components/MapSettingsForm';
 import { Skeleton } from '@/components/ui/skeleton';
-import { GOOGLE_MAPS_LIBRARIES } from '@/config/googleMaps';
+import { useGoogleMapsLoader } from '@/contexts/GoogleMapsLoaderContext';
 
 const mapContainerStyle = {
   width: '100%',
@@ -26,11 +26,7 @@ export function ManageMapSettingsPage() {
   const [selectedZoom, setSelectedZoom] = useState(12);
   const [map, setMap] = useState(null);
 
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script-admin',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries: GOOGLE_MAPS_LIBRARIES,
-  });
+  const { isLoaded } = useGoogleMapsLoader();
 
   const fetchInitialData = async () => {
     setLoading(true);

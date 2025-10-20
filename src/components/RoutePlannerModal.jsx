@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useJsApiLoader } from '@react-google-maps/api';
-import { GOOGLE_MAPS_LIBRARIES } from '@/config/googleMaps';
+import { useGoogleMapsLoader } from '@/contexts/GoogleMapsLoaderContext';
 import { Modal } from '@/components/Modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,11 +15,7 @@ export function RoutePlannerModal({ isOpen, onClose, points }) {
   const [step, setStep] = useState('input'); // 'input', 'confirm'
   const [startLocationInfo, setStartLocationInfo] = useState(null);
 
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: 'google-map-script-planner',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries: GOOGLE_MAPS_LIBRARIES,
-  });
+  const { isLoaded, loadError } = useGoogleMapsLoader();
 
   useEffect(() => {
     if (loadError) {

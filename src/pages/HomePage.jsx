@@ -1,15 +1,15 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, MarkerClustererF } from '@react-google-maps/api';
+import { GoogleMap, Marker, MarkerClustererF } from '@react-google-maps/api';
 import { supabase } from '@/lib/supabase';
 import { PointDetailsSheet } from '@/components/PointDetailsSheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMapConfig } from '@/contexts/MapConfigContext';
 import { useCart } from '@/contexts/CartContext';
+import { useGoogleMapsLoader } from '@/contexts/GoogleMapsLoaderContext';
 import { toast } from 'sonner';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { FilterPanel } from '@/components/FilterPanel';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
-import { GOOGLE_MAPS_LIBRARIES } from '@/config/googleMaps';
 import { Header } from '@/components/Header';
 import { MobileFilterButton } from '@/components/MobileFilterButton';
 import { FilterSheet } from '@/components/FilterSheet';
@@ -156,12 +156,7 @@ function HomePage() {
 
   const { rules, loading: loadingConfig } = useMapConfig();
   const { cartItems, addToCart } = useCart();
-
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script-main',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries: GOOGLE_MAPS_LIBRARIES,
-  });
+  const { isLoaded } = useGoogleMapsLoader();
 
   useEffect(() => {
     const fetchPoints = async () => {
