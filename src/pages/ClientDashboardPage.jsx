@@ -129,178 +129,176 @@ function ClientDashboardPage() {
 
   return (
     <>
-      <div className="print:hidden">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">
-            {profile?.name ? `Olá, ${profile.name}!` : 'Minha Conta'}
-          </h1>
-          <p className="text-gray-600">Gerencie seus pedidos e informações</p>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-800">
+          {profile?.name ? `Olá, ${profile.name}!` : 'Minha Conta'}
+        </h1>
+        <p className="text-gray-600">Gerencie seus pedidos e informações</p>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        {/* Desktop Tabs */}
+        <TabsList className="hidden md:grid w-full grid-cols-3">
+          <TabsTrigger value="orders">Meus Pedidos</TabsTrigger>
+          <TabsTrigger value="points">Meus Pontos Contratados</TabsTrigger>
+          <TabsTrigger value="profile">Meu Perfil</TabsTrigger>
+        </TabsList>
+
+        {/* Mobile Menu */}
+        <div className="md:hidden mb-4">
+          <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline">
+                <Menu className="h-4 w-4 mr-2" />
+                Menu
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[250px]">
+              <SheetHeader>
+                <SheetTitle>Dashboard</SheetTitle>
+              </SheetHeader>
+              <nav className="flex flex-col space-y-2 mt-4">
+                <Button
+                  variant={activeTab === 'orders' ? 'secondary' : 'ghost'}
+                  onClick={() => handleTabChange('orders')}
+                  className="justify-start"
+                >
+                  Meus Pedidos
+                </Button>
+                <Button
+                  variant={activeTab === 'points' ? 'secondary' : 'ghost'}
+                  onClick={() => handleTabChange('points')}
+                  className="justify-start"
+                >
+                  Meus Pontos Contratados
+                </Button>
+                <Button
+                  variant={activeTab === 'profile' ? 'secondary' : 'ghost'}
+                  onClick={() => handleTabChange('profile')}
+                  className="justify-start"
+                >
+                  Meu Perfil
+                </Button>
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          {/* Desktop Tabs */}
-          <TabsList className="hidden md:grid w-full grid-cols-3">
-            <TabsTrigger value="orders">Meus Pedidos</TabsTrigger>
-            <TabsTrigger value="points">Meus Pontos Contratados</TabsTrigger>
-            <TabsTrigger value="profile">Meu Perfil</TabsTrigger>
-          </TabsList>
-
-          {/* Mobile Menu */}
-          <div className="md:hidden mb-4">
-            <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline">
-                  <Menu className="h-4 w-4 mr-2" />
-                  Menu
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[250px]">
-                <SheetHeader>
-                  <SheetTitle>Dashboard</SheetTitle>
-                </SheetHeader>
-                <nav className="flex flex-col space-y-2 mt-4">
-                  <Button
-                    variant={activeTab === 'orders' ? 'secondary' : 'ghost'}
-                    onClick={() => handleTabChange('orders')}
-                    className="justify-start"
-                  >
-                    Meus Pedidos
-                  </Button>
-                  <Button
-                    variant={activeTab === 'points' ? 'secondary' : 'ghost'}
-                    onClick={() => handleTabChange('points')}
-                    className="justify-start"
-                  >
-                    Meus Pontos Contratados
-                  </Button>
-                  <Button
-                    variant={activeTab === 'profile' ? 'secondary' : 'ghost'}
-                    onClick={() => handleTabChange('profile')}
-                    className="justify-start"
-                  >
-                    Meu Perfil
-                  </Button>
-                </nav>
-              </SheetContent>
-            </Sheet>
-          </div>
-
-          <TabsContent value="orders">
-            {orders.length === 0 ? (
-              <Card className="mt-6">
-                <CardContent className="text-center py-12">
-                  <p className="text-gray-500">Você ainda não possui nenhum pedido.</p>
-                  <Button className="mt-4" onClick={() => navigate('/')}>Fazer um pedido</Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-6 mt-6">
-                {orders.map(order => (
-                  <Card key={order.id}>
-                    <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle>Pedido #{order.id.substring(0, 8)}</CardTitle>
-                          <CardDescription>
-                            {order.status === 'pending' && `Recebido em: ${new Date(order.created_at).toLocaleString('pt-BR')}`}
-                            {order.status === 'completed' && `Concluído em: ${new Date(order.updated_at).toLocaleString('pt-BR')}`}
-                            {order.status === 'cancelled' && `Cancelado em: ${new Date(order.updated_at).toLocaleString('pt-BR')}`}
-                          </CardDescription>
-                        </div>
-                        <div className="flex flex-col items-end gap-2">
-                          <Badge variant="secondary">Total: R$ {parseFloat(order.total_amount).toFixed(2)}</Badge>
-                          <Badge variant={
-                            order.status === 'pending' ? 'default' : 
-                            order.status === 'completed' ? 'success' : 'destructive'
-                          }>
-                            {order.status === 'pending' ? 'Pendente' : 
-                             order.status === 'completed' ? 'Concluído' : 'Cancelado'}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <h4 className="font-semibold mb-2">Itens do Pedido</h4>
-                        {order.order_items.map(item => (
-                          <div key={item.id} className="text-sm flex flex-col md:flex-row justify-between items-start md:items-center bg-card p-3 rounded-md mb-2">
-                            <span className="flex items-center font-medium mb-2 md:mb-0"><MapPin className="h-4 w-4 mr-2 text-gray-500" /> {item.points.name}</span>
-                            <div className="flex items-center gap-2 w-full md:w-auto">
-                              {updatingItemId === item.id && <Loader2 className="h-4 w-4 animate-spin" />}
-                              {order.status === 'pending' ? (
-                                <Select
-                                  value={String(item.period_years)}
-                                  onValueChange={(value) => handlePeriodChange(order.id, item.id, parseInt(value))}
-                                  disabled={updatingItemId === item.id}
-                                >
-                                  <SelectTrigger className="w-full md:w-[200px]">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {[1, 2, 3, 4, 5].map(years => {
-                                      const price = item.points[`price_${years}y`];
-                                      const isAvailable = typeof price === 'number' && price > 0;
-                                      return (
-                                        <SelectItem key={years} value={String(years)} disabled={!isAvailable}>
-                                          {isAvailable ? `${years} ano(s) - R$ ${price.toFixed(2)}` : `${years} ano(s) - (Indisponível)`}
-                                        </SelectItem>
-                                      );
-                                    })}
-                                  </SelectContent>
-                                </Select>
-                              ) : (
-                                <span className="flex items-center font-medium"><Calendar className="h-4 w-4 mr-2 text-gray-500" /> {item.period_years} ano(s)</span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <RouteGenerator points={order.order_items.map(item => item.points).filter(p => p.latitude && p.longitude)} />
-                    </CardContent>
-
-                    {order.status === 'pending' && (
-                      <div className="p-6 pt-0 flex flex-col sm:flex-row gap-2">
-                        <Button className="flex-1" onClick={() => openEditModal(order)}>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Remover Itens
-                        </Button>
-                        <Button variant="outline" className="flex-1" onClick={() => navigate('/')}>
-                          <ShoppingCart className="h-4 w-4 mr-2" />
-                          Continuar Comprando
-                        </Button>
-                      </div>
-                    )}
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="points">
-            <div ref={pointsTabRef} className="space-y-6 mt-6">
-              <ContractedPointsView orders={completedOrders} profile={profile} />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="profile">
+        <TabsContent value="orders">
+          {orders.length === 0 ? (
             <Card className="mt-6">
-              <CardHeader>
-                <CardTitle>Informações do Perfil</CardTitle>
-                <CardDescription>Gerencie suas informações pessoais e de contato</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {profile ? (
-                  <ClientProfileForm profile={profile} onSave={handleProfileSave} />
-                ) : (
-                  <div className="flex items-center justify-center h-40">
-                    <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
-                  </div>
-                )}
+              <CardContent className="text-center py-12">
+                <p className="text-gray-500">Você ainda não possui nenhum pedido.</p>
+                <Button className="mt-4" onClick={() => navigate('/')}>Fazer um pedido</Button>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+          ) : (
+            <div className="space-y-6 mt-6">
+              {orders.map(order => (
+                <Card key={order.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle>Pedido #{order.id.substring(0, 8)}</CardTitle>
+                        <CardDescription>
+                          {order.status === 'pending' && `Recebido em: ${new Date(order.created_at).toLocaleString('pt-BR')}`}
+                          {order.status === 'completed' && `Concluído em: ${new Date(order.updated_at).toLocaleString('pt-BR')}`}
+                          {order.status === 'cancelled' && `Cancelado em: ${new Date(order.updated_at).toLocaleString('pt-BR')}`}
+                        </CardDescription>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <Badge variant="secondary">Total: R$ {parseFloat(order.total_amount).toFixed(2)}</Badge>
+                        <Badge variant={
+                          order.status === 'pending' ? 'default' : 
+                          order.status === 'completed' ? 'success' : 'destructive'
+                        }>
+                          {order.status === 'pending' ? 'Pendente' : 
+                           order.status === 'completed' ? 'Concluído' : 'Cancelado'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <h4 className="font-semibold mb-2">Itens do Pedido</h4>
+                      {order.order_items.map(item => (
+                        <div key={item.id} className="text-sm flex flex-col md:flex-row justify-between items-start md:items-center bg-card p-3 rounded-md mb-2">
+                          <span className="flex items-center font-medium mb-2 md:mb-0"><MapPin className="h-4 w-4 mr-2 text-gray-500" /> {item.points.name}</span>
+                          <div className="flex items-center gap-2 w-full md:w-auto">
+                            {updatingItemId === item.id && <Loader2 className="h-4 w-4 animate-spin" />}
+                            {order.status === 'pending' ? (
+                              <Select
+                                value={String(item.period_years)}
+                                onValueChange={(value) => handlePeriodChange(order.id, item.id, parseInt(value))}
+                                disabled={updatingItemId === item.id}
+                              >
+                                <SelectTrigger className="w-full md:w-[200px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {[1, 2, 3, 4, 5].map(years => {
+                                    const price = item.points[`price_${years}y`];
+                                    const isAvailable = typeof price === 'number' && price > 0;
+                                    return (
+                                      <SelectItem key={years} value={String(years)} disabled={!isAvailable}>
+                                        {isAvailable ? `${years} ano(s) - R$ ${price.toFixed(2)}` : `${years} ano(s) - (Indisponível)`}
+                                      </SelectItem>
+                                    );
+                                  })}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <span className="flex items-center font-medium"><Calendar className="h-4 w-4 mr-2 text-gray-500" /> {item.period_years} ano(s)</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <RouteGenerator points={order.order_items.map(item => item.points).filter(p => p.latitude && p.longitude)} />
+                  </CardContent>
+
+                  {order.status === 'pending' && (
+                    <div className="p-6 pt-0 flex flex-col sm:flex-row gap-2">
+                      <Button className="flex-1" onClick={() => openEditModal(order)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Remover Itens
+                      </Button>
+                      <Button variant="outline" className="flex-1" onClick={() => navigate('/')}>
+                        <ShoppingCart className="h-4 w-4 mr-2" />
+                        Continuar Comprando
+                      </Button>
+                    </div>
+                  )}
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="points">
+          <div ref={pointsTabRef} className="space-y-6 mt-6">
+            <ContractedPointsView orders={completedOrders} profile={profile} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="profile">
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Informações do Perfil</CardTitle>
+              <CardDescription>Gerencie suas informações pessoais e de contato</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {profile ? (
+                <ClientProfileForm profile={profile} onSave={handleProfileSave} />
+              ) : (
+                <div className="flex items-center justify-center h-40">
+                  <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
       
       {selectedOrderForEdit && (
         <EditOrderDialog

@@ -53,7 +53,7 @@ export function Header() {
   };
 
   return (
-    <header className="bg-black/40 shadow-lg sticky top-0 z-50 h-16 sm:h-20 flex-shrink-0 print:hidden">
+    <header className="bg-black/40 shadow-lg sticky top-0 z-50 h-16 sm:h-20 flex-shrink-0">
       <div className="container mx-auto px-4 h-full">
         <div className="grid grid-cols-3 items-center h-full">
           {/* Coluna Esquerda: Menu */}
