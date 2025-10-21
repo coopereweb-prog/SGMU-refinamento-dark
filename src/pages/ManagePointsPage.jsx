@@ -42,9 +42,8 @@ const mapOptions = {
 // Estados de seleção de rua
 const SELECTION_STATE = {
   NONE: 0,
-  STREET: 1,
-  INTERSECTION: 2,
-  FORM: 3, // Estado final onde o formulário está aberto
+  STREET: 1, // Modo de adição: esperando o primeiro clique (Rua Principal)
+  FORM: 3, // Modo de adição/edição: formulário aberto
 };
 
 // Estilos de cluster (simplificados para o painel admin)
@@ -55,7 +54,7 @@ const clusterStyles = [
 export function ManagePointsPage() {
   const [points, setPoints] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  // Removendo isEditModalOpen
   const [editingPoint, setEditingPoint] = useState(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [pointToDelete, setPointToDelete] = useState(null);
@@ -74,7 +73,6 @@ export function ManagePointsPage() {
 
   const fetchPoints = async () => {
     setLoading(true);
-    // ALTERAÇÃO AQUI: Ordenar por updated_at decrescente
     const { data, error } = await supabase.from('points').select('*').order('updated_at', { ascending: false });
     if (error) {
       console.error('Error fetching points:', error);
@@ -94,7 +92,6 @@ export function ManagePointsPage() {
     setNewPointCoords(null);
     setIsAddingMode(true);
     setSelectionState(SELECTION_STATE.STREET);
-    setIsEditModalOpen(false);
   };
 
   const handleCancelAdd = () => {
@@ -178,9 +175,9 @@ export function ManagePointsPage() {
 
   const handleEdit = (point) => {
     setEditingPoint(point);
-    setIsEditModalOpen(true);
-    setIsAddingMode(false); 
-    setSelectionState(SELECTION_STATE.NONE);
+    setIsAddingMode(true); // Ativa o modo de edição/adição
+    setSelectionState(SELECTION_STATE.FORM); // Vai direto para o formulário
+    setNewPointCoords({ lat: point.latitude, lng: point.longitude }); // Define as coordenadas para o mapa
   };
 
   const handleViewMap = (point) => {
@@ -216,10 +213,10 @@ export function ManagePointsPage() {
         if (insertTagsError) throw insertTagsError;
       }
 
-      setIsEditModalOpen(false);
       setEditingPoint(null);
       setIsAddingMode(false);
       setSelectionState(SELECTION_STATE.NONE);
+      setNewPointCoords(null);
       fetchPoints();
     } catch (error) {
       console.error('Error saving point:', error);
@@ -249,6 +246,9 @@ export function ManagePointsPage() {
   };
 
   const getInstruction = () => {
+    if (editingPoint?.id) {
+      return "Editando Ponto Existente. Clique no mapa para redefinir o cruzamento (opcional).";
+    }
     if (selectionState === SELECTION_STATE.STREET) {
       return "1. Clique no mapa para definir a localização e a Rua Principal.";
     }
@@ -282,7 +282,7 @@ export function ManagePointsPage() {
           </Button>
         ) : (
           <Button variant="destructive" onClick={handleCancelAdd}>
-            <XCircle className="mr-2 h-4 w-4" /> Cancelar Adição
+            <XCircle className="mr-2 h-4 w-4" /> Cancelar {editingPoint?.id ? 'Edição' : 'Adição'}
           </Button>
         )}
       </div>
@@ -301,14 +301,14 @@ export function ManagePointsPage() {
               {isLoaded ? (
                 <GoogleMap
                   mapContainerStyle={mapContainerStyle}
-                  center={defaultCenter}
+                  center={newPointCoords || defaultCenter}
                   zoom={currentZoom}
                   onClick={handleMapClick}
                   onLoad={onMapLoad}
                   onZoomChanged={onZoomChanged}
                   options={{ ...mapOptions, draggableCursor: 'crosshair' }}
                 >
-                  {/* Marcador do novo ponto */}
+                  {/* Marcador do novo ponto / ponto em edição */}
                   {newPointCoords && (
                     <Marker 
                       position={newPointCoords} 
@@ -351,10 +351,10 @@ export function ManagePointsPage() {
             </div>
           </div>
           
-          {/* Coluna do Formulário (Aparece após a primeira seleção) */}
+          {/* Coluna do Formulário (Aparece após a primeira seleção ou ao editar) */}
           {selectionState === SELECTION_STATE.FORM && editingPoint && (
             <Card className="h-full overflow-y-auto">
-              <CardHeader><CardTitle>Novo Ponto</CardTitle></CardHeader>
+              <CardHeader><CardTitle>{editingPoint.id ? 'Editar Ponto' : 'Novo Ponto'}</CardTitle></CardHeader>
               <CardContent>
                 <PointForm
                   point={editingPoint}
@@ -407,20 +407,7 @@ export function ManagePointsPage() {
         )
       )}
 
-      {/* Modal de Edição (Mantido para edição de pontos existentes) */}
-      <Modal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        title={editingPoint?.id ? 'Editar Ponto' : 'Novo Ponto'}
-        description="Preencha os detalhes do ponto abaixo."
-      >
-        <PointForm
-          point={editingPoint}
-          onSave={handleSavePoint}
-          onCancel={() => setIsEditModalOpen(false)}
-        />
-      </Modal>
-
+      {/* Modal de Deleção (Mantido) */}
       <Modal
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
