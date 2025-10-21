@@ -75,11 +75,20 @@ export function KanbanBoard({ className }) {
     const originalTask = tasks.find((t) => t.id === taskId);
     if (!originalTask || originalTask.status === newStatus) return;
 
-    if (newStatus === "assigned" && !originalTask.assigned_technician_id) {
-      toast.warning(
-        "Atribua um técnico antes de mover a tarefa para 'Em Campo'."
-      );
-      return;
+    // Regra de Negócio: Não pode ir para 'assigned' sem técnico e kit_type
+    if (newStatus === "assigned") {
+      if (!originalTask.assigned_technician_id) {
+        toast.warning(
+          "Atribua um técnico antes de mover a tarefa para 'Em Campo'."
+        );
+        return;
+      }
+      if (!originalTask.kit_type) {
+        toast.warning(
+          "Defina o Tipo de Kit no modal de detalhes antes de mover a tarefa para 'Em Campo'."
+        );
+        return;
+      }
     }
 
     const snapshot = [...tasks];

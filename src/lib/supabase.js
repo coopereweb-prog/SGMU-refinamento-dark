@@ -244,7 +244,7 @@ export const getInstallationTasks = async () => {
     .select(`
       *,
       order_items (
-        orders ( id, customer_name )
+        orders ( id, customer_name, kit_type )
       ),
       points ( name ),
       technician:profiles ( name )
@@ -265,6 +265,7 @@ export const getInstallationTasks = async () => {
   return data.map(task => ({
     ...task,
     customer_name: task.order_items?.orders?.customer_name,
+    kit_type: task.order_items?.orders?.kit_type, // Adicionado kit_type
     point_name: task.points?.name,
     technician_name: task.technician?.name,
   }));
@@ -347,7 +348,7 @@ export const assignTaskToTechnician = async (taskId, technicianId) => {
     .eq('id', taskId)
     .select(`
       *,
-      order_items ( orders ( id, customer_name ) ),
+      order_items ( orders ( id, customer_name, kit_type ) ),
       points ( name ),
       technician:profiles ( name )
     `)
@@ -361,6 +362,7 @@ export const assignTaskToTechnician = async (taskId, technicianId) => {
   return {
     ...data,
     customer_name: data.order_items?.orders?.customer_name,
+    kit_type: data.order_items?.orders?.kit_type, // Adicionado kit_type
     point_name: data.points?.name,
     technician_name: data.technician?.name,
   };
@@ -391,5 +393,18 @@ export const returnTaskToHold = async (taskId, pointId, notes) => {
   if (taskUpdateError) {
     console.error('Error returning task to hold:', taskUpdateError);
     throw taskUpdateError;
+  }
+};
+
+// Nova função para atualizar o kit_type do pedido
+export const updateOrderKitType = async (orderId, kitType) => {
+  const { error } = await supabase
+    .from('orders')
+    .update({ kit_type: kitType })
+    .eq('id', orderId);
+
+  if (error) {
+    console.error('Error updating order kit type:', error);
+    throw error;
   }
 };

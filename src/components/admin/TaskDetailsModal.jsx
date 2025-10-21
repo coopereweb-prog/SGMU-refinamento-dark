@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { supabase } from '@/lib/supabase';
+import { supabase, updateOrderKitType } from '@/lib/supabase';
 import { Modal } from '@/components/Modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from 'sonner';
 import { Loader2, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -16,6 +17,7 @@ import { compressImage } from '@/lib/image-utils';
 const taskSchema = z.object({
   notes: z.string().optional(),
   due_date: z.string().optional(),
+  kit_type: z.enum(['kit_completo', 'kit_placas', 'troca_propaganda']).optional(),
 });
 
 export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
@@ -28,6 +30,7 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
     defaultValues: {
       notes: '',
       due_date: '',
+      kit_type: '',
     },
   });
 
@@ -36,6 +39,7 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
       form.reset({
         notes: task.notes || '',
         due_date: task.due_date ? task.due_date.split('T')[0] : '',
+        kit_type: task.kit_type || '',
       });
     }
     setArtFile(null);
@@ -77,7 +81,9 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
 
   const handleSave = async (values) => {
     if (!task) return;
-    let updatedData = { ...values };
+    let updatedTaskData = { notes: values.notes, due_date: values.due_date };
+    let updatedOrderData = { kit_type: values.kit_type };
+    let newArtFileUrl = null;
 
     if (artFile) {
       setIsUploading(true);
@@ -89,7 +95,8 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
         if (uploadError) throw uploadError;
         
         const { data: urlData } = supabase.storage.from('installation-photos').getPublicUrl(fileName);
-        updatedData.art_file_url = urlData.publicUrl;
+        newArtFileUrl = urlData.publicUrl;
+        updatedTaskData.art_file_url = newArtFileUrl;
       } catch (error) {
         toast.error("Falha no upload do arquivo de arte.", { description: error.message });
         setIsUploading(false);
@@ -99,17 +106,37 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
     }
 
     try {
+      // 1. Atualiza o kit_type no PEDIDO
+      if (updatedOrderData.kit_type !== task.kit_type) {
+        await updateOrderKitType(task.order_items.orders.id, updatedOrderData.kit_type);
+      }
+
+      // 2. Atualiza a TAREFA (notas, data de entrega, URL da arte)
       const { data, error } = await supabase
         .from('installation_tasks')
-        .update(updatedData)
+        .update(updatedTaskData)
         .eq('id', task.id)
-        .select()
+        .select(`
+          *,
+          order_items ( orders ( id, customer_name, kit_type ) ),
+          points ( name ),
+          technician:profiles ( name )
+        `)
         .single();
       
       if (error) throw error;
       
+      // Formata o resultado para o onUpdate
+      const updatedTask = {
+        ...data,
+        customer_name: data.order_items?.orders?.customer_name,
+        kit_type: data.order_items?.orders?.kit_type,
+        point_name: data.points?.name,
+        technician_name: data.technician?.name,
+      };
+      
       toast.success("Tarefa atualizada com sucesso!");
-      onUpdate(data);
+      onUpdate(updatedTask);
       onClose();
     } catch (error) {
       toast.error("Erro ao salvar alterações.", { description: error.message });
@@ -128,22 +155,46 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
         </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
+            
+            <FormField control={form.control} name="kit_type" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tipo de Kit</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger className="yellow-accent">
+                      <SelectValue placeholder="Selecione o tipo de kit" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="kit_completo">Kit Completo (Placa + Estrutura)</SelectItem>
+                    <SelectItem value="kit_placas">Kit Placas (Apenas Placas)</SelectItem>
+                    <SelectItem value="troca_propaganda">Troca de Propaganda (Apenas Arte)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
+            
             <FormField control={form.control} name="notes" render={({ field }) => (
               <FormItem><FormLabel>Notas</FormLabel><FormControl><Textarea placeholder="Adicione observações sobre a tarefa..." {...field} /></FormControl><FormMessage /></FormItem>
             )} />
             <FormField control={form.control} name="due_date" render={({ field }) => (
-              <FormItem><FormLabel>Data de Entrega</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Data de Entrega</FormLabel><FormControl><Input type="date" {...field} className="yellow-accent" /></FormControl><FormMessage /></FormItem>
             )} />
             
             <FormItem>
               <FormLabel>Arquivo da Arte</FormLabel>
               <FormControl><Input type="file" onChange={handleFileChange} /></FormControl>
-              {task.art_file_url && !artFile && (
+              {(task.art_file_url || artFile) && (
                 <div className="flex items-center gap-2 mt-2">
-                  <a href={task.art_file_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-500 hover:underline">Ver arte atual</a>
-                  <Button type="button" variant="destructive" size="icon" className="h-7 w-7" onClick={handleRemoveArtFile} disabled={isDeletingArt}>
-                    {isDeletingArt ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
-                  </Button>
+                  {task.art_file_url && !artFile && (
+                    <a href={task.art_file_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-500 hover:underline">Ver arte atual</a>
+                  )}
+                  {task.art_file_url && (
+                    <Button type="button" variant="destructive" size="icon" className="h-7 w-7" onClick={handleRemoveArtFile} disabled={isDeletingArt}>
+                      {isDeletingArt ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+                    </Button>
+                  )}
                 </div>
               )}
             </FormItem>

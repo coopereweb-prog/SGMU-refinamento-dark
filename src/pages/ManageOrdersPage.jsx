@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Loader2, Search, Calendar, CheckCircle, XCircle, Printer, Truck, Map, Clock } from 'lucide-react';
+import { Loader2, Search, Calendar, CheckCircle, XCircle, Printer, Map, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getOrderStatusProps } from '@/lib/utils';
@@ -185,7 +185,6 @@ export function ManageOrdersPage() {
   const [selectedPoints, setSelectedPoints] = useState(new Set());
   const [extendingOrder, setExtendingOrder] = useState(null);
   const [newReservedUntil, setNewReservedUntil] = useState('');
-  const [kitType, setKitType] = useState({});
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -251,6 +250,8 @@ export function ManageOrdersPage() {
 
   const handleApproveOrder = async (orderId) => {
     try {
+      // A função confirm_order_and_update_points também dispara o trigger
+      // que cria as installation_tasks se installation_sent for false.
       const { error } = await supabase.rpc('confirm_order_and_update_points', { p_order_id: orderId });
       if (error) throw error;
       toast.success("Pedido aprovado e pontos marcados como vendidos!");
@@ -277,20 +278,6 @@ export function ManageOrdersPage() {
     printWindow.document.write(printableHTML);
     printWindow.document.close();
     printWindow.print();
-  };
-
-  const handleSendToInstallation = async (orderId, selectedKitType) => {
-    try {
-      const { error } = await supabase
-        .from('orders')
-        .update({ kit_type: selectedKitType, installation_sent: true })
-        .eq('id', orderId);
-      if (error) throw error;
-      toast.success("Pedido enviado para instalação!");
-      fetchOrders();
-    } catch (error) {
-      toast.error("Erro ao enviar para instalação", { description: error.message });
-    }
   };
 
   const handlePointSelection = (pointId, checked) => {
@@ -437,7 +424,7 @@ export function ManageOrdersPage() {
                           <AlertDialog>
                             <AlertDialogTrigger asChild><Button><CheckCircle className="h-4 w-4 mr-2" />Aprovar Compra</Button></AlertDialogTrigger>
                             <AlertDialogContent>
-                              <AlertDialogHeader><AlertDialogTitle>Aprovar Compra?</AlertDialogTitle><AlertDialogDescription>Esta ação marcará o pedido como 'Concluído' e os pontos como 'Vendidos'. Esta ação não pode ser desfeita.</AlertDialogDescription></AlertDialogHeader>
+                              <AlertDialogHeader><AlertDialogTitle>Aprovar Compra?</AlertDialogTitle><AlertDialogDescription>Esta ação marcará o pedido como 'Concluído' e os pontos como 'Vendidos'. Isso também criará as tarefas no Pipeline de Instalação.</AlertDialogDescription></AlertDialogHeader>
                               <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => handleApproveOrder(order.id)}>Aprovar</AlertDialogAction></AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
@@ -453,26 +440,6 @@ export function ManageOrdersPage() {
                       <Button variant="outline" onClick={() => handlePrintOrder(order)}>
                         <Printer className="h-4 w-4 mr-2" />Imprimir Pedido
                       </Button>
-                      {!order.installation_sent && (
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Select value={kitType[order.id] || ''} onValueChange={(value) => setKitType(prev => ({ ...prev, [order.id]: value }))}>
-                            <SelectTrigger className="w-full sm:w-[180px]">
-                              <SelectValue placeholder="Tipo de Kit" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="kit_completo">Kit Completo</SelectItem>
-                              <SelectItem value="kit_placas">Kit Placas</SelectItem>
-                              <SelectItem value="troca_propaganda">Troca de Propaganda</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Button variant="outline" onClick={() => handleSendToInstallation(order.id, kitType[order.id])} disabled={!kitType[order.id]} className="w-full sm:w-auto">
-                            <Truck className="h-4 w-4 mr-2" />Enviar para Instalação
-                          </Button>
-                        </div>
-                      )}
-                      {order.installation_sent && (
-                        <Badge variant="secondary">Enviado para Instalação ({order.kit_type})</Badge>
-                      )}
                     </div>
                     {extendingOrder === order.id && (
                       <div className="flex flex-col sm:flex-row items-center gap-2 p-2 border rounded">

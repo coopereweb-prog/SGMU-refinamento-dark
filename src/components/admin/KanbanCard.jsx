@@ -1,12 +1,19 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, MapPin, UserPlus, Loader2, FileImage, MoreHorizontal } from 'lucide-react';
+import { User, MapPin, UserPlus, Loader2, FileImage, MoreHorizontal, Package } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
 import { assignTaskToTechnician } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+
+const kitTypeMap = {
+  kit_completo: 'Kit Completo',
+  kit_placas: 'Kit Placas',
+  troca_propaganda: 'Troca de Propaganda',
+};
 
 export function KanbanCard({ task, technicians, onTaskUpdate, onOpenModal, onTaskMove, allColumns }) {
   const [assigning, setAssigning] = useState(false);
@@ -65,6 +72,12 @@ export function KanbanCard({ task, technicians, onTaskUpdate, onOpenModal, onTas
           <User className="h-3 w-3 mr-2 flex-shrink-0" />
           <span className="break-words">{task.customer_name || 'Cliente não encontrado'}</span>
         </div>
+        {task.kit_type && (
+          <Badge variant="secondary" className="flex items-center w-fit">
+            <Package className="h-3 w-3 mr-1 flex-shrink-0" />
+            {kitTypeMap[task.kit_type] || task.kit_type}
+          </Badge>
+        )}
         {task.art_file_url && (
           <a 
             href={task.art_file_url} 
