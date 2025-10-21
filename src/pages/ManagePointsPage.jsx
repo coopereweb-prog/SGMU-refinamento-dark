@@ -35,7 +35,7 @@ const SELECTION_STATE = {
   NONE: 0,
   STREET: 1,
   INTERSECTION: 2,
-  FORM: 3, // Novo estado para indicar que o formulário está aberto ao lado do mapa
+  FORM: 3, // Estado final onde o formulário está aberto
 };
 
 export function ManagePointsPage() {
@@ -116,25 +116,24 @@ export function ManagePointsPage() {
           latitude: lat, 
           longitude: lng, 
           street_name: streetName,
-          intersection_name: '',
+          intersection_name: '', // Começa vazio
           name: streetName, // Nome inicial
           description: '',
           pricing_tier_id: '',
           is_available: true,
           image_url: '',
         });
-        setSelectionState(SELECTION_STATE.INTERSECTION);
-        toast.info(`Rua Principal definida: ${streetName}. Agora clique na rua do cruzamento (opcional).`);
+        setSelectionState(SELECTION_STATE.FORM); // Transiciona para o formulário imediatamente
+        toast.info(`Rua Principal definida: ${streetName}. Agora, clique na rua do cruzamento (opcional) ou preencha o formulário.`);
       });
-    } else if (selectionState === SELECTION_STATE.INTERSECTION) {
+    } else if (selectionState === SELECTION_STATE.FORM) {
+      // Se já estiver no estado FORM, o clique no mapa é para definir o cruzamento
       getStreetNameFromCoords(lat, lng, (intersectionName) => {
         setEditingPoint(prev => ({
           ...prev,
           intersection_name: intersectionName,
-          name: `${prev.street_name} c/ ${intersectionName}`,
         }));
-        setSelectionState(SELECTION_STATE.FORM); // Passa para o estado de formulário
-        toast.success(`Cruzamento definido: ${editingPoint.street_name} c/ ${intersectionName}. Abra o formulário.`);
+        toast.success(`Rua do Cruzamento sugerida: ${intersectionName}. Ajuste no formulário se necessário.`);
       });
     }
   };
@@ -215,21 +214,13 @@ export function ManagePointsPage() {
     if (selectionState === SELECTION_STATE.STREET) {
       return "1. Clique no mapa para definir a localização e a Rua Principal.";
     }
-    if (selectionState === SELECTION_STATE.INTERSECTION) {
-      return `2. Clique na Rua do Cruzamento (Opcional). Rua Principal: ${editingPoint?.street_name || 'N/A'}`;
-    }
     if (selectionState === SELECTION_STATE.FORM) {
-      return `3. Preencha os detalhes do ponto: ${editingPoint?.name || 'Novo Ponto'}`;
+      return `2. Clique na Rua do Cruzamento (Opcional) ou preencha o formulário.`;
     }
     return "Clique no mapa para definir a localização do novo ponto.";
   };
   
-  const handleSkipIntersection = () => {
-    if (selectionState === SELECTION_STATE.INTERSECTION) {
-      setSelectionState(SELECTION_STATE.FORM);
-      toast.info("Seleção de cruzamento ignorada. Preencha o formulário.");
-    }
-  };
+  // Removendo handleSkipIntersection, pois o formulário já está visível
 
   return (
     <div className="container mx-auto p-4 space-y-6">
@@ -252,14 +243,9 @@ export function ManagePointsPage() {
           <div className="flex flex-col gap-4 h-full">
             <div className="p-4 text-center bg-blue-50 border border-blue-200 rounded-lg">
               <p className="font-semibold text-blue-700 flex items-center justify-center">
-                {(selectionState === SELECTION_STATE.INTERSECTION || selectionState === SELECTION_STATE.FORM) && <CornerDownRight className="h-5 w-5 mr-2" />}
+                {(selectionState === SELECTION_STATE.FORM) && <CornerDownRight className="h-5 w-5 mr-2" />}
                 {getInstruction()}
               </p>
-              {selectionState === SELECTION_STATE.INTERSECTION && (
-                <Button variant="link" onClick={handleSkipIntersection} className="mt-2 p-0 h-auto text-sm">
-                  Pular seleção de cruzamento e abrir formulário
-                </Button>
-              )}
             </div>
             <div className="relative flex-grow w-full rounded-lg overflow-hidden shadow-md">
               {isLoaded ? (
@@ -281,7 +267,7 @@ export function ManagePointsPage() {
             </div>
           </div>
           
-          {/* Coluna do Formulário (Apenas no estado FORM) */}
+          {/* Coluna do Formulário (Aparece após a primeira seleção) */}
           {selectionState === SELECTION_STATE.FORM && editingPoint && (
             <Card className="h-full overflow-y-auto">
               <CardHeader><CardTitle>Novo Ponto</CardTitle></CardHeader>
