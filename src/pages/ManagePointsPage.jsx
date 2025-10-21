@@ -86,10 +86,9 @@ export function ManagePointsPage() {
     const geocoder = new window.google.maps.Geocoder();
     geocoder.geocode({ location: { lat, lng } }, (results, status) => {
       if (status === 'OK' && results[0]) {
-        const address = results[0].address_components;
-        const street = address.find(c => c.types.includes('route'))?.long_name;
-        const number = address.find(c => c.types.includes('street_number'))?.long_name;
-        const pointName = number ? `${street}, ${number}` : street;
+        // Usamos o endereço formatado completo, que é o mais provável de incluir
+        // informações de cruzamento (ex: "Rua A & Rua B") ou o endereço completo.
+        const pointName = results[0].formatted_address;
         
         setEditingPoint({ latitude: lat, longitude: lng, name: pointName || '' });
         setIsFormOpen(true);
