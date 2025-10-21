@@ -159,10 +159,10 @@ export function ManagePointsPage() {
           image_url: '',
           _temp_neighborhood: neighborhood, 
         });
-        setSelectionState(SELECTION_STATE.INTERSECTION); // Próximo passo: Cruzamento
-        toast.info(`Rua Principal definida: ${streetName}. Agora, clique na rua do cruzamento (opcional).`);
+        setSelectionState(SELECTION_STATE.FORM); // Transiciona para o formulário imediatamente
+        toast.info(`Rua Principal definida: ${streetName}. Agora, clique na rua do cruzamento (opcional) ou preencha o formulário.`);
       });
-    } else if (selectionState === SELECTION_STATE.INTERSECTION || selectionState === SELECTION_STATE.FORM) {
+    } else if (selectionState === SELECTION_STATE.FORM || selectionState === SELECTION_STATE.INTERSECTION) {
       // 2. Seleção do Cruzamento (Em Adição ou Edição)
       getAddressDetailsFromCoords(lat, lng, ({ streetName: intersectionName }) => {
         setEditingPoint(prev => ({
@@ -263,17 +263,25 @@ export function ManagePointsPage() {
     if (selectionState === SELECTION_STATE.STREET) {
       return "1. Clique no mapa para definir a localização e a Rua Principal.";
     }
-    if (selectionState === SELECTION_STATE.INTERSECTION) {
-      return "2. Clique na Rua do Cruzamento (Opcional) ou preencha o formulário.";
-    }
-    if (selectionState === SELECTION_STATE.FORM) {
-      return `3. Ajuste os dados no formulário. Clique no mapa para redefinir o cruzamento.`;
+    if (selectionState === SELECTION_STATE.FORM || selectionState === SELECTION_STATE.INTERSECTION) {
+      return `2. Clique na Rua do Cruzamento (Opcional) ou preencha o formulário.`;
     }
     return "Clique no mapa para definir a localização do novo ponto.";
   };
   
   const onMapLoad = useCallback((mapInstance) => setMapInstance(mapInstance), []);
   const onZoomChanged = useCallback(() => { if (mapInstance) setCurrentZoom(mapInstance.getZoom()); }, [mapInstance]);
+
+  // Efeito para forçar o centro e o zoom quando o ponto de edição é carregado
+  useEffect(() => {
+    if (mapInstance && isAddingMode && newPointCoords) {
+      // Força o zoom para 18 (nível de rua)
+      mapInstance.setZoom(18);
+      // Centraliza no ponto
+      mapInstance.setCenter(newPointCoords);
+    }
+  }, [mapInstance, isAddingMode, newPointCoords]);
+
 
   const activeRule = useMemo(() => {
     if (loadingConfig || !rules.length) return { display_mode: currentZoom > 14 ? 'individual' : 'cluster', cluster_radius: 60, min_cluster_size: 2 };
@@ -286,23 +294,16 @@ export function ManagePointsPage() {
     return { text: String(count), index, title: `${count} pontos` };
   };
 
-  // Lógica de centralização: Se estiver editando, use as coordenadas do ponto. Caso contrário, use newPointCoords ou defaultCenter.
+  // Lógica de centralização: Usa newPointCoords (que é o ponto editado/adicionado)
   const mapCenter = useMemo(() => {
     if (newPointCoords) {
       return newPointCoords;
     }
-    if (editingPoint && editingPoint.latitude && editingPoint.longitude) {
-      const lat = Number(editingPoint.latitude);
-      const lng = Number(editingPoint.longitude);
-      if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
-        return { lat, lng };
-      }
-    }
     return defaultCenter;
-  }, [editingPoint, newPointCoords]);
+  }, [newPointCoords]);
     
-  // Define o zoom: 18 para edição/adição, ou o zoom atual para o modo de seleção de rua
-  const mapZoom = (isAddingMode && (selectionState === SELECTION_STATE.FORM || selectionState === SELECTION_STATE.INTERSECTION)) ? 18 : currentZoom;
+  // O zoom é controlado pelo useEffect acima, mas precisamos de um valor inicial para o GoogleMap
+  const mapZoom = isAddingMode ? 18 : currentZoom;
 
   return (
     <div className="container mx-auto p-4 space-y-6">
