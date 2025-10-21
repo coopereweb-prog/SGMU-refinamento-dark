@@ -9,8 +9,11 @@ export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState(() => {
     try {
       const savedCart = localStorage.getItem('sgmu-cart');
-      return savedCart ? JSON.parse(savedCart) : [];
+      // Adicionando verificação para garantir que o valor lido é um array
+      const parsedCart = savedCart ? JSON.parse(savedCart) : [];
+      return Array.isArray(parsedCart) ? parsedCart : [];
     } catch (error) {
+      console.error("Falha ao carregar carrinho do localStorage:", error);
       return [];
     }
   });
