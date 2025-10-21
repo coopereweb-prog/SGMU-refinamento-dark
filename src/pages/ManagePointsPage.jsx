@@ -103,26 +103,41 @@ export function ManagePointsPage() {
     setEditingPoint(null);
   };
 
-  const getStreetNameFromCoords = (lat, lng, callback) => {
+  /**
+   * Tenta extrair o nome da rua e o bairro a partir das coordenadas.
+   * @param {number} lat 
+   * @param {number} lng 
+   * @param {(result: {streetName: string, neighborhood: string}) => void} callback 
+   */
+  const getAddressDetailsFromCoords = (lat, lng, callback) => {
     if (!isLoaded) {
       toast.warning("Serviço de mapas não carregado. Tente novamente.");
       return;
     }
     const geocoder = new window.google.maps.Geocoder();
     geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+      let streetName = '';
+      let neighborhood = '';
+      
       if (status === 'OK' && results.length > 0) {
-        const routeComponent = results[0].address_components.find(c => c.types.includes('route'));
-        const streetName = routeComponent ? routeComponent.long_name : results[0].formatted_address;
-        callback(streetName);
+        const components = results[0].address_components;
+        
+        const routeComponent = components.find(c => c.types.includes('route'));
+        streetName = routeComponent ? routeComponent.long_name : '';
+
+        const neighborhoodComponent = components.find(c => c.types.includes('sublocality') || c.types.includes('sublocality_level_1'));
+        neighborhood = neighborhoodComponent ? neighborhoodComponent.long_name : '';
+
+        if (!streetName) {
+          // Fallback para o endereço formatado se a rua não for encontrada
+          streetName = results[0].formatted_address;
+        }
       } else {
         toast.warning("Não foi possível encontrar o nome da rua. Por favor, insira manualmente.");
-        callback('');
       }
+      callback({ streetName, neighborhood });
     });
   };
-
-  // Função auxiliar para calcular a distância em metros (mantida, mas não usada no clique)
-  // const calculateDistance = (lat1, lon1, lat2, lon2) => { ... };
 
   const handleMapClick = (e) => {
     if (!isAddingMode) return;
@@ -131,7 +146,7 @@ export function ManagePointsPage() {
     
     if (selectionState === SELECTION_STATE.STREET) {
       setNewPointCoords({ lat, lng });
-      getStreetNameFromCoords(lat, lng, (streetName) => {
+      getAddressDetailsFromCoords(lat, lng, ({ streetName, neighborhood }) => {
         setEditingPoint({ 
           latitude: lat, 
           longitude: lng, 
@@ -142,13 +157,15 @@ export function ManagePointsPage() {
           pricing_tier_id: '',
           is_available: true,
           image_url: '',
+          // Armazena o bairro temporariamente para a descrição
+          _temp_neighborhood: neighborhood, 
         });
         setSelectionState(SELECTION_STATE.FORM); // Transiciona para o formulário imediatamente
         toast.info(`Rua Principal definida: ${streetName}. Agora, clique na rua do cruzamento (opcional) ou preencha o formulário.`);
       });
     } else if (selectionState === SELECTION_STATE.FORM) {
       // Se já estiver no estado FORM, o clique no mapa é para definir o cruzamento
-      getStreetNameFromCoords(lat, lng, (intersectionName) => {
+      getAddressDetailsFromCoords(lat, lng, ({ streetName: intersectionName }) => {
         setEditingPoint(prev => ({
           ...prev,
           intersection_name: intersectionName,

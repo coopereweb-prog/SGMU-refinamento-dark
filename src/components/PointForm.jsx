@@ -45,6 +45,7 @@ export function PointForm({ point, onSave, onCancel }) {
       image_url: '',
       street_name: '',
       intersection_name: '',
+      _temp_neighborhood: '', // Campo temporário para o bairro
     },
   });
 
@@ -52,6 +53,7 @@ export function PointForm({ point, onSave, onCancel }) {
   const baseName = form.watch('street_name') + (form.watch('intersection_name') ? ` c/ ${form.watch('intersection_name')}` : '');
 
   const selectedTierId = form.watch('pricing_tier_id');
+  const currentNeighborhood = form.watch('_temp_neighborhood');
 
   useEffect(() => {
     if (point) {
@@ -65,6 +67,7 @@ export function PointForm({ point, onSave, onCancel }) {
         image_url: point.image_url || '',
         street_name: point.street_name || '',
         intersection_name: point.intersection_name || '',
+        _temp_neighborhood: point._temp_neighborhood || '', // Carrega o bairro temporário
       });
       
       if (point.id) {
@@ -95,6 +98,7 @@ export function PointForm({ point, onSave, onCancel }) {
   // Efeito para atualizar nome e descrição automaticamente
   useEffect(() => {
     const currentBaseName = form.getValues('street_name') + (form.getValues('intersection_name') ? ` c/ ${form.getValues('intersection_name')}` : '');
+    const currentNeighborhoodValue = form.getValues('_temp_neighborhood');
     
     if (selectedTierId && pricingTiers.length > 0 && currentBaseName) {
       const selectedTier = pricingTiers.find(t => t.id === selectedTierId);
@@ -108,6 +112,7 @@ export function PointForm({ point, onSave, onCancel }) {
         newDescription = newDescription
           .replace(/{{tier_name}}/g, selectedTier.name)
           .replace(/{{point_name}}/g, currentBaseName)
+          .replace(/{{neighborhood}}/g, currentNeighborhoodValue) // Novo campo
           .replace(/{{price_1y}}/g, formatCurrencyBRL(selectedTier.price_1y))
           .replace(/{{price_2y}}/g, formatCurrencyBRL(selectedTier.price_2y))
           .replace(/{{price_3y}}/g, formatCurrencyBRL(selectedTier.price_3y))
@@ -119,7 +124,7 @@ export function PointForm({ point, onSave, onCancel }) {
         // Se não houver tier selecionado, apenas define o nome base
         form.setValue('name', currentBaseName);
     }
-  }, [selectedTierId, pricingTiers, form.watch('street_name'), form.watch('intersection_name'), form]);
+  }, [selectedTierId, pricingTiers, form.watch('street_name'), form.watch('intersection_name'), currentNeighborhood, form]);
 
 
   const handleTagChange = (tagId) => {
@@ -152,8 +157,8 @@ export function PointForm({ point, onSave, onCancel }) {
       }
     }
     
-    // Não incluímos os preços no objeto pointData, pois eles serão preenchidos automaticamente pela trigger
-    const pointData = { 
+    // Remove o campo temporário antes de salvar no banco
+    const { _temp_neighborhood, ...pointDataToSave } = { 
       ...values, 
       image_url: imageUrl,
       // Garante que o nome final seja o composto pelas regras do tier
@@ -161,7 +166,7 @@ export function PointForm({ point, onSave, onCancel }) {
       description: form.getValues('description'),
     };
     
-    await onSave(pointData, Array.from(selectedTags));
+    await onSave(pointDataToSave, Array.from(selectedTags));
   };
 
   // Obter os preços do tier selecionado para exibição
