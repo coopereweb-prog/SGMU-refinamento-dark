@@ -175,14 +175,20 @@ export function ManagePointsPage() {
   };
 
   const handleEdit = (point) => {
+    const lat = Number(point.latitude);
+    const lng = Number(point.longitude);
+
+    if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
+      toast.error("Coordenadas inválidas.", { description: "Este ponto não possui coordenadas válidas para edição no mapa." });
+      // Ainda permite a edição do formulário, mas sem o mapa focado
+      setNewPointCoords(null);
+    } else {
+      setNewPointCoords({ lat, lng });
+    }
+
     setEditingPoint(point);
     setIsAddingMode(true); // Ativa o modo de edição/adição
     setSelectionState(SELECTION_STATE.FORM); // Vai direto para o formulário
-    // Define as coordenadas para o mapa e o marcador, garantindo que sejam números
-    setNewPointCoords({ 
-      lat: Number(point.latitude), 
-      lng: Number(point.longitude) 
-    }); 
   };
 
   const handleViewMap = (point) => {
@@ -279,25 +285,21 @@ export function ManagePointsPage() {
 
   // Lógica de centralização: Se estiver editando, use as coordenadas do ponto. Caso contrário, use newPointCoords ou defaultCenter.
   const mapCenter = useMemo(() => {
-    if (editingPoint && editingPoint.latitude && editingPoint.longitude) {
-      return { lat: Number(editingPoint.latitude), lng: Number(editingPoint.longitude) };
+    if (newPointCoords) {
+      return newPointCoords;
     }
-    return newPointCoords || defaultCenter;
+    if (editingPoint && editingPoint.latitude && editingPoint.longitude) {
+      const lat = Number(editingPoint.latitude);
+      const lng = Number(editingPoint.longitude);
+      if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+        return { lat, lng };
+      }
+    }
+    return defaultCenter;
   }, [editingPoint, newPointCoords]);
     
   // Define o zoom: 18 para edição/adição, ou o zoom atual para o modo de seleção de rua
   const mapZoom = isAddingMode ? 18 : currentZoom;
-
-  // Filtra os pontos para mostrar apenas o ponto em edição/adição no mapa
-  const pointsToDisplayOnEditMap = useMemo(() => {
-    if (editingPoint?.id) {
-      // Se estiver editando, mostra apenas o ponto editado (que será renderizado pelo newPointCoords)
-      return []; 
-    }
-    // Se estiver adicionando, não mostra nenhum ponto existente
-    return [];
-  }, [editingPoint]);
-
 
   return (
     <div className="container mx-auto p-4 space-y-6">
@@ -343,14 +345,7 @@ export function ManagePointsPage() {
                     />
                   )}
                   
-                  {/* Pontos existentes (agora vazios no modo de edição) */}
-                  {pointsToDisplayOnEditMap.map((point) => (
-                    <Marker
-                      key={point.id}
-                      position={{ lat: point.latitude, lng: point.longitude }}
-                      onClick={() => toast.info(`Ponto existente: ${point.name}`)}
-                    />
-                  ))}
+                  {/* No modo de adição/edição, não mostramos outros pontos para focar no trabalho atual. */}
                 </GoogleMap>
               ) : <Skeleton className="w-full h-full" />}
             </div>
