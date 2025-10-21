@@ -99,8 +99,8 @@ export function PointForm({ point, onSave, onCancel }) {
     if (selectedTierId && pricingTiers.length > 0 && currentBaseName) {
       const selectedTier = pricingTiers.find(t => t.id === selectedTierId);
       if (selectedTier) {
-        // Atualiza nome
-        const newName = `${selectedTier.name} - ${currentBaseName}`;
+        // Atualiza nome com o novo separador
+        const newName = `${selectedTier.name} | ${currentBaseName}`;
         form.setValue('name', newName);
 
         // Atualiza descrição com todas as variáveis
