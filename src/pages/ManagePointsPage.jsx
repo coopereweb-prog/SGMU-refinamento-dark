@@ -85,10 +85,26 @@ export function ManagePointsPage() {
 
     const geocoder = new window.google.maps.Geocoder();
     geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-      if (status === 'OK' && results[0]) {
-        // Usamos o endereço formatado completo, que é o mais provável de incluir
-        // informações de cruzamento (ex: "Rua A & Rua B") ou o endereço completo.
-        const pointName = results[0].formatted_address;
+      if (status === 'OK' && results.length > 0) {
+        let pointName = results[0].formatted_address; // Padrão: o endereço mais relevante
+
+        // 1. Tenta encontrar um resultado que seja explicitamente um cruzamento (intersection)
+        const intersectionResult = results.find(r => r.types.includes('intersection'));
+        
+        if (intersectionResult) {
+          // Se encontrar um cruzamento, prioriza o nome formatado dele
+          pointName = intersectionResult.formatted_address;
+        } else {
+          // 2. Se não for um cruzamento, tenta construir o nome a partir da rua e número
+          const address = results[0].address_components;
+          const street = address.find(c => c.types.includes('route'))?.long_name;
+          const number = address.find(c => c.types.includes('street_number'))?.long_name;
+          
+          // Se tiver rua, usa a combinação (rua, número) ou apenas a rua.
+          if (street) {
+             pointName = number ? `${street}, ${number}` : street;
+          }
+        }
         
         setEditingPoint({ latitude: lat, longitude: lng, name: pointName || '' });
         setIsFormOpen(true);
