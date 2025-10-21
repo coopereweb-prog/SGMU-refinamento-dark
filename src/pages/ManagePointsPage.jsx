@@ -73,6 +73,7 @@ export function ManagePointsPage() {
 
   const fetchPoints = async () => {
     setLoading(true);
+    // ALTERAÇÃO AQUI: Ordenar por updated_at decrescente
     const { data, error } = await supabase.from('points').select('*').order('updated_at', { ascending: false });
     if (error) {
       console.error('Error fetching points:', error);
@@ -177,7 +178,8 @@ export function ManagePointsPage() {
     setEditingPoint(point);
     setIsAddingMode(true); // Ativa o modo de edição/adição
     setSelectionState(SELECTION_STATE.FORM); // Vai direto para o formulário
-    setNewPointCoords({ lat: point.latitude, lng: point.longitude }); // Define as coordenadas para o mapa
+    // Define as coordenadas para o mapa e o marcador
+    setNewPointCoords({ lat: point.latitude, lng: point.longitude }); 
   };
 
   const handleViewMap = (point) => {
@@ -272,6 +274,11 @@ export function ManagePointsPage() {
     return { text: String(count), index, title: `${count} pontos` };
   };
 
+  // Define o centro do mapa dinamicamente
+  const mapCenter = newPointCoords || defaultCenter;
+  // Define o zoom inicial para edição (mais próximo)
+  const mapZoom = editingPoint?.id ? 18 : currentZoom;
+
   return (
     <div className="container mx-auto p-4 space-y-6">
       <div className="flex justify-between items-center">
@@ -301,8 +308,8 @@ export function ManagePointsPage() {
               {isLoaded ? (
                 <GoogleMap
                   mapContainerStyle={mapContainerStyle}
-                  center={newPointCoords || defaultCenter}
-                  zoom={currentZoom}
+                  center={mapCenter}
+                  zoom={mapZoom}
                   onClick={handleMapClick}
                   onLoad={onMapLoad}
                   onZoomChanged={onZoomChanged}
