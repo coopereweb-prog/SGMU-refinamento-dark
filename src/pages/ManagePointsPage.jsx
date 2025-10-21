@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { GoogleMap, Marker } from '@react-google-maps/api';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,9 +12,11 @@ import {
 import { PointForm } from '@/components/PointForm';
 import { Modal } from '@/components/Modal';
 import { toast } from "sonner";
-import { PlusCircle, Edit, Trash2, XCircle, MapPin } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, XCircle, MapPin, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGoogleMapsLoader } from '@/contexts/GoogleMapsLoaderContext';
+import { GoogleMap, Marker } from '@react-google-maps/api';
+import { PointMapModal } from '@/components/admin/PointMapModal';
 
 const mapContainerStyle = {
   width: '100%',
@@ -38,10 +39,9 @@ export function ManagePointsPage() {
   const [isAddingMode, setIsAddingMode] = useState(false);
   const [newPointCoords, setNewPointCoords] = useState(null);
   
-  // Novos estados para controle do mapa
-  const [mapCenter, setMapCenter] = useState(defaultCenter);
-  const [mapZoom, setMapZoom] = useState(14);
-  const [map, setMap] = useState(null);
+  // Estados para o modal de visualização
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [pointToView, setPointToView] = useState(null);
 
   const { isLoaded } = useGoogleMapsLoader();
 
@@ -65,8 +65,6 @@ export function ManagePointsPage() {
     setEditingPoint(null);
     setNewPointCoords(null);
     setIsAddingMode(true);
-    setMapCenter(defaultCenter);
-    setMapZoom(14);
   };
 
   const handleCancelAdd = () => {
@@ -79,6 +77,11 @@ export function ManagePointsPage() {
     const lat = e.latLng.lat();
     const lng = e.latLng.lng();
     setNewPointCoords({ lat, lng });
+
+    if (!isLoaded) {
+      toast.warning("Serviço de mapas não carregado. Tente novamente.");
+      return;
+    }
 
     const geocoder = new window.google.maps.Geocoder();
     geocoder.geocode({ location: { lat, lng } }, (results, status) => {
@@ -101,6 +104,15 @@ export function ManagePointsPage() {
   const handleEdit = (point) => {
     setEditingPoint(point);
     setIsFormOpen(true);
+  };
+
+  const handleViewMap = (point) => {
+    if (!point.latitude || !point.longitude) {
+      toast.warning("Coordenadas ausentes.", { description: "Este ponto não pode ser visualizado no mapa." });
+      return;
+    }
+    setPointToView(point);
+    setIsMapModalOpen(true);
   };
 
   const handleSavePoint = async (pointData, tagIds) => {
@@ -129,6 +141,7 @@ export function ManagePointsPage() {
 
       setIsFormOpen(false);
       setEditingPoint(null);
+      setIsAddingMode(false); // Sai do modo de adição após salvar
       fetchPoints();
     } catch (error) {
       console.error('Error saving point:', error);
@@ -157,14 +170,6 @@ export function ManagePointsPage() {
     }
   };
 
-  const onMapLoad = useCallback((mapInstance) => setMap(mapInstance), []);
-
-  const handleCenterMap = (lat, lng) => {
-    setMapCenter({ lat, lng });
-    setMapZoom(18); // Zoom in close enough to see the point clearly
-    toast.info("Mapa centralizado no ponto selecionado.");
-  };
-
   return (
     <div className="container mx-auto p-4 space-y-6">
       <div className="flex justify-between items-center">
@@ -180,42 +185,35 @@ export function ManagePointsPage() {
         )}
       </div>
 
-      {/* Map View (Sempre visível, altura ajustada pelo modo) */}
-      <div className={`relative w-full rounded-lg overflow-hidden shadow-md ${isAddingMode ? 'h-[60vh]' : 'h-[40vh]'}`}>
-        {isLoaded ? (
-          <GoogleMap
-            mapContainerStyle={mapContainerStyle}
-            center={mapCenter}
-            zoom={mapZoom}
-            onClick={isAddingMode ? handleMapClick : undefined}
-            onLoad={onMapLoad}
-            options={{ draggableCursor: isAddingMode ? 'crosshair' : 'grab' }}
-          >
-            {points.map(point => (
-              <Marker 
-                key={point.id} 
-                position={{ lat: point.latitude, lng: point.longitude }} 
-              />
-            ))}
-            {newPointCoords && isAddingMode && (
-              <Marker 
-                position={newPointCoords} 
-                icon={{ url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png' }}
-              />
-            )}
-          </GoogleMap>
-        ) : <Skeleton className="w-full h-full" />}
-      </div>
-
       {isAddingMode && (
-        <div className="p-4 text-center bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="font-semibold text-blue-700">Clique no mapa para definir a localização do novo ponto.</p>
+        <div className="h-[60vh] flex flex-col gap-4">
+          <div className="p-4 text-center bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="font-semibold text-blue-700">Clique no mapa para definir a localização do novo ponto.</p>
+          </div>
+          <div className="relative flex-grow w-full rounded-lg overflow-hidden shadow-md">
+            {isLoaded ? (
+              <GoogleMap
+                mapContainerStyle={mapContainerStyle}
+                center={defaultCenter}
+                zoom={14}
+                onClick={handleMapClick}
+                options={{ draggableCursor: 'crosshair' }}
+              >
+                {newPointCoords && (
+                  <Marker 
+                    position={newPointCoords} 
+                    icon={{ url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png' }}
+                  />
+                )}
+              </GoogleMap>
+            ) : <Skeleton className="w-full h-full" />}
+          </div>
         </div>
       )}
 
       {!isAddingMode && (
         loading ? (
-          <p>Carregando tabela de pontos...</p>
+          <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
           <Table>
             <TableHeader>
@@ -234,7 +232,7 @@ export function ManagePointsPage() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => handleCenterMap(point.latitude, point.longitude)}
+                      onClick={() => handleViewMap(point)}
                       disabled={!point.latitude || !point.longitude}
                     >
                       <MapPin className="h-4 w-4 mr-2" /> Ver no Mapa
@@ -277,6 +275,12 @@ export function ManagePointsPage() {
           <Button variant="destructive" onClick={handleDeletePoint}>Excluir</Button>
         </div>
       </Modal>
+      
+      <PointMapModal
+        isOpen={isMapModalOpen}
+        onClose={() => setIsMapModalOpen(false)}
+        point={pointToView}
+      />
     </div>
   );
 }
