@@ -285,8 +285,19 @@ export function ManagePointsPage() {
     return newPointCoords || defaultCenter;
   }, [editingPoint, newPointCoords]);
     
-  // Define o zoom inicial para edição (mais próximo)
-  const mapZoom = editingPoint?.id ? 18 : currentZoom;
+  // Define o zoom: 18 para edição/adição, ou o zoom atual para o modo de seleção de rua
+  const mapZoom = isAddingMode ? 18 : currentZoom;
+
+  // Filtra os pontos para mostrar apenas o ponto em edição/adição no mapa
+  const pointsToDisplayOnEditMap = useMemo(() => {
+    if (editingPoint?.id) {
+      // Se estiver editando, mostra apenas o ponto editado (que será renderizado pelo newPointCoords)
+      return []; 
+    }
+    // Se estiver adicionando, não mostra nenhum ponto existente
+    return [];
+  }, [editingPoint]);
+
 
   return (
     <div className="container mx-auto p-4 space-y-6">
@@ -332,36 +343,14 @@ export function ManagePointsPage() {
                     />
                   )}
                   
-                  {/* Pontos existentes com lógica de cluster/individual */}
-                  {activeRule.display_mode === 'cluster' ? (
-                    <MarkerClustererF
-                      options={{
-                        gridSize: activeRule.cluster_radius,
-                        minimumClusterSize: activeRule.min_cluster_size,
-                        styles: clusterStyles,
-                      }}
-                      calculator={clustererCalculator}
-                    >
-                      {(clusterer) =>
-                        points.map((point) => (
-                          <Marker
-                            key={point.id}
-                            position={{ lat: point.latitude, lng: point.longitude }}
-                            clusterer={clusterer}
-                            onClick={() => toast.info(`Ponto existente: ${point.name}`)}
-                          />
-                        ))
-                      }
-                    </MarkerClustererF>
-                  ) : (
-                    points.map((point) => (
-                      <Marker
-                        key={point.id}
-                        position={{ lat: point.latitude, lng: point.longitude }}
-                        onClick={() => toast.info(`Ponto existente: ${point.name}`)}
-                      />
-                    ))
-                  )}
+                  {/* Pontos existentes (agora vazios no modo de edição) */}
+                  {pointsToDisplayOnEditMap.map((point) => (
+                    <Marker
+                      key={point.id}
+                      position={{ lat: point.latitude, lng: point.longitude }}
+                      onClick={() => toast.info(`Ponto existente: ${point.name}`)}
+                    />
+                  ))}
                 </GoogleMap>
               ) : <Skeleton className="w-full h-full" />}
             </div>
