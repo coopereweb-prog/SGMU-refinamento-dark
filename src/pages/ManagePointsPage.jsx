@@ -12,7 +12,7 @@ import {
 import { PointForm } from '@/components/PointForm';
 import { Modal } from '@/components/Modal';
 import { toast } from "sonner";
-import { PlusCircle, Edit, Trash2, XCircle, MapPin, Loader2, CornerDownRight, AlertTriangle } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, XCircle, MapPin, Loader2, CornerDownRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGoogleMapsLoader } from '@/contexts/GoogleMapsLoaderContext';
 import { GoogleMap, Marker, MarkerClustererF } from '@react-google-maps/api';
@@ -121,40 +121,14 @@ export function ManagePointsPage() {
     });
   };
 
-  // Função auxiliar para calcular a distância em metros
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371e3; // Raio da Terra em metros
-    const φ1 = lat1 * Math.PI / 180;
-    const φ2 = lat2 * Math.PI / 180;
-    const Δφ = (lat2 - lat1) * Math.PI / 180;
-    const Δλ = (lon2 - lon1) * Math.PI / 180;
-
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    return R * c; // Distância em metros
-  };
+  // Função auxiliar para calcular a distância em metros (mantida, mas não usada no clique)
+  // const calculateDistance = (lat1, lon1, lat2, lon2) => { ... };
 
   const handleMapClick = (e) => {
     if (!isAddingMode) return;
     const lat = e.latLng.lat();
     const lng = e.latLng.lng();
     
-    // 0. Prevenção de Duplicação
-    const isTooClose = points.some(p => 
-      p.latitude && p.longitude && calculateDistance(lat, lng, p.latitude, p.longitude) < 20 // 20 metros de raio
-    );
-
-    if (isTooClose) {
-      toast.error("Ponto Duplicado Detectado", {
-        description: "Já existe um ponto cadastrado muito próximo a esta localização. Por favor, verifique os marcadores existentes.",
-        icon: <AlertTriangle className="h-4 w-4" />,
-      });
-      return;
-    }
-
     if (selectionState === SELECTION_STATE.STREET) {
       setNewPointCoords({ lat, lng });
       getStreetNameFromCoords(lat, lng, (streetName) => {
