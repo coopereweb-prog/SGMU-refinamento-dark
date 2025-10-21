@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,12 +12,13 @@ import {
 import { PointForm } from '@/components/PointForm';
 import { Modal } from '@/components/Modal';
 import { toast } from "sonner";
-import { PlusCircle, Edit, Trash2, XCircle, MapPin, Loader2, CornerDownRight } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, XCircle, MapPin, Loader2, CornerDownRight, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGoogleMapsLoader } from '@/contexts/GoogleMapsLoaderContext';
-import { GoogleMap, Marker } from '@react-google-maps/api';
+import { GoogleMap, Marker, MarkerClustererF } from '@react-google-maps/api';
 import { PointMapModal } from '@/components/admin/PointMapModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useMapConfig } from '@/contexts/MapConfigContext'; // Importando configurações do mapa
 
 const mapContainerStyle = {
   width: '100%',
@@ -30,6 +31,14 @@ const defaultCenter = {
   lng: -47.30
 };
 
+const mapOptions = {
+  disableDefaultUI: true,
+  zoomControl: true,
+  mapTypeControl: false,
+  streetViewControl: false,
+  fullscreenControl: false,
+};
+
 // Estados de seleção de rua
 const SELECTION_STATE = {
   NONE: 0,
@@ -38,22 +47,30 @@ const SELECTION_STATE = {
   FORM: 3, // Estado final onde o formulário está aberto
 };
 
+// Estilos de cluster (simplificados para o painel admin)
+const clusterStyles = [
+  { url: 'data:image/svg+xml;charset=UTF-8,<svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg"><circle cx="25" cy="25" r="23" fill="oklch(0.85 0.2 90)" stroke="oklch(0.145 0 0)" stroke-width="2"/><text x="25" y="30" font-family="sans-serif" font-size="16" fill="oklch(0.145 0 0)" text-anchor="middle" font-weight="bold"></text></svg>', height: 50, width: 50, textColor: 'oklch(0.145 0 0)', textSize: 16, fontWeight: 'bold' },
+];
+
 export function ManagePointsPage() {
   const [points, setPoints] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Usado apenas para EDIÇÃO
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingPoint, setEditingPoint] = useState(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [pointToDelete, setPointToDelete] = useState(null);
   const [isAddingMode, setIsAddingMode] = useState(false);
   const [newPointCoords, setNewPointCoords] = useState(null);
   const [selectionState, setSelectionState] = useState(SELECTION_STATE.NONE);
+  const [currentZoom, setCurrentZoom] = useState(14);
+  const [mapInstance, setMapInstance] = useState(null);
   
   // Estados para o modal de visualização
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [pointToView, setPointToView] = useState(null);
 
   const { isLoaded } = useGoogleMapsLoader();
+  const { rules, settings, loading: loadingConfig } = useMapConfig();
 
   const fetchPoints = async () => {
     setLoading(true);
@@ -75,8 +92,8 @@ export function ManagePointsPage() {
     setEditingPoint(null);
     setNewPointCoords(null);
     setIsAddingMode(true);
-    setSelectionState(SELECTION_STATE.STREET); // Começa selecionando a rua principal
-    setIsEditModalOpen(false); // Garante que o modal de edição esteja fechado
+    setSelectionState(SELECTION_STATE.STREET);
+    setIsEditModalOpen(false);
   };
 
   const handleCancelAdd = () => {
@@ -104,11 +121,40 @@ export function ManagePointsPage() {
     });
   };
 
+  // Função auxiliar para calcular a distância em metros
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371e3; // Raio da Terra em metros
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // Distância em metros
+  };
+
   const handleMapClick = (e) => {
     if (!isAddingMode) return;
     const lat = e.latLng.lat();
     const lng = e.latLng.lng();
     
+    // 0. Prevenção de Duplicação
+    const isTooClose = points.some(p => 
+      p.latitude && p.longitude && calculateDistance(lat, lng, p.latitude, p.longitude) < 20 // 20 metros de raio
+    );
+
+    if (isTooClose) {
+      toast.error("Ponto Duplicado Detectado", {
+        description: "Já existe um ponto cadastrado muito próximo a esta localização. Por favor, verifique os marcadores existentes.",
+        icon: <AlertTriangle className="h-4 w-4" />,
+      });
+      return;
+    }
+
     if (selectionState === SELECTION_STATE.STREET) {
       setNewPointCoords({ lat, lng });
       getStreetNameFromCoords(lat, lng, (streetName) => {
@@ -116,8 +162,8 @@ export function ManagePointsPage() {
           latitude: lat, 
           longitude: lng, 
           street_name: streetName,
-          intersection_name: '', // Começa vazio
-          name: streetName, // Nome inicial
+          intersection_name: '',
+          name: streetName,
           description: '',
           pricing_tier_id: '',
           is_available: true,
@@ -140,7 +186,7 @@ export function ManagePointsPage() {
 
   const handleEdit = (point) => {
     setEditingPoint(point);
-    setIsEditModalOpen(true); // Usa o modal para edição
+    setIsEditModalOpen(true);
     setIsAddingMode(false); 
     setSelectionState(SELECTION_STATE.NONE);
   };
@@ -178,7 +224,7 @@ export function ManagePointsPage() {
         if (insertTagsError) throw insertTagsError;
       }
 
-      setIsEditModalOpen(false); // Fecha o modal de edição
+      setIsEditModalOpen(false);
       setEditingPoint(null);
       setIsAddingMode(false);
       setSelectionState(SELECTION_STATE.NONE);
@@ -220,7 +266,19 @@ export function ManagePointsPage() {
     return "Clique no mapa para definir a localização do novo ponto.";
   };
   
-  // Removendo handleSkipIntersection, pois o formulário já está visível
+  const onMapLoad = useCallback((mapInstance) => setMapInstance(mapInstance), []);
+  const onZoomChanged = useCallback(() => { if (mapInstance) setCurrentZoom(mapInstance.getZoom()); }, [mapInstance]);
+
+  const activeRule = useMemo(() => {
+    if (loadingConfig || !rules.length) return { display_mode: currentZoom > 14 ? 'individual' : 'cluster', cluster_radius: 60, min_cluster_size: 2 };
+    return rules.find(r => r.zoom_level === currentZoom) || rules[rules.length - 1];
+  }, [currentZoom, rules, loadingConfig]);
+
+  const clustererCalculator = (markers, numStyles) => {
+    const count = markers.length;
+    const index = Math.min(String(count).length, numStyles);
+    return { text: String(count), index, title: `${count} pontos` };
+  };
 
   return (
     <div className="container mx-auto p-4 space-y-6">
@@ -252,15 +310,49 @@ export function ManagePointsPage() {
                 <GoogleMap
                   mapContainerStyle={mapContainerStyle}
                   center={defaultCenter}
-                  zoom={14}
+                  zoom={currentZoom}
                   onClick={handleMapClick}
-                  options={{ draggableCursor: 'crosshair' }}
+                  onLoad={onMapLoad}
+                  onZoomChanged={onZoomChanged}
+                  options={{ ...mapOptions, draggableCursor: 'crosshair' }}
                 >
+                  {/* Marcador do novo ponto */}
                   {newPointCoords && (
                     <Marker 
                       position={newPointCoords} 
                       icon={{ url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png' }}
                     />
+                  )}
+                  
+                  {/* Pontos existentes com lógica de cluster/individual */}
+                  {activeRule.display_mode === 'cluster' ? (
+                    <MarkerClustererF
+                      options={{
+                        gridSize: activeRule.cluster_radius,
+                        minimumClusterSize: activeRule.min_cluster_size,
+                        styles: clusterStyles,
+                      }}
+                      calculator={clustererCalculator}
+                    >
+                      {(clusterer) =>
+                        points.map((point) => (
+                          <Marker
+                            key={point.id}
+                            position={{ lat: point.latitude, lng: point.longitude }}
+                            clusterer={clusterer}
+                            onClick={() => toast.info(`Ponto existente: ${point.name}`)}
+                          />
+                        ))
+                      }
+                    </MarkerClustererF>
+                  ) : (
+                    points.map((point) => (
+                      <Marker
+                        key={point.id}
+                        position={{ lat: point.latitude, lng: point.longitude }}
+                        onClick={() => toast.info(`Ponto existente: ${point.name}`)}
+                      />
+                    ))
                   )}
                 </GoogleMap>
               ) : <Skeleton className="w-full h-full" />}
