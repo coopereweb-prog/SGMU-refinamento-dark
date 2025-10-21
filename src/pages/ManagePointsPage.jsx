@@ -43,6 +43,7 @@ const mapOptions = {
 const SELECTION_STATE = {
   NONE: 0,
   STREET: 1, // Modo de adição: esperando o primeiro clique (Rua Principal)
+  INTERSECTION: 2, // Modo de adição/edição: esperando o segundo clique (Cruzamento)
   FORM: 3, // Modo de adição/edição: formulário aberto
 };
 
@@ -54,7 +55,6 @@ const clusterStyles = [
 export function ManagePointsPage() {
   const [points, setPoints] = useState([]);
   const [loading, setLoading] = useState(true);
-  // Removendo isEditModalOpen
   const [editingPoint, setEditingPoint] = useState(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [pointToDelete, setPointToDelete] = useState(null);
@@ -144,6 +144,7 @@ export function ManagePointsPage() {
     const lng = e.latLng.lng();
     
     if (selectionState === SELECTION_STATE.STREET) {
+      // 1. Seleção da Rua Principal (Apenas no modo Adicionar Novo)
       setNewPointCoords({ lat, lng });
       getAddressDetailsFromCoords(lat, lng, ({ streetName, neighborhood }) => {
         setEditingPoint({ 
@@ -156,19 +157,19 @@ export function ManagePointsPage() {
           pricing_tier_id: '',
           is_available: true,
           image_url: '',
-          // Armazena o bairro temporariamente para a descrição
           _temp_neighborhood: neighborhood, 
         });
-        setSelectionState(SELECTION_STATE.FORM); // Transiciona para o formulário imediatamente
-        toast.info(`Rua Principal definida: ${streetName}. Agora, clique na rua do cruzamento (opcional) ou preencha o formulário.`);
+        setSelectionState(SELECTION_STATE.INTERSECTION); // Próximo passo: Cruzamento
+        toast.info(`Rua Principal definida: ${streetName}. Agora, clique na rua do cruzamento (opcional).`);
       });
-    } else if (selectionState === SELECTION_STATE.FORM) {
-      // Se já estiver no estado FORM, o clique no mapa é para definir o cruzamento
+    } else if (selectionState === SELECTION_STATE.INTERSECTION || selectionState === SELECTION_STATE.FORM) {
+      // 2. Seleção do Cruzamento (Em Adição ou Edição)
       getAddressDetailsFromCoords(lat, lng, ({ streetName: intersectionName }) => {
         setEditingPoint(prev => ({
           ...prev,
           intersection_name: intersectionName,
         }));
+        setSelectionState(SELECTION_STATE.FORM); // Garante que o formulário está aberto
         toast.success(`Rua do Cruzamento sugerida: ${intersectionName}. Ajuste no formulário se necessário.`);
       });
     }
@@ -180,7 +181,6 @@ export function ManagePointsPage() {
 
     if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
       toast.error("Coordenadas inválidas.", { description: "Este ponto não possui coordenadas válidas para edição no mapa." });
-      // Ainda permite a edição do formulário, mas sem o mapa focado
       setNewPointCoords(null);
     } else {
       setNewPointCoords({ lat, lng });
@@ -263,8 +263,11 @@ export function ManagePointsPage() {
     if (selectionState === SELECTION_STATE.STREET) {
       return "1. Clique no mapa para definir a localização e a Rua Principal.";
     }
+    if (selectionState === SELECTION_STATE.INTERSECTION) {
+      return "2. Clique na Rua do Cruzamento (Opcional) ou preencha o formulário.";
+    }
     if (selectionState === SELECTION_STATE.FORM) {
-      return `2. Clique na Rua do Cruzamento (Opcional) ou preencha o formulário.`;
+      return `3. Ajuste os dados no formulário. Clique no mapa para redefinir o cruzamento.`;
     }
     return "Clique no mapa para definir a localização do novo ponto.";
   };
@@ -299,7 +302,7 @@ export function ManagePointsPage() {
   }, [editingPoint, newPointCoords]);
     
   // Define o zoom: 18 para edição/adição, ou o zoom atual para o modo de seleção de rua
-  const mapZoom = isAddingMode ? 18 : currentZoom;
+  const mapZoom = (isAddingMode && (selectionState === SELECTION_STATE.FORM || selectionState === SELECTION_STATE.INTERSECTION)) ? 18 : currentZoom;
 
   return (
     <div className="container mx-auto p-4 space-y-6">
@@ -322,7 +325,7 @@ export function ManagePointsPage() {
           <div className="flex flex-col gap-4 h-full">
             <div className="p-4 text-center bg-blue-50 border border-blue-200 rounded-lg">
               <p className="font-semibold text-blue-700 flex items-center justify-center">
-                {(selectionState === SELECTION_STATE.FORM) && <CornerDownRight className="h-5 w-5 mr-2" />}
+                {(selectionState === SELECTION_STATE.FORM || selectionState === SELECTION_STATE.INTERSECTION) && <CornerDownRight className="h-5 w-5 mr-2" />}
                 {getInstruction()}
               </p>
             </div>
@@ -340,7 +343,7 @@ export function ManagePointsPage() {
                   {/* Marcador do novo ponto / ponto em edição */}
                   {newPointCoords && (
                     <Marker 
-                      position={newPointCoords} 
+                      position={mapCenter} 
                       icon={{ url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png' }}
                     />
                   )}
@@ -352,7 +355,7 @@ export function ManagePointsPage() {
           </div>
           
           {/* Coluna do Formulário (Aparece após a primeira seleção ou ao editar) */}
-          {selectionState === SELECTION_STATE.FORM && editingPoint && (
+          {(selectionState === SELECTION_STATE.FORM || selectionState === SELECTION_STATE.INTERSECTION) && editingPoint && (
             <Card className="h-full overflow-y-auto">
               <CardHeader><CardTitle>{editingPoint.id ? 'Editar Ponto' : 'Novo Ponto'}</CardTitle></CardHeader>
               <CardContent>
