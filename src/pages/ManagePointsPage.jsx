@@ -17,6 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useGoogleMapsLoader } from '@/contexts/GoogleMapsLoaderContext';
 import { GoogleMap, Marker } from '@react-google-maps/api';
 import { PointMapModal } from '@/components/admin/PointMapModal';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const mapContainerStyle = {
   width: '100%',
@@ -34,12 +35,13 @@ const SELECTION_STATE = {
   NONE: 0,
   STREET: 1,
   INTERSECTION: 2,
+  FORM: 3, // Novo estado para indicar que o formulário está aberto ao lado do mapa
 };
 
 export function ManagePointsPage() {
   const [points, setPoints] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Usado apenas para EDIÇÃO
   const [editingPoint, setEditingPoint] = useState(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [pointToDelete, setPointToDelete] = useState(null);
@@ -74,6 +76,7 @@ export function ManagePointsPage() {
     setNewPointCoords(null);
     setIsAddingMode(true);
     setSelectionState(SELECTION_STATE.STREET); // Começa selecionando a rua principal
+    setIsEditModalOpen(false); // Garante que o modal de edição esteja fechado
   };
 
   const handleCancelAdd = () => {
@@ -130,17 +133,16 @@ export function ManagePointsPage() {
           intersection_name: intersectionName,
           name: `${prev.street_name} c/ ${intersectionName}`,
         }));
-        setSelectionState(SELECTION_STATE.NONE);
-        setIsFormOpen(true);
-        toast.success(`Cruzamento definido: ${editingPoint.street_name} c/ ${intersectionName}.`);
+        setSelectionState(SELECTION_STATE.FORM); // Passa para o estado de formulário
+        toast.success(`Cruzamento definido: ${editingPoint.street_name} c/ ${intersectionName}. Abra o formulário.`);
       });
     }
   };
 
   const handleEdit = (point) => {
     setEditingPoint(point);
-    setIsFormOpen(true);
-    setIsAddingMode(false); // Garante que o modo de adição esteja desativado ao editar
+    setIsEditModalOpen(true); // Usa o modal para edição
+    setIsAddingMode(false); 
     setSelectionState(SELECTION_STATE.NONE);
   };
 
@@ -177,7 +179,7 @@ export function ManagePointsPage() {
         if (insertTagsError) throw insertTagsError;
       }
 
-      setIsFormOpen(false);
+      setIsEditModalOpen(false); // Fecha o modal de edição
       setEditingPoint(null);
       setIsAddingMode(false);
       setSelectionState(SELECTION_STATE.NONE);
@@ -216,7 +218,17 @@ export function ManagePointsPage() {
     if (selectionState === SELECTION_STATE.INTERSECTION) {
       return `2. Clique na Rua do Cruzamento (Opcional). Rua Principal: ${editingPoint?.street_name || 'N/A'}`;
     }
+    if (selectionState === SELECTION_STATE.FORM) {
+      return `3. Preencha os detalhes do ponto: ${editingPoint?.name || 'Novo Ponto'}`;
+    }
     return "Clique no mapa para definir a localização do novo ponto.";
+  };
+  
+  const handleSkipIntersection = () => {
+    if (selectionState === SELECTION_STATE.INTERSECTION) {
+      setSelectionState(SELECTION_STATE.FORM);
+      toast.info("Seleção de cruzamento ignorada. Preencha o formulário.");
+    }
   };
 
   return (
@@ -235,36 +247,53 @@ export function ManagePointsPage() {
       </div>
 
       {isAddingMode && (
-        <div className="h-[60vh] flex flex-col gap-4">
-          <div className="p-4 text-center bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="font-semibold text-blue-700 flex items-center justify-center">
-              {selectionState === SELECTION_STATE.INTERSECTION && <CornerDownRight className="h-5 w-5 mr-2" />}
-              {getInstruction()}
-            </p>
-            {selectionState === SELECTION_STATE.INTERSECTION && (
-              <Button variant="link" onClick={() => setIsFormOpen(true)} className="mt-2 p-0 h-auto text-sm">
-                Pular seleção de cruzamento e abrir formulário
-              </Button>
-            )}
+        <div className="grid lg:grid-cols-2 gap-6 h-[70vh]">
+          {/* Coluna do Mapa */}
+          <div className="flex flex-col gap-4 h-full">
+            <div className="p-4 text-center bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="font-semibold text-blue-700 flex items-center justify-center">
+                {(selectionState === SELECTION_STATE.INTERSECTION || selectionState === SELECTION_STATE.FORM) && <CornerDownRight className="h-5 w-5 mr-2" />}
+                {getInstruction()}
+              </p>
+              {selectionState === SELECTION_STATE.INTERSECTION && (
+                <Button variant="link" onClick={handleSkipIntersection} className="mt-2 p-0 h-auto text-sm">
+                  Pular seleção de cruzamento e abrir formulário
+                </Button>
+              )}
+            </div>
+            <div className="relative flex-grow w-full rounded-lg overflow-hidden shadow-md">
+              {isLoaded ? (
+                <GoogleMap
+                  mapContainerStyle={mapContainerStyle}
+                  center={defaultCenter}
+                  zoom={14}
+                  onClick={handleMapClick}
+                  options={{ draggableCursor: 'crosshair' }}
+                >
+                  {newPointCoords && (
+                    <Marker 
+                      position={newPointCoords} 
+                      icon={{ url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png' }}
+                    />
+                  )}
+                </GoogleMap>
+              ) : <Skeleton className="w-full h-full" />}
+            </div>
           </div>
-          <div className="relative flex-grow w-full rounded-lg overflow-hidden shadow-md">
-            {isLoaded ? (
-              <GoogleMap
-                mapContainerStyle={mapContainerStyle}
-                center={defaultCenter}
-                zoom={14}
-                onClick={handleMapClick}
-                options={{ draggableCursor: 'crosshair' }}
-              >
-                {newPointCoords && (
-                  <Marker 
-                    position={newPointCoords} 
-                    icon={{ url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png' }}
-                  />
-                )}
-              </GoogleMap>
-            ) : <Skeleton className="w-full h-full" />}
-          </div>
+          
+          {/* Coluna do Formulário (Apenas no estado FORM) */}
+          {selectionState === SELECTION_STATE.FORM && editingPoint && (
+            <Card className="h-full overflow-y-auto">
+              <CardHeader><CardTitle>Novo Ponto</CardTitle></CardHeader>
+              <CardContent>
+                <PointForm
+                  point={editingPoint}
+                  onSave={handleSavePoint}
+                  onCancel={handleCancelAdd}
+                />
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
@@ -308,16 +337,17 @@ export function ManagePointsPage() {
         )
       )}
 
+      {/* Modal de Edição (Mantido para edição de pontos existentes) */}
       <Modal
-        isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
         title={editingPoint?.id ? 'Editar Ponto' : 'Novo Ponto'}
         description="Preencha os detalhes do ponto abaixo."
       >
         <PointForm
           point={editingPoint}
           onSave={handleSavePoint}
-          onCancel={() => setIsFormOpen(false)}
+          onCancel={() => setIsEditModalOpen(false)}
         />
       </Modal>
 
