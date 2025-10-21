@@ -26,7 +26,7 @@ import { InstallationPipelinePage } from '@/pages/InstallationPipelinePage';
 import SignUpPage from '@/pages/SignUpPage';
 import UpdatePasswordPage from '@/pages/UpdatePasswordPage';
 import AboutUsPage from '@/pages/AboutUsPage';
-import NossosServicosPage from '@/pages/NossosServicosPage';
+import MobiliarioUrbanoPage from '@/pages/MobiliarioUrbanoPage'; // Novo Import
 import ComoAdquirirPage from '@/pages/ComoAdquirirPage';
 import TrabalheConoscoPage from '@/pages/TrabalheConoscoPage';
 import FaleConoscoPage from '@/pages/FaleConoscoPage';
@@ -60,7 +60,7 @@ function App() {
                   <Route element={<AppLayout />}>
                     {/* Páginas de Conteúdo Público */}
                     <Route path="/quem-somos" element={<AboutUsPage />} />
-                    <Route path="/nossos-servicos" element={<NossosServicosPage />} />
+                    <Route path="/mobiliario-urbano" element={<MobiliarioUrbanoPage />} /> {/* Nova Rota */}
                     <Route path="/como-adquirir" element={<ComoAdquirirPage />} />
                     <Route path="/trabalhe-conosco" element={<TrabalheConoscoPage />} />
                     <Route path="/fale-conosco" element={<FaleConoscoPage />} />
