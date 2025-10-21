@@ -74,7 +74,8 @@ export function ManagePointsPage() {
 
   const fetchPoints = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('points').select('*').order('name');
+    // ALTERAÇÃO AQUI: Ordenar por updated_at decrescente
+    const { data, error } = await supabase.from('points').select('*').order('updated_at', { ascending: false });
     if (error) {
       console.error('Error fetching points:', error);
       toast.error("Erro", { description: "Não foi possível carregar os pontos." });
