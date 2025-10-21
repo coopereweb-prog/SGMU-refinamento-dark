@@ -179,7 +179,10 @@ export function ManagePointsPage() {
     setIsAddingMode(true); // Ativa o modo de edição/adição
     setSelectionState(SELECTION_STATE.FORM); // Vai direto para o formulário
     // Define as coordenadas para o mapa e o marcador
-    setNewPointCoords({ lat: point.latitude, lng: point.longitude }); 
+    setNewPointCoords({ 
+      lat: point.latitude, 
+      lng: point.longitude 
+    }); 
   };
 
   const handleViewMap = (point) => {
@@ -274,8 +277,11 @@ export function ManagePointsPage() {
     return { text: String(count), index, title: `${count} pontos` };
   };
 
-  // Define o centro do mapa dinamicamente
-  const mapCenter = newPointCoords || defaultCenter;
+  // Lógica de centralização: Se estiver editando, use as coordenadas do ponto. Caso contrário, use newPointCoords ou defaultCenter.
+  const mapCenter = (editingPoint && editingPoint.latitude && editingPoint.longitude)
+    ? { lat: editingPoint.latitude, lng: editingPoint.longitude }
+    : newPointCoords || defaultCenter;
+    
   // Define o zoom inicial para edição (mais próximo)
   const mapZoom = editingPoint?.id ? 18 : currentZoom;
 
