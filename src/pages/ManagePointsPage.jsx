@@ -12,7 +12,7 @@ import {
 import { PointForm } from '@/components/PointForm';
 import { Modal } from '@/components/Modal';
 import { toast } from "sonner";
-import { PlusCircle, Edit, Trash2, XCircle, MapPin, Loader2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, XCircle, MapPin, Loader2, CornerDownRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGoogleMapsLoader } from '@/contexts/GoogleMapsLoaderContext';
 import { GoogleMap, Marker } from '@react-google-maps/api';
@@ -29,6 +29,13 @@ const defaultCenter = {
   lng: -47.30
 };
 
+// Estados de seleção de rua
+const SELECTION_STATE = {
+  NONE: 0,
+  STREET: 1,
+  INTERSECTION: 2,
+};
+
 export function ManagePointsPage() {
   const [points, setPoints] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,6 +45,7 @@ export function ManagePointsPage() {
   const [pointToDelete, setPointToDelete] = useState(null);
   const [isAddingMode, setIsAddingMode] = useState(false);
   const [newPointCoords, setNewPointCoords] = useState(null);
+  const [selectionState, setSelectionState] = useState(SELECTION_STATE.NONE);
   
   // Estados para o modal de visualização
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
@@ -65,60 +73,75 @@ export function ManagePointsPage() {
     setEditingPoint(null);
     setNewPointCoords(null);
     setIsAddingMode(true);
+    setSelectionState(SELECTION_STATE.STREET); // Começa selecionando a rua principal
   };
 
   const handleCancelAdd = () => {
     setIsAddingMode(false);
     setNewPointCoords(null);
+    setSelectionState(SELECTION_STATE.NONE);
+    setEditingPoint(null);
+  };
+
+  const getStreetNameFromCoords = (lat, lng, callback) => {
+    if (!isLoaded) {
+      toast.warning("Serviço de mapas não carregado. Tente novamente.");
+      return;
+    }
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+      if (status === 'OK' && results.length > 0) {
+        const routeComponent = results[0].address_components.find(c => c.types.includes('route'));
+        const streetName = routeComponent ? routeComponent.long_name : results[0].formatted_address;
+        callback(streetName);
+      } else {
+        toast.warning("Não foi possível encontrar o nome da rua. Por favor, insira manualmente.");
+        callback('');
+      }
+    });
   };
 
   const handleMapClick = (e) => {
     if (!isAddingMode) return;
     const lat = e.latLng.lat();
     const lng = e.latLng.lng();
-    setNewPointCoords({ lat, lng });
-
-    if (!isLoaded) {
-      toast.warning("Serviço de mapas não carregado. Tente novamente.");
-      return;
+    
+    if (selectionState === SELECTION_STATE.STREET) {
+      setNewPointCoords({ lat, lng });
+      getStreetNameFromCoords(lat, lng, (streetName) => {
+        setEditingPoint({ 
+          latitude: lat, 
+          longitude: lng, 
+          street_name: streetName,
+          intersection_name: '',
+          name: streetName, // Nome inicial
+          description: '',
+          pricing_tier_id: '',
+          is_available: true,
+          image_url: '',
+        });
+        setSelectionState(SELECTION_STATE.INTERSECTION);
+        toast.info(`Rua Principal definida: ${streetName}. Agora clique na rua do cruzamento (opcional).`);
+      });
+    } else if (selectionState === SELECTION_STATE.INTERSECTION) {
+      getStreetNameFromCoords(lat, lng, (intersectionName) => {
+        setEditingPoint(prev => ({
+          ...prev,
+          intersection_name: intersectionName,
+          name: `${prev.street_name} c/ ${intersectionName}`,
+        }));
+        setSelectionState(SELECTION_STATE.NONE);
+        setIsFormOpen(true);
+        toast.success(`Cruzamento definido: ${editingPoint.street_name} c/ ${intersectionName}.`);
+      });
     }
-
-    const geocoder = new window.google.maps.Geocoder();
-    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-      if (status === 'OK' && results.length > 0) {
-        let pointName = results[0].formatted_address; // Padrão: o endereço mais relevante
-
-        // 1. Tenta encontrar um resultado que seja explicitamente um cruzamento (intersection)
-        const intersectionResult = results.find(r => r.types.includes('intersection'));
-        
-        if (intersectionResult) {
-          // Se encontrar um cruzamento, prioriza o nome formatado dele
-          pointName = intersectionResult.formatted_address;
-        } else {
-          // 2. Se não for um cruzamento, tenta construir o nome a partir da rua e número
-          const address = results[0].address_components;
-          const street = address.find(c => c.types.includes('route'))?.long_name;
-          const number = address.find(c => c.types.includes('street_number'))?.long_name;
-          
-          // Se tiver rua, usa a combinação (rua, número) ou apenas a rua.
-          if (street) {
-             pointName = number ? `${street}, ${number}` : street;
-          }
-        }
-        
-        setEditingPoint({ latitude: lat, longitude: lng, name: pointName || '' });
-        setIsFormOpen(true);
-      } else {
-        toast.warning("Não foi possível encontrar o nome da rua.", { description: "Por favor, insira manualmente." });
-        setEditingPoint({ latitude: lat, longitude: lng, name: '' });
-        setIsFormOpen(true);
-      }
-    });
   };
 
   const handleEdit = (point) => {
     setEditingPoint(point);
     setIsFormOpen(true);
+    setIsAddingMode(false); // Garante que o modo de adição esteja desativado ao editar
+    setSelectionState(SELECTION_STATE.NONE);
   };
 
   const handleViewMap = (point) => {
@@ -156,7 +179,8 @@ export function ManagePointsPage() {
 
       setIsFormOpen(false);
       setEditingPoint(null);
-      setIsAddingMode(false); // Sai do modo de adição após salvar
+      setIsAddingMode(false);
+      setSelectionState(SELECTION_STATE.NONE);
       fetchPoints();
     } catch (error) {
       console.error('Error saving point:', error);
@@ -185,6 +209,16 @@ export function ManagePointsPage() {
     }
   };
 
+  const getInstruction = () => {
+    if (selectionState === SELECTION_STATE.STREET) {
+      return "1. Clique no mapa para definir a localização e a Rua Principal.";
+    }
+    if (selectionState === SELECTION_STATE.INTERSECTION) {
+      return `2. Clique na Rua do Cruzamento (Opcional). Rua Principal: ${editingPoint?.street_name || 'N/A'}`;
+    }
+    return "Clique no mapa para definir a localização do novo ponto.";
+  };
+
   return (
     <div className="container mx-auto p-4 space-y-6">
       <div className="flex justify-between items-center">
@@ -203,7 +237,15 @@ export function ManagePointsPage() {
       {isAddingMode && (
         <div className="h-[60vh] flex flex-col gap-4">
           <div className="p-4 text-center bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="font-semibold text-blue-700">Clique no mapa para definir a localização do novo ponto.</p>
+            <p className="font-semibold text-blue-700 flex items-center justify-center">
+              {selectionState === SELECTION_STATE.INTERSECTION && <CornerDownRight className="h-5 w-5 mr-2" />}
+              {getInstruction()}
+            </p>
+            {selectionState === SELECTION_STATE.INTERSECTION && (
+              <Button variant="link" onClick={() => setIsFormOpen(true)} className="mt-2 p-0 h-auto text-sm">
+                Pular seleção de cruzamento e abrir formulário
+              </Button>
+            )}
           </div>
           <div className="relative flex-grow w-full rounded-lg overflow-hidden shadow-md">
             {isLoaded ? (

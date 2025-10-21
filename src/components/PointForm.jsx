@@ -22,6 +22,9 @@ const pointSchema = z.object({
   pricing_tier_id: z.string().uuid("Você deve selecionar um nível de preço."),
   is_available: z.boolean().default(true),
   image_url: z.string().optional(),
+  // Novos campos
+  street_name: z.string().min(1, { message: "O nome da rua principal é obrigatório." }),
+  intersection_name: z.string().optional(),
 });
 
 export function PointForm({ point, onSave, onCancel }) {
@@ -29,7 +32,9 @@ export function PointForm({ point, onSave, onCancel }) {
   const [pricingTiers, setPricingTiers] = useState([]);
   const [selectedTags, setSelectedTags] = useState(new Set());
   const [imageFile, setImageFile] = useState(null);
-  const [baseName, setBaseName] = useState('');
+  
+  // O nome base agora é composto pelas ruas
+  const baseName = form.watch('street_name') + (form.watch('intersection_name') ? ` c/ ${form.watch('intersection_name')}` : '');
 
   const form = useForm({
     resolver: zodResolver(pointSchema),
@@ -41,6 +46,8 @@ export function PointForm({ point, onSave, onCancel }) {
       pricing_tier_id: '',
       is_available: true,
       image_url: '',
+      street_name: '',
+      intersection_name: '',
     },
   });
 
@@ -56,9 +63,10 @@ export function PointForm({ point, onSave, onCancel }) {
         pricing_tier_id: point.pricing_tier_id || '',
         is_available: point.is_available ?? true,
         image_url: point.image_url || '',
+        street_name: point.street_name || '',
+        intersection_name: point.intersection_name || '',
       });
-      setBaseName(point.name || '');
-
+      
       if (point.id) {
         const fetchPointTags = async () => {
           const { data } = await supabase.from('point_tags').select('tag_id').eq('point_id', point.id);
@@ -84,19 +92,22 @@ export function PointForm({ point, onSave, onCancel }) {
     fetchInitialData();
   }, []);
 
+  // Efeito para atualizar nome e descrição automaticamente
   useEffect(() => {
-    if (selectedTierId && pricingTiers.length > 0) {
+    const currentBaseName = form.getValues('street_name') + (form.getValues('intersection_name') ? ` c/ ${form.getValues('intersection_name')}` : '');
+    
+    if (selectedTierId && pricingTiers.length > 0 && currentBaseName) {
       const selectedTier = pricingTiers.find(t => t.id === selectedTierId);
       if (selectedTier) {
         // Atualiza nome
-        const newName = `${selectedTier.name} - ${baseName}`;
+        const newName = `${selectedTier.name} - ${currentBaseName}`;
         form.setValue('name', newName);
 
         // Atualiza descrição com todas as variáveis
         let newDescription = selectedTier.description_template || '';
         newDescription = newDescription
           .replace(/{{tier_name}}/g, selectedTier.name)
-          .replace(/{{point_name}}/g, baseName)
+          .replace(/{{point_name}}/g, currentBaseName)
           .replace(/{{price_1y}}/g, formatCurrencyBRL(selectedTier.price_1y))
           .replace(/{{price_2y}}/g, formatCurrencyBRL(selectedTier.price_2y))
           .replace(/{{price_3y}}/g, formatCurrencyBRL(selectedTier.price_3y))
@@ -104,8 +115,12 @@ export function PointForm({ point, onSave, onCancel }) {
           .replace(/{{price_5y}}/g, formatCurrencyBRL(selectedTier.price_5y));
         form.setValue('description', newDescription);
       }
+    } else if (currentBaseName) {
+        // Se não houver tier selecionado, apenas define o nome base
+        form.setValue('name', currentBaseName);
     }
-  }, [selectedTierId, pricingTiers, baseName, form]);
+  }, [selectedTierId, pricingTiers, form.watch('street_name'), form.watch('intersection_name'), form]);
+
 
   const handleTagChange = (tagId) => {
     setSelectedTags(prev => {
@@ -140,7 +155,10 @@ export function PointForm({ point, onSave, onCancel }) {
     // Não incluímos os preços no objeto pointData, pois eles serão preenchidos automaticamente pela trigger
     const pointData = { 
       ...values, 
-      image_url: imageUrl
+      image_url: imageUrl,
+      // Garante que o nome final seja o composto pelas regras do tier
+      name: form.getValues('name'),
+      description: form.getValues('description'),
     };
     
     await onSave(pointData, Array.from(selectedTags));
@@ -152,6 +170,25 @@ export function PointForm({ point, onSave, onCancel }) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
+        
+        <h3 className="font-semibold pt-2 border-t">Localização e Nomenclatura</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <FormField control={form.control} name="latitude" render={({ field }) => (
+            <FormItem><FormLabel>Latitude</FormLabel><FormControl><Input type="number" step="any" disabled {...field} /></FormControl><FormMessage /></FormItem>
+          )} />
+          <FormField control={form.control} name="longitude" render={({ field }) => (
+            <FormItem><FormLabel>Longitude</FormLabel><FormControl><Input type="number" step="any" disabled {...field} /></FormControl><FormMessage /></FormItem>
+          )} />
+        </div>
+        
+        <FormField control={form.control} name="street_name" render={({ field }) => (
+          <FormItem><FormLabel>Rua Principal</FormLabel><FormControl><Input placeholder="Ex: Av. Brasil" {...field} /></FormControl><FormMessage /></FormItem>
+        )} />
+        <FormField control={form.control} name="intersection_name" render={({ field }) => (
+          <FormItem><FormLabel>Rua do Cruzamento (Opcional)</FormLabel><FormControl><Input placeholder="Ex: Rua 13 de Maio" {...field} /></FormControl><FormMessage /></FormItem>
+        )} />
+
+        <h3 className="font-semibold pt-2 border-t">Classificação e Preços</h3>
         <FormField control={form.control} name="pricing_tier_id" render={({ field }) => (
           <FormItem>
             <FormLabel>Classificação do Ponto</FormLabel>
@@ -179,19 +216,13 @@ export function PointForm({ point, onSave, onCancel }) {
         )}
         
         <FormField control={form.control} name="name" render={({ field }) => (
-          <FormItem><FormLabel>Nome do Ponto (Automático)</FormLabel><FormControl><Input placeholder="Será preenchido automaticamente" {...field} /></FormControl><FormMessage /></FormItem>
+          <FormItem><FormLabel>Nome do Ponto (Automático)</FormLabel><FormControl><Input placeholder="Será preenchido automaticamente" {...field} disabled /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={form.control} name="description" render={({ field }) => (
-          <FormItem><FormLabel>Descrição (Automática)</FormLabel><FormControl><Textarea placeholder="Será preenchida automaticamente" {...field} /></FormControl><FormMessage /></FormItem>
+          <FormItem><FormLabel>Descrição (Automática)</FormLabel><FormControl><Textarea placeholder="Será preenchida automaticamente" {...field} disabled /></FormControl><FormMessage /></FormItem>
         )} />
-        <div className="grid grid-cols-2 gap-4">
-          <FormField control={form.control} name="latitude" render={({ field }) => (
-            <FormItem><FormLabel>Latitude</FormLabel><FormControl><Input type="number" step="any" disabled {...field} /></FormControl><FormMessage /></FormItem>
-          )} />
-          <FormField control={form.control} name="longitude" render={({ field }) => (
-            <FormItem><FormLabel>Longitude</FormLabel><FormControl><Input type="number" step="any" disabled {...field} /></FormControl><FormMessage /></FormItem>
-          )} />
-        </div>
+        
+        <h3 className="font-semibold pt-2 border-t">Outras Informações</h3>
         <div>
           <FormLabel>Tags</FormLabel>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2 p-2 border rounded-md">
