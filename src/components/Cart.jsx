@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, X } from 'lucide-react';
+import { Trash2, X, Info } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { Link } from 'react-router-dom';
 
 export function Cart({ items, onRemove, onClear, onUpdatePeriod, onShowReservationForm }) {
   const { points } = useCart();
@@ -23,6 +24,18 @@ export function Cart({ items, onRemove, onClear, onUpdatePeriod, onShowReservati
     const point = points.find(p => p.id === item.point_id);
     return point?.pricing_tiers?.tier_prices?.sort((a, b) => a.period_days - b.period_days) || [];
   };
+  
+  const getInfoLink = (mediaType) => {
+    switch (mediaType) {
+      case 'outdoor':
+        return { to: '/outdoors', label: 'Condições do Outdoor' };
+      case 'led_panel':
+        return { to: '/led-panels', label: 'Condições do Painel de LED' };
+      case 'static_panel':
+      default:
+        return { to: '/nossos-servicos', label: 'Condições do Painel Estático' };
+    }
+  };
 
   return (
     <div className="flex flex-col flex-grow h-full bg-background">
@@ -38,6 +51,8 @@ export function Cart({ items, onRemove, onClear, onUpdatePeriod, onShowReservati
           <ul className="space-y-4">
             {items.map((item, index) => {
               const priceOptions = getPriceOptionsForItem(item);
+              const infoLink = getInfoLink(item.media_type);
+              
               return (
                 <li key={index} className="flex items-start justify-between p-3 bg-muted/50 rounded-lg">
                   <div className="flex-grow">
@@ -45,6 +60,12 @@ export function Cart({ items, onRemove, onClear, onUpdatePeriod, onShowReservati
                     <p className="text-sm text-status-available font-bold">
                       {item.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </p>
+                    
+                    {/* Link de Informação */}
+                    <Link to={infoLink.to} className="flex items-center text-xs text-blue-500 hover:underline mt-1">
+                      <Info className="h-3 w-3 mr-1" /> {infoLink.label}
+                    </Link>
+
                     {item.media_type !== 'led_panel' && priceOptions.length > 0 && (
                       <div className="mt-2">
                         <Select

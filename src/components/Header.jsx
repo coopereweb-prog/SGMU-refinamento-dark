@@ -18,6 +18,8 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/co
 
 const navLinks = [
   { to: '/', label: 'Início' },
+  { to: '/outdoors', label: 'Outdoors' },
+  { to: '/led-panels', label: 'Painéis de LED' },
   { to: '/quem-somos', label: 'Quem Somos' },
   { to: '/nossos-servicos', label: 'Nossos Serviços' },
   { to: '/como-adquirir', label: 'Como Adquirir' },
