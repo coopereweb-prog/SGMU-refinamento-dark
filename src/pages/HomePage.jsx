@@ -32,7 +32,7 @@ const mapOptions = {
   fullscreenControl: false,
 };
 
-const getMarkerIcon = (status) => {
+const getStaticPanelIcon = (status) => {
   const colors = {
     available: 'oklch(0.75 0.25 145)',
     reserved: 'oklch(0.85 0.2 90)',
@@ -64,6 +64,18 @@ const getMarkerIcon = (status) => {
     anchor: new window.google.maps.Point(18, 36),
   };
 };
+
+const getMediaTypeIcon = (mediaType, status) => {
+  if (mediaType === 'outdoor') {
+    return { url: '/outdoor-icon.svg', scaledSize: new window.google.maps.Size(36, 36), anchor: new window.google.maps.Point(18, 18) };
+  }
+  if (mediaType === 'led_panel') {
+    return { url: '/led-panel-icon.svg', scaledSize: new window.google.maps.Size(36, 36), anchor: new window.google.maps.Point(18, 18) };
+  }
+  // Default to static_panel
+  return getStaticPanelIcon(status);
+};
+
 
 const getInCartMarkerIcon = () => {
   const circleFill = 'oklch(0.145 0 0)'; // Black
@@ -100,7 +112,7 @@ const getDynamicMarkerIcon = (point, cartItems) => {
   if (isInCart) {
     return getInCartMarkerIcon();
   }
-  return getMarkerIcon(point.status);
+  return getMediaTypeIcon(point.media_type, point.status);
 };
 
 const createClusterSvg = (size, fillColor, strokeColor = 'oklch(1 0 0 / 25%)') => `
@@ -166,7 +178,7 @@ function HomePage() {
           .select(`
             *,
             tags (id, name),
-            pricing_tiers (*)
+            pricing_tiers (*, tier_prices (*))
           `);
         if (error) throw error;
         
@@ -221,8 +233,8 @@ function HomePage() {
     setIsSheetOpen(true);
   };
 
-  const handleAddToCart = (point, period) => {
-    addToCart(point, period);
+  const handleAddToCart = (point, details) => {
+    addToCart(point, details);
     setIsSheetOpen(false);
   };
 
