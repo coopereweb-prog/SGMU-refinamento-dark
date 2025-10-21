@@ -33,9 +33,6 @@ export function PointForm({ point, onSave, onCancel }) {
   const [selectedTags, setSelectedTags] = useState(new Set());
   const [imageFile, setImageFile] = useState(null);
   
-  // O nome base agora é composto pelas ruas
-  const baseName = form.watch('street_name') + (form.watch('intersection_name') ? ` c/ ${form.watch('intersection_name')}` : '');
-
   const form = useForm({
     resolver: zodResolver(pointSchema),
     defaultValues: {
@@ -50,6 +47,9 @@ export function PointForm({ point, onSave, onCancel }) {
       intersection_name: '',
     },
   });
+
+  // O nome base agora é composto pelas ruas. Deve vir DEPOIS de useForm.
+  const baseName = form.watch('street_name') + (form.watch('intersection_name') ? ` c/ ${form.watch('intersection_name')}` : '');
 
   const selectedTierId = form.watch('pricing_tier_id');
 
