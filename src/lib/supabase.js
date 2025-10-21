@@ -90,15 +90,11 @@ export const deleteTag = async (id) => {
 export const createOrder = async (customerData, cartItems) => {
   // Verificar se há um usuário logado
   const { data: { session } } = await supabase.auth.getSession();
-  let userId = null;
   
-  if (session?.user) {
-    userId = session.user.id;
-  }
-
   const itemsForFunction = cartItems.map(item => ({
     point_id: item.point_id,
-    period_years: item.period_years,
+    period_years: item.details.days / 365, // Passa o período em anos
+    details: item.details, // Passa os detalhes para a Edge Function calcular o preço
   }));
 
   const headers = {};
@@ -108,7 +104,11 @@ export const createOrder = async (customerData, cartItems) => {
 
   const { data, error } = await supabase.functions.invoke('create-order', {
     body: {
-      customerData,
+      customerData: {
+        name: customerData.name,
+        email: customerData.email,
+        phone: customerData.phone || null, // Garante que o telefone é enviado
+      },
       items: itemsForFunction,
     },
     headers,
