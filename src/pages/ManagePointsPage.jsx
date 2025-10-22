@@ -198,8 +198,25 @@ export function ManagePointsPage() {
     try {
       let savedPoint;
       
-      // Remove explicitamente as colunas de preço do objeto de dados antes de enviar
-      const { price_1y, price_2y, price_3y, price_4y, price_5y, ...dataToSave } = pointData;
+      // --- REMOÇÃO ROBUSTA DE COLUNAS DE PREÇO ---
+      // Cria um novo objeto que só contém as chaves permitidas na tabela points
+      const allowedKeys = [
+        'name', 'description', 'latitude', 'longitude', 'pricing_tier_id', 
+        'is_available', 'image_url', 'street_name', 'intersection_name', 'media_type'
+      ];
+      
+      const dataToSave = Object.keys(pointData)
+        .filter(key => allowedKeys.includes(key))
+        .reduce((obj, key) => {
+          // Garante que valores vazios de números sejam null ou undefined
+          if (['latitude', 'longitude'].includes(key) && (pointData[key] === '' || pointData[key] === null)) {
+             obj[key] = null;
+          } else {
+             obj[key] = pointData[key];
+          }
+          return obj;
+        }, {});
+      // --- FIM DA REMOÇÃO ROBUSTA ---
 
       if (editingPoint && editingPoint.id) {
         const { data, error } = await supabase.from('points').update(dataToSave).eq('id', editingPoint.id).select().single();
@@ -207,7 +224,12 @@ export function ManagePointsPage() {
         savedPoint = data;
         toast.success("Sucesso", { description: "Ponto atualizado com sucesso." });
       } else {
-        const { data, error } = await supabase.from('points').insert(dataToSave).select().single();
+        // Para novos pontos, adicionamos o media_type padrão se não estiver presente
+        const finalDataToInsert = {
+          ...dataToSave,
+          media_type: dataToSave.media_type || 'static_panel'
+        };
+        const { data, error } = await supabase.from('points').insert(finalDataToInsert).select().single();
         if (error) throw error;
         savedPoint = data;
         toast.success("Sucesso", { description: "Ponto criado com sucesso." });
