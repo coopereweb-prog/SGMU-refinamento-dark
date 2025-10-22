@@ -80,7 +80,18 @@ export function PointForm({ point, onSave, onCancel }) {
         setSelectedTags(new Set());
       }
     } else {
-      form.reset();
+      form.reset({
+        name: '',
+        description: '',
+        latitude: '',
+        longitude: '',
+        pricing_tier_id: '',
+        is_available: true,
+        image_url: '',
+        street_name: '',
+        intersection_name: '',
+        _temp_neighborhood: '',
+      });
       setSelectedTags(new Set());
     }
   }, [point, form]);
@@ -179,10 +190,10 @@ export function PointForm({ point, onSave, onCancel }) {
         <h3 className="font-semibold pt-2 border-t">Localização e Nomenclatura</h3>
         <div className="grid grid-cols-2 gap-4">
           <FormField control={form.control} name="latitude" render={({ field }) => (
-            <FormItem><FormLabel>Latitude</FormLabel><FormControl><Input type="number" step="any" disabled {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Latitude</FormLabel><FormControl><Input type="number" step="any" {...field} /></FormControl><FormMessage /></FormItem>
           )} />
           <FormField control={form.control} name="longitude" render={({ field }) => (
-            <FormItem><FormLabel>Longitude</FormLabel><FormControl><Input type="number" step="any" disabled {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Longitude</FormLabel><FormControl><Input type="number" step="any" {...field} /></FormControl><FormMessage /></FormItem>
           )} />
         </div>
         
