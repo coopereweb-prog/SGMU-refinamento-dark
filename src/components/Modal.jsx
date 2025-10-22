@@ -1,42 +1,42 @@
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription 
-} from '@/components/ui/dialog';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function Modal({ isOpen, onClose, title, description, children, className }) {
-  // O componente Dialog do shadcn/ui (Radix) gerencia o estado de abertura/fechamento
-  // e o backdrop, então não precisamos do div condicional externo.
+  if (!isOpen) {
+    return null;
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent 
+    <div 
+      className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <Card 
         className={cn(
-          "sm:max-w-lg max-h-[90vh] overflow-y-auto",
+          "relative w-full max-w-lg flex flex-col animate-in fade-in-0 zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto",
           className
         )}
+        onClick={(e) => e.stopPropagation()}
       >
-        <DialogHeader className="pr-8">
-          <DialogTitle>{title}</DialogTitle>
-          {/* O DialogDescription é obrigatório para acessibilidade, mesmo que vazio */}
-          <DialogDescription>
-            {description || 'Informações detalhadas.'}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="py-4">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onClose} 
+          className="absolute top-3 right-3 z-10 h-8 w-8 rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80"
+        >
+          <X className="h-5 w-5" />
+        </Button>
+
+        <CardHeader className="pr-12">
+          <CardTitle>{title}</CardTitle>
+          {description && <CardDescription>{description}</CardDescription>}
+        </CardHeader>
+        <CardContent>
           {children}
-        </div>
-        
-        {/* O botão de fechar já é nativo do DialogContent, mas vamos mantê-lo explícito se necessário, 
-            ou confiar no botão 'X' padrão do DialogContent. 
-            Removendo o botão 'X' customizado para usar o padrão do DialogContent, que é mais acessível.
-        */}
-      </DialogContent>
-    </Dialog>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

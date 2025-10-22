@@ -25,7 +25,6 @@ const pointSchema = z.object({
   // Novos campos
   street_name: z.string().min(1, { message: "O nome da rua principal é obrigatório." }),
   intersection_name: z.string().optional(),
-  _temp_neighborhood: z.string().optional(), // Campo temporário para o bairro
 });
 
 export function PointForm({ point, onSave, onCancel }) {
@@ -46,7 +45,7 @@ export function PointForm({ point, onSave, onCancel }) {
       image_url: '',
       street_name: '',
       intersection_name: '',
-      _temp_neighborhood: '',
+      _temp_neighborhood: '', // Campo temporário para o bairro
     },
   });
 
@@ -58,18 +57,17 @@ export function PointForm({ point, onSave, onCancel }) {
 
   useEffect(() => {
     if (point) {
-      // Garante que os valores numéricos sejam strings para o input type="number"
       form.reset({
         name: point.name || '',
         description: point.description || '',
-        latitude: point.latitude ? String(point.latitude) : '',
-        longitude: point.longitude ? String(point.longitude) : '',
+        latitude: point.latitude || '',
+        longitude: point.longitude || '',
         pricing_tier_id: point.pricing_tier_id || '',
         is_available: point.is_available ?? true,
         image_url: point.image_url || '',
         street_name: point.street_name || '',
         intersection_name: point.intersection_name || '',
-        _temp_neighborhood: point._temp_neighborhood || '',
+        _temp_neighborhood: point._temp_neighborhood || '', // Carrega o bairro temporário
       });
       
       if (point.id) {
@@ -82,22 +80,9 @@ export function PointForm({ point, onSave, onCancel }) {
         setSelectedTags(new Set());
       }
     } else {
-      // Se o ponto for nulo (novo ponto), reseta para os defaults
-      form.reset({
-        name: '',
-        description: '',
-        latitude: '',
-        longitude: '',
-        pricing_tier_id: '',
-        is_available: true,
-        image_url: '',
-        street_name: '',
-        intersection_name: '',
-        _temp_neighborhood: '',
-      });
+      form.reset();
       setSelectedTags(new Set());
     }
-    setImageFile(null); // Limpa o arquivo de imagem ao carregar um novo ponto/edição
   }, [point, form]);
 
   useEffect(() => {
@@ -212,7 +197,7 @@ export function PointForm({ point, onSave, onCancel }) {
         <FormField control={form.control} name="pricing_tier_id" render={({ field }) => (
           <FormItem>
             <FormLabel>Classificação do Ponto</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
               <FormControl><SelectTrigger><SelectValue placeholder="Selecione a classificação" /></SelectTrigger></FormControl>
               <SelectContent>
                 {pricingTiers.map(tier => <SelectItem key={tier.id} value={tier.id}>{tier.name}</SelectItem>)}
