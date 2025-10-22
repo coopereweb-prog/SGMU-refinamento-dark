@@ -22,9 +22,10 @@ const pointSchema = z.object({
   pricing_tier_id: z.string().uuid("Você deve selecionar um nível de preço."),
   is_available: z.boolean().default(true),
   image_url: z.string().optional(),
-  // Novos campos
   street_name: z.string().min(1, { message: "O nome da rua principal é obrigatório." }),
   intersection_name: z.string().optional(),
+  _temp_neighborhood: z.string().optional(),
+  media_type: z.enum(['static_panel', 'outdoor', 'led_panel']).default('static_panel'), // Adicionado media_type
 });
 
 export function PointForm({ point, onSave, onCancel }) {
@@ -36,64 +37,41 @@ export function PointForm({ point, onSave, onCancel }) {
   const form = useForm({
     resolver: zodResolver(pointSchema),
     defaultValues: {
-      name: '',
-      description: '',
-      latitude: '',
-      longitude: '',
-      pricing_tier_id: '',
-      is_available: true,
-      image_url: '',
-      street_name: '',
-      intersection_name: '',
-      _temp_neighborhood: '', // Campo temporário para o bairro
+      name: '', description: '', latitude: '', longitude: '',
+      pricing_tier_id: '', is_available: true, image_url: '',
+      street_name: '', intersection_name: '', _temp_neighborhood: '',
+      media_type: 'static_panel', // Valor padrão
     },
   });
 
-  // O nome base agora é composto pelas ruas. Deve vir DEPOIS de useForm.
-  const baseName = form.watch('street_name') + (form.watch('intersection_name') ? ` c/ ${form.watch('intersection_name')}` : '');
-
   const selectedTierId = form.watch('pricing_tier_id');
-  const currentNeighborhood = form.watch('_temp_neighborhood');
 
   useEffect(() => {
     if (point) {
       form.reset({
-        name: point.name || '',
-        description: point.description || '',
+        ...point,
+        // Garante que latitude/longitude sejam números ou strings vazias
         latitude: point.latitude || '',
         longitude: point.longitude || '',
-        pricing_tier_id: point.pricing_tier_id || '',
-        is_available: point.is_available ?? true,
-        image_url: point.image_url || '',
-        street_name: point.street_name || '',
-        intersection_name: point.intersection_name || '',
-        _temp_neighborhood: point._temp_neighborhood || '', // Carrega o bairro temporário
+        // Garante que media_type tenha um valor
+        media_type: point.media_type || 'static_panel',
       });
-      
-      if (point.id) {
-        const fetchPointTags = async () => {
-          const { data } = await supabase.from('point_tags').select('tag_id').eq('point_id', point.id);
-          setSelectedTags(new Set((data || []).map(pt => pt.tag_id)));
-        };
-        fetchPointTags();
-      } else {
-        setSelectedTags(new Set());
-      }
     } else {
       form.reset({
-        name: '',
-        description: '',
-        latitude: '',
-        longitude: '',
-        pricing_tier_id: '',
-        is_available: true,
-        image_url: '',
-        street_name: '',
-        intersection_name: '',
-        _temp_neighborhood: '',
+        name: '', description: '', latitude: '', longitude: '',
+        pricing_tier_id: '', is_available: true, image_url: '',
+        street_name: '', intersection_name: '', _temp_neighborhood: '',
+        media_type: 'static_panel',
       });
+    }
+    
+    if (point?.id) {
+      supabase.from('point_tags').select('tag_id').eq('point_id', point.id)
+        .then(({ data }) => setSelectedTags(new Set((data || []).map(pt => pt.tag_id))));
+    } else {
       setSelectedTags(new Set());
     }
+    setImageFile(null);
   }, [point, form]);
 
   useEffect(() => {
@@ -106,24 +84,20 @@ export function PointForm({ point, onSave, onCancel }) {
     fetchInitialData();
   }, []);
 
-  // Efeito para atualizar nome e descrição automaticamente
   useEffect(() => {
-    const currentBaseName = form.getValues('street_name') + (form.getValues('intersection_name') ? ` c/ ${form.getValues('intersection_name')}` : '');
-    const currentNeighborhoodValue = form.getValues('_temp_neighborhood');
+    const street = form.getValues('street_name');
+    const intersection = form.getValues('intersection_name');
+    const neighborhood = form.getValues('_temp_neighborhood');
+    const baseName = street + (intersection ? ` c/ ${intersection}` : '');
     
-    if (selectedTierId && pricingTiers.length > 0 && currentBaseName) {
+    if (selectedTierId && pricingTiers.length > 0 && baseName) {
       const selectedTier = pricingTiers.find(t => t.id === selectedTierId);
       if (selectedTier) {
-        // Atualiza nome com o novo separador
-        const newName = `${selectedTier.name} | ${currentBaseName}`;
-        form.setValue('name', newName);
-
-        // Atualiza descrição com todas as variáveis
-        let newDescription = selectedTier.description_template || '';
-        newDescription = newDescription
+        form.setValue('name', `${selectedTier.name} | ${baseName}`, { shouldValidate: true });
+        let newDescription = (selectedTier.description_template || '')
           .replace(/{{tier_name}}/g, selectedTier.name)
-          .replace(/{{point_name}}/g, currentBaseName)
-          .replace(/{{neighborhood}}/g, currentNeighborhoodValue) // Novo campo
+          .replace(/{{point_name}}/g, baseName)
+          .replace(/{{neighborhood}}/g, neighborhood || '')
           .replace(/{{price_1y}}/g, formatCurrencyBRL(selectedTier.price_1y))
           .replace(/{{price_2y}}/g, formatCurrencyBRL(selectedTier.price_2y))
           .replace(/{{price_3y}}/g, formatCurrencyBRL(selectedTier.price_3y))
@@ -131,18 +105,16 @@ export function PointForm({ point, onSave, onCancel }) {
           .replace(/{{price_5y}}/g, formatCurrencyBRL(selectedTier.price_5y));
         form.setValue('description', newDescription);
       }
-    } else if (currentBaseName) {
-        // Se não houver tier selecionado, apenas define o nome base
-        form.setValue('name', currentBaseName);
+    } else if (baseName) {
+        form.setValue('name', baseName, { shouldValidate: true });
     }
-  }, [selectedTierId, pricingTiers, form.watch('street_name'), form.watch('intersection_name'), currentNeighborhood, form]);
-
+  }, [selectedTierId, pricingTiers, form.watch('street_name'), form.watch('intersection_name'), form.watch('_temp_neighborhood'), form]);
 
   const handleTagChange = (tagId) => {
     setSelectedTags(prev => {
-      const newSelectedTags = new Set(prev);
-      newSelectedTags.has(tagId) ? newSelectedTags.delete(tagId) : newSelectedTags.add(tagId);
-      return newSelectedTags;
+      const newSelected = new Set(prev);
+      newSelected.has(tagId) ? newSelected.delete(tagId) : newSelected.add(tagId);
+      return newSelected;
     });
   };
 
@@ -153,34 +125,37 @@ export function PointForm({ point, onSave, onCancel }) {
   };
 
   const onSubmit = async (values) => {
-    let imageUrl = values.image_url;
+    let imageUrl = point?.image_url || '';
     if (imageFile) {
       try {
         const compressedFile = await compressImage(imageFile);
         const fileName = `${Date.now()}_${imageFile.name}`;
         const { data: uploadData, error: uploadError } = await supabase.storage.from('point_images').upload(fileName, compressedFile);
         if (uploadError) throw uploadError;
-        const { data: publicUrlData } = supabase.storage.from('point_images').getPublicUrl(uploadData.path);
-        imageUrl = publicUrlData.publicUrl;
+        imageUrl = supabase.storage.from('point_images').getPublicUrl(uploadData.path).data.publicUrl;
       } catch (error) {
         toast.error("Falha no upload da imagem.", { description: error.message });
         return;
       }
     }
     
-    // Remove o campo temporário antes de salvar no banco
-    const { _temp_neighborhood, ...pointDataToSave } = { 
-      ...values, 
+    // CORREÇÃO: Criamos o objeto de salvamento explicitamente com os campos do schema
+    const pointDataToSave = {
+      name: values.name,
+      description: values.description,
+      latitude: values.latitude,
+      longitude: values.longitude,
+      pricing_tier_id: values.pricing_tier_id,
+      is_available: values.is_available,
+      street_name: values.street_name,
+      intersection_name: values.intersection_name,
       image_url: imageUrl,
-      // Garante que o nome final seja o composto pelas regras do tier
-      name: form.getValues('name'),
-      description: form.getValues('description'),
+      media_type: values.media_type, // Incluído media_type
     };
     
     await onSave(pointDataToSave, Array.from(selectedTags));
   };
 
-  // Obter os preços do tier selecionado para exibição
   const selectedTier = pricingTiers.find(t => t.id === selectedTierId);
 
   return (
@@ -190,10 +165,10 @@ export function PointForm({ point, onSave, onCancel }) {
         <h3 className="font-semibold pt-2 border-t">Localização e Nomenclatura</h3>
         <div className="grid grid-cols-2 gap-4">
           <FormField control={form.control} name="latitude" render={({ field }) => (
-            <FormItem><FormLabel>Latitude</FormLabel><FormControl><Input type="number" step="any" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Latitude</FormLabel><FormControl><Input type="number" step="any" disabled {...field} /></FormControl><FormMessage /></FormItem>
           )} />
           <FormField control={form.control} name="longitude" render={({ field }) => (
-            <FormItem><FormLabel>Longitude</FormLabel><FormControl><Input type="number" step="any" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Longitude</FormLabel><FormControl><Input type="number" step="any" disabled {...field} /></FormControl><FormMessage /></FormItem>
           )} />
         </div>
         
@@ -208,7 +183,7 @@ export function PointForm({ point, onSave, onCancel }) {
         <FormField control={form.control} name="pricing_tier_id" render={({ field }) => (
           <FormItem>
             <FormLabel>Classificação do Ponto</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <Select onValueChange={field.onChange} value={field.value}>
               <FormControl><SelectTrigger><SelectValue placeholder="Selecione a classificação" /></SelectTrigger></FormControl>
               <SelectContent>
                 {pricingTiers.map(tier => <SelectItem key={tier.id} value={tier.id}>{tier.name}</SelectItem>)}
@@ -219,26 +194,45 @@ export function PointForm({ point, onSave, onCancel }) {
         )} />
         
         {selectedTier && (
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <p className="text-sm font-semibold text-blue-700 mb-2">Preços automáticos baseados na classificação:</p>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-              <div>1 ano: {formatCurrencyBRL(selectedTier.price_1y)}</div>
-              <div>2 anos: {formatCurrencyBRL(selectedTier.price_2y)}</div>
-              <div>3 anos: {formatCurrencyBRL(selectedTier.price_3y)}</div>
-              <div>4 anos: {formatCurrencyBRL(selectedTier.price_4y)}</div>
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-sm">
+            <p className="font-semibold text-blue-700 mb-2">Preços automáticos:</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <div>1 ano: {formatCurrencyBRL(selectedTier.price_1y)}</div> <div>2 anos: {formatCurrencyBRL(selectedTier.price_2y)}</div>
+              <div>3 anos: {formatCurrencyBRL(selectedTier.price_3y)}</div> <div>4 anos: {formatCurrencyBRL(selectedTier.price_4y)}</div>
               <div>5 anos: {formatCurrencyBRL(selectedTier.price_5y)}</div>
             </div>
           </div>
         )}
         
         <FormField control={form.control} name="name" render={({ field }) => (
-          <FormItem><FormLabel>Nome do Ponto (Automático)</FormLabel><FormControl><Input placeholder="Será preenchido automaticamente" {...field} disabled /></FormControl><FormMessage /></FormItem>
+          <FormItem><FormLabel>Nome (Automático)</FormLabel><FormControl><Input disabled {...field} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={form.control} name="description" render={({ field }) => (
-          <FormItem><FormLabel>Descrição (Automática)</FormLabel><FormControl><Textarea placeholder="Será preenchida automaticamente" {...field} disabled /></FormControl><FormMessage /></FormItem>
+          <FormItem><FormLabel>Descrição (Automática)</FormLabel><FormControl><Textarea rows={4} disabled {...field} /></FormControl><FormMessage /></FormItem>
         )} />
         
         <h3 className="font-semibold pt-2 border-t">Outras Informações</h3>
+        
+        {/* Campo de Mídia (Oculto, mas necessário para a RPC) */}
+        <FormField control={form.control} name="media_type" render={({ field }) => (
+          <FormItem className="hidden">
+            <FormLabel>Tipo de Mídia</FormLabel>
+            <Select onValueChange={field.onChange} value={field.value}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="static_panel">Painel Estático</SelectItem>
+                <SelectItem value="outdoor">Outdoor</SelectItem>
+                <SelectItem value="led_panel">Painel de LED</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )} />
+        
         <div>
           <FormLabel>Tags</FormLabel>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2 p-2 border rounded-md">
@@ -256,7 +250,7 @@ export function PointForm({ point, onSave, onCancel }) {
         <div>
           <FormLabel htmlFor="image">Imagem do Ponto</FormLabel>
           <Input id="image" name="image" type="file" onChange={handleImageChange} className="mt-1" />
-          {form.getValues("image_url") && !imageFile && <img src={form.getValues("image_url")} alt="Preview" className="mt-2 h-20 w-20 object-cover rounded-md" />}
+          {point?.image_url && !imageFile && <img src={point.image_url} alt="Preview" className="mt-2 h-20 w-20 object-cover rounded-md" />}
         </div>
         <div className="flex justify-end space-x-2 pt-4">
           <Button type="button" variant="outline" onClick={onCancel} disabled={form.formState.isSubmitting}>Cancelar</Button>

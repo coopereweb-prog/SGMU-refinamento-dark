@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, savePoint } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -202,44 +202,20 @@ export function ManagePointsPage() {
 
   const handleSavePoint = async (pointData, tagIds) => {
     try {
-      let savedPoint;
-      
       // O pontoData recebido do PointForm é limpo.
-      // Apenas garante que latitude/longitude sejam null se forem strings vazias.
+      // Adiciona o ID se for uma edição
       const dataToSave = {
         ...pointData,
+        id: editingPoint?.id || null,
         latitude: pointData.latitude === '' ? null : pointData.latitude,
         longitude: pointData.longitude === '' ? null : pointData.longitude,
+        media_type: pointData.media_type || 'static_panel',
       };
 
-      if (editingPoint && editingPoint.id) {
-        // Usamos select('id') para minimizar a exposição do esquema e evitar o erro price_1y
-        const { data, error } = await supabase.from('points').update(dataToSave).eq('id', editingPoint.id).select('id').single();
-        if (error) throw error;
-        savedPoint = data;
-        toast.success("Sucesso", { description: "Ponto atualizado com sucesso." });
-      } else {
-        // Para novos pontos, adicionamos o media_type padrão se não estiver presente
-        const finalDataToInsert = {
-          ...dataToSave,
-          media_type: dataToSave.media_type || 'static_panel'
-        };
-        // Usamos select('id') aqui também
-        const { data, error } = await supabase.from('points').insert(finalDataToInsert).select('id').single();
-        if (error) throw error;
-        savedPoint = data;
-        toast.success("Sucesso", { description: "Ponto criado com sucesso." });
-      }
+      // Usa a função RPC para salvar/atualizar o ponto e as tags
+      await savePoint(dataToSave, tagIds);
 
-      // Lógica de salvamento de tags
-      const { error: deleteError } = await supabase.from('point_tags').delete().eq('point_id', savedPoint.id);
-      if (deleteError) throw deleteError;
-
-      if (tagIds && tagIds.length > 0) {
-        const pointTags = tagIds.map(tagId => ({ point_id: savedPoint.id, tag_id: tagId }));
-        const { error: insertTagsError } = await supabase.from('point_tags').insert(pointTags);
-        if (insertTagsError) throw insertTagsError;
-      }
+      toast.success("Sucesso", { description: `Ponto ${editingPoint?.id ? 'atualizado' : 'criado'} com sucesso.` });
 
       setIsEditModalOpen(false);
       setEditingPoint(null);
