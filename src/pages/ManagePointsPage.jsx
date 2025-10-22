@@ -74,11 +74,11 @@ export function ManagePointsPage() {
 
   const fetchPoints = async () => {
     setLoading(true);
-    // Seleciona explicitamente as colunas necessárias para a tabela de gerenciamento
+    // Seleciona explicitamente as colunas necessárias para a tabela de gerenciamento,
+    // removendo as colunas de preço que estão causando o erro de esquema.
     const { data, error } = await supabase.from('points').select(`
       id, name, status, latitude, longitude, pricing_tier_id, is_available, image_url, 
-      street_name, intersection_name, media_type, description,
-      price_1y, price_2y, price_3y, price_4y, price_5y
+      street_name, intersection_name, media_type, description
     `).order('name');
     
     if (error) {
@@ -184,8 +184,8 @@ export function ManagePointsPage() {
 
   const handleEdit = (point) => {
     // Cria uma cópia do ponto, removendo as propriedades de preço que não devem ser enviadas no update
-    const { price_1y, price_2y, price_3y, price_4y, price_5y, ...cleanPoint } = point;
-    setEditingPoint(cleanPoint);
+    // e que não foram lidas na query acima.
+    setEditingPoint(point);
     setIsEditModalOpen(true);
     setIsAddingMode(false); 
     setSelectionState(SELECTION_STATE.NONE);
