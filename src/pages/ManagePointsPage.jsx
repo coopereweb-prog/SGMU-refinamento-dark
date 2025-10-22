@@ -147,7 +147,8 @@ export function ManagePointsPage() {
     if (selectionState === SELECTION_STATE.STREET) {
       setNewPointCoords({ lat, lng });
       getAddressDetailsFromCoords(lat, lng, ({ streetName, neighborhood }) => {
-        setEditingPoint({ 
+        // Cria um objeto de ponto limpo, sem propriedades de preço
+        const newPoint = { 
           latitude: lat, 
           longitude: lng, 
           street_name: streetName,
@@ -157,9 +158,9 @@ export function ManagePointsPage() {
           pricing_tier_id: '',
           is_available: true,
           image_url: '',
-          // Armazena o bairro temporariamente para a descrição
           _temp_neighborhood: neighborhood, 
-        });
+        };
+        setEditingPoint(newPoint);
         setSelectionState(SELECTION_STATE.FORM); // Transiciona para o formulário imediatamente
         toast.info(`Rua Principal definida: ${streetName}. Agora, clique na rua do cruzamento (opcional) ou preencha o formulário.`);
       });
@@ -176,7 +177,9 @@ export function ManagePointsPage() {
   };
 
   const handleEdit = (point) => {
-    setEditingPoint(point);
+    // Cria uma cópia do ponto, removendo as propriedades de preço que não devem ser enviadas no update
+    const { price_1y, price_2y, price_3y, price_4y, price_5y, ...cleanPoint } = point;
+    setEditingPoint(cleanPoint);
     setIsEditModalOpen(true);
     setIsAddingMode(false); 
     setSelectionState(SELECTION_STATE.NONE);
@@ -194,13 +197,17 @@ export function ManagePointsPage() {
   const handleSavePoint = async (pointData, tagIds) => {
     try {
       let savedPoint;
+      
+      // Remove explicitamente as colunas de preço do objeto de dados antes de enviar
+      const { price_1y, price_2y, price_3y, price_4y, price_5y, ...dataToSave } = pointData;
+
       if (editingPoint && editingPoint.id) {
-        const { data, error } = await supabase.from('points').update(pointData).eq('id', editingPoint.id).select().single();
+        const { data, error } = await supabase.from('points').update(dataToSave).eq('id', editingPoint.id).select().single();
         if (error) throw error;
         savedPoint = data;
         toast.success("Sucesso", { description: "Ponto atualizado com sucesso." });
       } else {
-        const { data, error } = await supabase.from('points').insert(pointData).select().single();
+        const { data, error } = await supabase.from('points').insert(dataToSave).select().single();
         if (error) throw error;
         savedPoint = data;
         toast.success("Sucesso", { description: "Ponto criado com sucesso." });
