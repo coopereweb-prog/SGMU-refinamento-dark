@@ -177,7 +177,7 @@ export function PointForm({ point, onSave, onCancel }) {
           <FormItem><FormLabel>Rua Principal</FormLabel><FormControl><Input placeholder="Ex: Av. Brasil" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={form.control} name="intersection_name" render={({ field }) => (
-          <FormItem><FormLabel>Rua do Cruzamento (Opcional)</FormLabel><FormControl><Input placeholder="Ex: Rua 13 de Maio" {...field} /></FormControl><FormMessage /></FormMessage>
+          <FormItem><FormLabel>Rua do Cruzamento (Opcional)</FormLabel><FormControl><Input placeholder="Ex: Rua 13 de Maio" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
 
         <h3 className="font-semibold pt-2 border-t">Classificação e Preços</h3>
