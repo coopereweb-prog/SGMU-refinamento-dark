@@ -74,7 +74,13 @@ export function ManagePointsPage() {
 
   const fetchPoints = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('points').select('*').order('name');
+    // Seleciona explicitamente as colunas necessárias para a tabela de gerenciamento
+    const { data, error } = await supabase.from('points').select(`
+      id, name, status, latitude, longitude, pricing_tier_id, is_available, image_url, 
+      street_name, intersection_name, media_type, description,
+      price_1y, price_2y, price_3y, price_4y, price_5y
+    `).order('name');
+    
     if (error) {
       console.error('Error fetching points:', error);
       toast.error("Erro", { description: "Não foi possível carregar os pontos." });
