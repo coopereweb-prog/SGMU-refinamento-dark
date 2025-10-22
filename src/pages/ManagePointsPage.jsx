@@ -16,6 +16,7 @@ import { PlusCircle, Edit, Trash2, XCircle, MapPin, Loader2, CornerDownRight } f
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGoogleMapsLoader } from '@/contexts/GoogleMapsLoaderContext';
 import { GoogleMap, Marker, MarkerClustererF } from '@react-google-maps/api';
+import { PointMapModal } from '@/components/admin/PointMapModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useMapConfig } from '@/contexts/MapConfigContext'; // Importando configurações do mapa
 
@@ -63,9 +64,9 @@ export function ManagePointsPage() {
   const [currentZoom, setCurrentZoom] = useState(14);
   const [mapInstance, setMapInstance] = useState(null);
   
-  // Removendo estados de visualização do mapa
-  // const [isMapModalOpen, setIsMapModalOpen] = useState(false);
-  // const [pointToView, setPointToView] = useState(null);
+  // Estados para o modal de visualização
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [pointToView, setPointToView] = useState(null);
 
   const { isLoaded } = useGoogleMapsLoader();
   const { rules, settings, loading: loadingConfig } = useMapConfig();
@@ -190,15 +191,14 @@ export function ManagePointsPage() {
     setSelectionState(SELECTION_STATE.FORM); // Vai direto para o formulário
   };
 
-  // Removendo handleViewMap
-  // const handleViewMap = (point) => {
-  //   if (!point.latitude || !point.longitude) {
-  //     toast.warning("Coordenadas ausentes.", { description: "Este ponto não pode ser visualizado no mapa." });
-  //     return;
-  //   }
-  //   setPointToView(point);
-  //   setIsMapModalOpen(true);
-  // };
+  const handleViewMap = (point) => {
+    if (!point.latitude || !point.longitude) {
+      toast.warning("Coordenadas ausentes.", { description: "Este ponto não pode ser visualizado no mapa." });
+      return;
+    }
+    setPointToView(point);
+    setIsMapModalOpen(true);
+  };
 
   const handleSavePoint = async (pointData, tagIds) => {
     try {
@@ -389,6 +389,14 @@ export function ManagePointsPage() {
                   <TableCell>{point.name}</TableCell>
                   <TableCell>{point.status}</TableCell>
                   <TableCell className="text-right flex justify-end space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handleViewMap(point)}
+                      disabled={!point.latitude || !point.longitude}
+                    >
+                      <MapPin className="h-4 w-4 mr-2" /> Ver no Mapa
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => handleEdit(point)}>
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -416,7 +424,11 @@ export function ManagePointsPage() {
         </div>
       </Modal>
       
-      {/* Removendo PointMapModal */}
+      <PointMapModal
+        isOpen={isMapModalOpen}
+        onClose={() => setIsMapModalOpen(false)}
+        point={pointToView}
+      />
     </div>
   );
 }
