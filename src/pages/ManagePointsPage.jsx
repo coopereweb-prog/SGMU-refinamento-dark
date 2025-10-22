@@ -74,8 +74,6 @@ export function ManagePointsPage() {
 
   const fetchPoints = async () => {
     setLoading(true);
-    // Seleciona explicitamente as colunas necessárias para a tabela de gerenciamento,
-    // removendo as colunas de preço que estão causando o erro de esquema.
     const { data, error } = await supabase.from('points').select(`
       id, name, status, latitude, longitude, pricing_tier_id, is_available, image_url, 
       street_name, intersection_name, media_type, description
@@ -109,12 +107,6 @@ export function ManagePointsPage() {
     setEditingPoint(null);
   };
 
-  /**
-   * Tenta extrair o nome da rua e o bairro a partir das coordenadas.
-   * @param {number} lat 
-   * @param {number} lng 
-   * @param {(result: {streetName: string, neighborhood: string}) => void} callback 
-   */
   const getAddressDetailsFromCoords = (lat, lng, callback) => {
     if (!isLoaded) {
       toast.warning("Serviço de mapas não carregado. Tente novamente.");
@@ -135,7 +127,6 @@ export function ManagePointsPage() {
         neighborhood = neighborhoodComponent ? neighborhoodComponent.long_name : '';
 
         if (!streetName) {
-          // Fallback para o endereço formatado se a rua não for encontrada
           streetName = results[0].formatted_address;
         }
       } else {
@@ -153,7 +144,6 @@ export function ManagePointsPage() {
     if (selectionState === SELECTION_STATE.STREET) {
       setNewPointCoords({ lat, lng });
       getAddressDetailsFromCoords(lat, lng, ({ streetName, neighborhood }) => {
-        // Cria um objeto de ponto limpo, sem propriedades de preço
         const newPoint = { 
           latitude: lat, 
           longitude: lng, 
@@ -161,17 +151,16 @@ export function ManagePointsPage() {
           intersection_name: '',
           name: streetName,
           description: '',
-          pricing_tier_id: '',
+          pricing_tier_id: null, // Alteração: Inicializa como null
           is_available: true,
           image_url: '',
           _temp_neighborhood: neighborhood, 
         };
         setEditingPoint(newPoint);
-        setSelectionState(SELECTION_STATE.FORM); // Transiciona para o formulário imediatamente
+        setSelectionState(SELECTION_STATE.FORM);
         toast.info(`Rua Principal definida: ${streetName}. Agora, clique na rua do cruzamento (opcional) ou preencha o formulário.`);
       });
     } else if (selectionState === SELECTION_STATE.FORM) {
-      // Se já estiver no estado FORM, o clique no mapa é para definir o cruzamento
       getAddressDetailsFromCoords(lat, lng, ({ streetName: intersectionName }) => {
         setEditingPoint(prev => ({
           ...prev,
@@ -183,8 +172,6 @@ export function ManagePointsPage() {
   };
 
   const handleEdit = (point) => {
-    // Cria uma cópia do ponto, removendo as propriedades de preço que não devem ser enviadas no update
-    // e que não foram lidas na query acima.
     setEditingPoint(point);
     setIsEditModalOpen(true);
     setIsAddingMode(false); 
@@ -202,8 +189,6 @@ export function ManagePointsPage() {
 
   const handleSavePoint = async (pointData, tagIds) => {
     try {
-      // O pontoData recebido do PointForm é limpo.
-      // Adiciona o ID se for uma edição
       const dataToSave = {
         ...pointData,
         id: editingPoint?.id || null,
@@ -212,7 +197,6 @@ export function ManagePointsPage() {
         media_type: pointData.media_type || 'static_panel',
       };
 
-      // Usa a função RPC para salvar/atualizar o ponto e as tags
       await savePoint(dataToSave, tagIds);
 
       toast.success("Sucesso", { description: `Ponto ${editingPoint?.id ? 'atualizado' : 'criado'} com sucesso.` });
@@ -290,7 +274,6 @@ export function ManagePointsPage() {
 
       {isAddingMode && (
         <div className="grid lg:grid-cols-2 gap-6 h-[70vh]">
-          {/* Coluna do Mapa */}
           <div className="flex flex-col gap-4 h-full">
             <div className="p-4 text-center bg-blue-50 border border-blue-200 rounded-lg">
               <p className="font-semibold text-blue-700 flex items-center justify-center">
@@ -309,7 +292,6 @@ export function ManagePointsPage() {
                   onZoomChanged={onZoomChanged}
                   options={{ ...mapOptions, draggableCursor: 'crosshair' }}
                 >
-                  {/* Marcador do novo ponto */}
                   {newPointCoords && (
                     <Marker 
                       position={newPointCoords} 
@@ -317,7 +299,6 @@ export function ManagePointsPage() {
                     />
                   )}
                   
-                  {/* Pontos existentes com lógica de cluster/individual */}
                   {activeRule.display_mode === 'cluster' ? (
                     <MarkerClustererF
                       options={{
@@ -352,7 +333,6 @@ export function ManagePointsPage() {
             </div>
           </div>
           
-          {/* Coluna do Formulário (Aparece após a primeira seleção) */}
           {selectionState === SELECTION_STATE.FORM && editingPoint && (
             <Card className="h-full overflow-y-auto">
               <CardHeader><CardTitle>Novo Ponto</CardTitle></CardHeader>
@@ -408,7 +388,6 @@ export function ManagePointsPage() {
         )
       )}
 
-      {/* Modal de Edição (Mantido para edição de pontos existentes) */}
       <Modal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}

@@ -19,13 +19,14 @@ const pointSchema = z.object({
   description: z.string().optional(),
   latitude: z.coerce.number({ invalid_type_error: "Latitude deve ser um número." }),
   longitude: z.coerce.number({ invalid_type_error: "Longitude deve ser um número." }),
-  pricing_tier_id: z.string().uuid("Você deve selecionar um nível de preço."),
+  // Alteração: Tornando o campo opcional e permitindo nulo para teste.
+  pricing_tier_id: z.string().uuid("ID do nível de preço inválido.").nullable().optional(),
   is_available: z.boolean().default(true),
   image_url: z.string().optional(),
   street_name: z.string().min(1, { message: "O nome da rua principal é obrigatório." }),
   intersection_name: z.string().optional(),
   _temp_neighborhood: z.string().optional(),
-  media_type: z.enum(['static_panel', 'outdoor', 'led_panel']).default('static_panel'), // Adicionado media_type
+  media_type: z.enum(['static_panel', 'outdoor', 'led_panel']).default('static_panel'),
 });
 
 export function PointForm({ point, onSave, onCancel }) {
@@ -38,9 +39,10 @@ export function PointForm({ point, onSave, onCancel }) {
     resolver: zodResolver(pointSchema),
     defaultValues: {
       name: '', description: '', latitude: '', longitude: '',
-      pricing_tier_id: '', is_available: true, image_url: '',
+      pricing_tier_id: null, // Alteração: Valor padrão para nulo
+      is_available: true, image_url: '',
       street_name: '', intersection_name: '', _temp_neighborhood: '',
-      media_type: 'static_panel', // Valor padrão
+      media_type: 'static_panel',
     },
   });
 
@@ -50,16 +52,15 @@ export function PointForm({ point, onSave, onCancel }) {
     if (point) {
       form.reset({
         ...point,
-        // Garante que latitude/longitude sejam números ou strings vazias
         latitude: point.latitude || '',
         longitude: point.longitude || '',
-        // Garante que media_type tenha um valor
+        pricing_tier_id: point.pricing_tier_id || null, // Garante nulo em vez de string vazia
         media_type: point.media_type || 'static_panel',
       });
     } else {
       form.reset({
         name: '', description: '', latitude: '', longitude: '',
-        pricing_tier_id: '', is_available: true, image_url: '',
+        pricing_tier_id: null, is_available: true, image_url: '',
         street_name: '', intersection_name: '', _temp_neighborhood: '',
         media_type: 'static_panel',
       });
@@ -139,18 +140,18 @@ export function PointForm({ point, onSave, onCancel }) {
       }
     }
     
-    // CORREÇÃO: Criamos o objeto de salvamento explicitamente com os campos do schema
     const pointDataToSave = {
       name: values.name,
       description: values.description,
       latitude: values.latitude,
       longitude: values.longitude,
-      pricing_tier_id: values.pricing_tier_id,
+      // Alteração: Garante que uma string vazia seja convertida para null antes de salvar.
+      pricing_tier_id: values.pricing_tier_id || null,
       is_available: values.is_available,
       street_name: values.street_name,
       intersection_name: values.intersection_name,
       image_url: imageUrl,
-      media_type: values.media_type, // Incluído media_type
+      media_type: values.media_type,
     };
     
     await onSave(pointDataToSave, Array.from(selectedTags));
@@ -176,15 +177,15 @@ export function PointForm({ point, onSave, onCancel }) {
           <FormItem><FormLabel>Rua Principal</FormLabel><FormControl><Input placeholder="Ex: Av. Brasil" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={form.control} name="intersection_name" render={({ field }) => (
-          <FormItem><FormLabel>Rua do Cruzamento (Opcional)</FormLabel><FormControl><Input placeholder="Ex: Rua 13 de Maio" {...field} /></FormControl><FormMessage /></FormItem>
+          <FormItem><FormLabel>Rua do Cruzamento (Opcional)</FormLabel><FormControl><Input placeholder="Ex: Rua 13 de Maio" {...field} /></FormControl><FormMessage /></FormMessage>
         )} />
 
         <h3 className="font-semibold pt-2 border-t">Classificação e Preços</h3>
         <FormField control={form.control} name="pricing_tier_id" render={({ field }) => (
           <FormItem>
-            <FormLabel>Classificação do Ponto</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
-              <FormControl><SelectTrigger><SelectValue placeholder="Selecione a classificação" /></SelectTrigger></FormControl>
+            <FormLabel>Classificação do Ponto (Opcional)</FormLabel>
+            <Select onValueChange={field.onChange} value={field.value || ''}>
+              <FormControl><SelectTrigger><SelectValue placeholder="Selecione a classificação (opcional)" /></SelectTrigger></FormControl>
               <SelectContent>
                 {pricingTiers.map(tier => <SelectItem key={tier.id} value={tier.id}>{tier.name}</SelectItem>)}
               </SelectContent>
@@ -213,7 +214,6 @@ export function PointForm({ point, onSave, onCancel }) {
         
         <h3 className="font-semibold pt-2 border-t">Outras Informações</h3>
         
-        {/* Campo de Mídia (Oculto, mas necessário para a RPC) */}
         <FormField control={form.control} name="media_type" render={({ field }) => (
           <FormItem className="hidden">
             <FormLabel>Tipo de Mídia</FormLabel>
