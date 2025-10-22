@@ -204,28 +204,17 @@ export function ManagePointsPage() {
     try {
       let savedPoint;
       
-      // --- REMOÇÃO ROBUSTA DE COLUNAS DE PREÇO ---
-      // Cria um novo objeto que só contém as chaves permitidas na tabela points
-      const allowedKeys = [
-        'name', 'description', 'latitude', 'longitude', 'pricing_tier_id', 
-        'is_available', 'image_url', 'street_name', 'intersection_name', 'media_type'
-      ];
-      
-      const dataToSave = Object.keys(pointData)
-        .filter(key => allowedKeys.includes(key))
-        .reduce((obj, key) => {
-          // Garante que valores vazios de números sejam null ou undefined
-          if (['latitude', 'longitude'].includes(key) && (pointData[key] === '' || pointData[key] === null)) {
-             obj[key] = null;
-          } else {
-             obj[key] = pointData[key];
-          }
-          return obj;
-        }, {});
-      // --- FIM DA REMOÇÃO ROBUSTA ---
+      // O pontoData recebido do PointForm é limpo.
+      // Apenas garante que latitude/longitude sejam null se forem strings vazias.
+      const dataToSave = {
+        ...pointData,
+        latitude: pointData.latitude === '' ? null : pointData.latitude,
+        longitude: pointData.longitude === '' ? null : pointData.longitude,
+      };
 
       if (editingPoint && editingPoint.id) {
-        const { data, error } = await supabase.from('points').update(dataToSave).eq('id', editingPoint.id).select().single();
+        // Usamos select('id') para minimizar a exposição do esquema e evitar o erro price_1y
+        const { data, error } = await supabase.from('points').update(dataToSave).eq('id', editingPoint.id).select('id').single();
         if (error) throw error;
         savedPoint = data;
         toast.success("Sucesso", { description: "Ponto atualizado com sucesso." });
@@ -235,12 +224,14 @@ export function ManagePointsPage() {
           ...dataToSave,
           media_type: dataToSave.media_type || 'static_panel'
         };
-        const { data, error } = await supabase.from('points').insert(finalDataToInsert).select().single();
+        // Usamos select('id') aqui também
+        const { data, error } = await supabase.from('points').insert(finalDataToInsert).select('id').single();
         if (error) throw error;
         savedPoint = data;
         toast.success("Sucesso", { description: "Ponto criado com sucesso." });
       }
 
+      // Lógica de salvamento de tags
       const { error: deleteError } = await supabase.from('point_tags').delete().eq('point_id', savedPoint.id);
       if (deleteError) throw deleteError;
 
