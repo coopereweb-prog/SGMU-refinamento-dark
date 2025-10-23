@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Modal } from '@/components/Modal';
 import { toast } from "sonner";
-import { PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
 import { PricingTierForm } from '@/components/PricingTierForm';
 
 export function ManagePricingPage() {
@@ -19,10 +19,19 @@ export function ManagePricingPage() {
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTier, setEditingTier] = useState(null);
+  const [editingTierPrices, setEditingTierPrices] = useState([]);
 
   const fetchTiers = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('pricing_tiers').select('*').order('name');
+    // Busca os tiers e seus preços associados
+    const { data, error } = await supabase
+      .from('pricing_tiers')
+      .select(`
+        *,
+        tier_prices (id, period_days, price)
+      `)
+      .order('name');
+      
     if (error) {
       toast.error("Erro ao carregar níveis de preço.", { description: error.message });
     } else {
@@ -37,30 +46,66 @@ export function ManagePricingPage() {
 
   const handleAddNew = () => {
     setEditingTier(null);
+    setEditingTierPrices([]);
     setIsFormOpen(true);
   };
 
   const handleEdit = (tier) => {
     setEditingTier(tier);
+    setEditingTierPrices(tier.tier_prices || []);
     setIsFormOpen(true);
   };
 
-  const handleSave = async (formData) => {
+  const handleSave = async (tierData, pricesToSave) => {
     try {
+      let savedTier;
+      
+      // 1. Salva/Atualiza o Tier Principal
       if (editingTier) {
-        const { error } = await supabase.from('pricing_tiers').update(formData).eq('id', editingTier.id);
+        const { data, error } = await supabase
+          .from('pricing_tiers')
+          .update(tierData)
+          .eq('id', editingTier.id)
+          .select()
+          .single();
         if (error) throw error;
-        toast.success("Nível de preço atualizado com sucesso.");
+        savedTier = data;
       } else {
-        const { error } = await supabase.from('pricing_tiers').insert(formData);
+        const { data, error } = await supabase
+          .from('pricing_tiers')
+          .insert(tierData)
+          .select()
+          .single();
         if (error) throw error;
-        toast.success("Nível de preço criado com sucesso.");
+        savedTier = data;
       }
+
+      // 2. Salva/Atualiza os Preços (Tier Prices)
+      const pricesWithTierId = pricesToSave.map(p => ({
+        ...p,
+        tier_id: savedTier.id,
+        // Usamos period_days como chave para o upsert, já que é único por tier
+        id: editingTierPrices.find(ep => ep.period_days === p.period_days)?.id,
+      }));
+      
+      const { error: pricesError } = await supabase
+        .from('tier_prices')
+        .upsert(pricesWithTierId, { onConflict: 'tier_id, period_days' });
+        
+      if (pricesError) throw pricesError;
+
+      toast.success(`Nível de preço ${editingTier ? 'atualizado' : 'criado'} com sucesso.`);
       setIsFormOpen(false);
       fetchTiers();
     } catch (error) {
       toast.error("Falha ao salvar o nível de preço.", { description: error.message });
     }
+  };
+  
+  const getPriceForPeriod = (tier, periodYears) => {
+    const periodDays = periodYears * 365;
+    const priceItem = tier.tier_prices?.find(p => p.period_days === periodDays);
+    return priceItem ? Number(priceItem.price) : 0;
   };
 
   return (
@@ -73,7 +118,7 @@ export function ManagePricingPage() {
       </div>
 
       {loading ? (
-        <p>Carregando...</p>
+        <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
       ) : (
         <Table>
           <TableHeader>
@@ -87,11 +132,12 @@ export function ManagePricingPage() {
             {tiers.map((tier) => (
               <TableRow key={tier.id}>
                 <TableCell className="font-medium">{tier.name}</TableCell>
-                <TableCell>{Number(tier.price_1y).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
+                <TableCell>{getPriceForPeriod(tier, 1).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="icon" onClick={() => handleEdit(tier)}>
                     <Edit className="h-4 w-4" />
                   </Button>
+                  {/* Implementar exclusão se necessário */}
                 </TableCell>
               </TableRow>
             ))}
@@ -106,6 +152,7 @@ export function ManagePricingPage() {
       >
         <PricingTierForm
           tier={editingTier}
+          tierPrices={editingTierPrices}
           onSave={handleSave}
           onCancel={() => setIsFormOpen(false)}
         />

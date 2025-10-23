@@ -8,62 +8,103 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Loader2 } from 'lucide-react';
 
-const tierSchema = z.object({
-  name: z.string().min(1, "O nome é obrigatório."),
-  price_1y: z.coerce.number().positive("O preço deve ser positivo."),
-  price_2y: z.coerce.number().positive("O preço deve ser positivo."),
-  price_3y: z.coerce.number().positive("O preço deve ser positivo."),
-  price_4y: z.coerce.number().positive("O preço deve ser positivo."),
-  price_5y: z.coerce.number().positive("O preço deve ser positivo."),
-  description_template: z.string().optional(),
+// Define o esquema para um único preço de período
+const priceSchema = z.object({
+  period_years: z.number().int().positive(),
+  price: z.coerce.number().min(0, "O preço não pode ser negativo."),
 });
 
-export function PricingTierForm({ tier, onSave, onCancel }) {
+const tierSchema = z.object({
+  name: z.string().min(1, "O nome é obrigatório."),
+  description_template: z.string().optional(),
+  // Usamos um array para os preços, que será tratado separadamente
+  prices: z.array(priceSchema),
+});
+
+const PERIOD_OPTIONS = [
+  { years: 1, label: '1 Ano' },
+  { years: 2, label: '2 Anos' },
+  { years: 3, label: '3 Anos' },
+  { years: 4, label: '4 Anos' },
+  { years: 5, label: '5 Anos' },
+];
+
+export function PricingTierForm({ tier, tierPrices, onSave, onCancel }) {
+  const defaultPrices = PERIOD_OPTIONS.map(option => {
+    const existingPrice = tierPrices?.find(p => p.period_days === option.years * 365);
+    return {
+      period_years: option.years,
+      price: existingPrice ? Number(existingPrice.price) : 0,
+    };
+  });
+
   const form = useForm({
     resolver: zodResolver(tierSchema),
     defaultValues: {
-      name: '',
-      price_1y: 0, // Alterado para 0
-      price_2y: 0, // Alterado para 0
-      price_3y: 0, // Alterado para 0
-      price_4y: 0, // Alterado para 0
-      price_5y: 0, // Alterado para 0
-      description_template: '',
+      name: tier?.name || '',
+      description_template: tier?.description_template || '',
+      prices: defaultPrices,
     },
   });
 
   useEffect(() => {
     if (tier) {
-      // Garante que os números sejam tratados corretamente ao carregar
+      const prices = PERIOD_OPTIONS.map(option => {
+        const existingPrice = tierPrices?.find(p => p.period_days === option.years * 365);
+        return {
+          period_years: option.years,
+          price: existingPrice ? Number(existingPrice.price) : 0,
+        };
+      });
+      
       form.reset({
         name: tier.name || '',
-        price_1y: Number(tier.price_1y) || 0,
-        price_2y: Number(tier.price_2y) || 0,
-        price_3y: Number(tier.price_3y) || 0,
-        price_4y: Number(tier.price_4y) || 0,
-        price_5y: Number(tier.price_5y) || 0,
         description_template: tier.description_template || '',
+        prices: prices,
       });
     } else {
       form.reset({
-        name: '', price_1y: 0, price_2y: 0, price_3y: 0, price_4y: 0, price_5y: 0, description_template: ''
+        name: '',
+        description_template: '',
+        prices: PERIOD_OPTIONS.map(option => ({ period_years: option.years, price: 0 })),
       });
     }
-  }, [tier, form]);
+  }, [tier, tierPrices, form]);
+
+  const handleSubmit = (values) => {
+    // Separa os dados do tier principal dos dados dos preços
+    const { prices, ...tierData } = values;
+    
+    // Formata os preços para a tabela tier_prices
+    const pricesToSave = prices.map(p => ({
+      period_days: p.period_years * 365,
+      period_label: `${p.period_years} Ano(s)`,
+      price: p.price,
+    }));
+
+    onSave(tierData, pricesToSave);
+  };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSave)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <FormField control={form.control} name="name" render={({ field }) => (
           <FormItem><FormLabel>Nome do Nível</FormLabel><FormControl><Input placeholder="Ex: Ouro" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
+        
+        <h3 className="font-semibold pt-2 border-t">Preços por Período</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5].map(year => (
-            <FormField key={year} control={form.control} name={`price_${year}y`} render={({ field }) => (
-              <FormItem><FormLabel>Preço {year} Ano(s)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+          {PERIOD_OPTIONS.map((option, index) => (
+            <FormField key={option.years} control={form.control} name={`prices.${index}.price`} render={({ field }) => (
+              <FormItem>
+                <FormLabel>Preço {option.label}</FormLabel>
+                <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value === 0 ? '' : field.value} onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))} /></FormControl>
+                <FormMessage />
+              </FormItem>
             )} />
           ))}
         </div>
+        
         <FormField control={form.control} name="description_template" render={({ field }) => (
           <FormItem>
             <FormLabel>Modelo de Descrição</FormLabel>
@@ -72,6 +113,7 @@ export function PricingTierForm({ tier, onSave, onCancel }) {
               Variáveis: 
               <code className="mx-1 font-mono bg-muted p-0.5 rounded-sm">{`{{tier_name}}`}</code>
               <code className="mx-1 font-mono bg-muted p-0.5 rounded-sm">{`{{point_name}}`}</code>
+              <code className="mx-1 font-mono bg-muted p-0.5 rounded-sm">{`{{neighborhood}}`}</code>
               <code className="mx-1 font-mono bg-muted p-0.5 rounded-sm">{`{{price_1y}}`}</code>
               ...
               <code className="mx-1 font-mono bg-muted p-0.5 rounded-sm">{`{{price_5y}}`}</code>
