@@ -262,7 +262,7 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
               <GoogleMap
                 mapContainerStyle={mapContainerStyle}
                 center={mapCenter}
-                zoom={18}
+                zoom={19} {/* Zoom fixo em 19 para edição */}
                 options={{ disableDefaultUI: true, zoomControl: true }}
               >
                 {/* Marcador do Ponto em Edição (Arrastável) */}
