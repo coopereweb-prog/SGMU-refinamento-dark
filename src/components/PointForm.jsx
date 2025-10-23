@@ -21,18 +21,29 @@ const pointSchema = z.object({
   description: z.string().optional(),
   latitude: z.coerce.number({ invalid_type_error: "Latitude deve ser um número." }),
   longitude: z.coerce.number({ invalid_type_error: "Longitude deve ser um número." }),
-  pricing_tier_id: z.string().uuid("Você deve selecionar um nível de preço."),
+  // Permite string vazia para novo ponto, mas valida se for submetido
+  pricing_tier_id: z.string().min(1, "Você deve selecionar um nível de preço."),
   is_available: z.boolean().default(true),
   image_url: z.string().optional(),
   // Novos campos
   street_name: z.string().min(1, { message: "O nome da rua principal é obrigatório." }),
   intersection_name: z.string().optional(),
+  _temp_neighborhood: z.string().optional(), // Campo temporário
 });
 
 const mapContainerStyle = {
   width: '100%',
   height: '300px',
   borderRadius: '0.5rem',
+};
+
+// Mapeamento de dias para anos para facilitar a busca de preços
+const PERIOD_MAP = {
+  365: 'price_1y',
+  730: 'price_2y',
+  1095: 'price_3y',
+  1460: 'price_4y',
+  1825: 'price_5y',
 };
 
 export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
@@ -44,7 +55,6 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
   
   const isEditing = !!point?.id;
 
-  // Define os ícones aqui, onde isLoaded pode ser verificado antes de usar window.google.maps
   const EDIT_MARKER_ICON = useMemo(() => isLoaded ? {
     url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
     scaledSize: new window.google.maps.Size(36, 36),
@@ -71,9 +81,6 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
     },
   });
 
-  // O nome base agora é composto pelas ruas. Deve vir DEPOIS de useForm.
-  const baseName = form.watch('street_name') + (form.watch('intersection_name') ? ` c/ ${form.watch('intersection_name')}` : '');
-
   const selectedTierId = form.watch('pricing_tier_id');
   const currentNeighborhood = form.watch('_temp_neighborhood');
 
@@ -89,7 +96,7 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
         image_url: point.image_url || '',
         street_name: point.street_name || '',
         intersection_name: point.intersection_name || '',
-        _temp_neighborhood: point._temp_neighborhood || '', // Carrega o bairro temporário
+        _temp_neighborhood: point._temp_neighborhood || '',
       });
       
       if (point.id) {
@@ -111,42 +118,68 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
     const fetchInitialData = async () => {
       const { data: tagsData } = await supabase.from('tags').select('*');
       setTags(tagsData || []);
-      const { data: tiersData } = await supabase.from('pricing_tiers').select('*');
-      setPricingTiers(tiersData || []);
+      
+      // Busca os tiers e os preços aninhados
+      const { data: tiersData, error: tiersError } = await supabase
+        .from('pricing_tiers')
+        .select(`
+          *,
+          tier_prices (period_days, price)
+        `);
+        
+      if (tiersError) {
+        toast.error("Erro ao carregar níveis de preço.", { description: tiersError.message });
+        setPricingTiers([]);
+      } else {
+        // Mapeia os preços aninhados para um formato fácil de usar (price_1y, price_2y, etc.)
+        const formattedTiers = tiersData.map(tier => {
+          const prices = {};
+          tier.tier_prices.forEach(tp => {
+            const key = PERIOD_MAP[tp.period_days];
+            if (key) {
+              prices[key] = Number(tp.price);
+            }
+          });
+          return { ...tier, ...prices };
+        });
+        setPricingTiers(formattedTiers || []);
+      }
     };
     fetchInitialData();
   }, []);
 
+  // Obter os preços do tier selecionado para exibição e preenchimento
+  const selectedTier = pricingTiers.find(t => t.id === selectedTierId);
+  
   // Efeito para atualizar nome e descrição automaticamente
   useEffect(() => {
-    const currentBaseName = form.getValues('street_name') + (form.getValues('intersection_name') ? ` c/ ${form.getValues('intersection_name')}` : '');
+    const streetName = form.getValues('street_name');
+    const intersectionName = form.getValues('intersection_name');
+    const currentBaseName = streetName + (intersectionName ? ` c/ ${intersectionName}` : '');
     const currentNeighborhoodValue = form.getValues('_temp_neighborhood');
     
-    if (selectedTierId && pricingTiers.length > 0 && currentBaseName) {
-      const selectedTier = pricingTiers.find(t => t.id === selectedTierId);
-      if (selectedTier) {
-        // Atualiza nome com o novo separador
-        const newName = `${selectedTier.name} | ${currentBaseName}`;
-        form.setValue('name', newName);
+    if (selectedTier && currentBaseName) {
+      // Atualiza nome com o novo separador
+      const newName = `${selectedTier.name} | ${currentBaseName}`;
+      form.setValue('name', newName);
 
-        // Atualiza descrição com todas as variáveis
-        let newDescription = selectedTier.description_template || '';
-        newDescription = newDescription
-          .replace(/{{tier_name}}/g, selectedTier.name)
-          .replace(/{{point_name}}/g, currentBaseName)
-          .replace(/{{neighborhood}}/g, currentNeighborhoodValue) // Novo campo
-          .replace(/{{price_1y}}/g, formatCurrencyBRL(selectedTier.price_1y))
-          .replace(/{{price_2y}}/g, formatCurrencyBRL(selectedTier.price_2y))
-          .replace(/{{price_3y}}/g, formatCurrencyBRL(selectedTier.price_3y))
-          .replace(/{{price_4y}}/g, formatCurrencyBRL(selectedTier.price_4y))
-          .replace(/{{price_5y}}/g, formatCurrencyBRL(selectedTier.price_5y));
-        form.setValue('description', newDescription);
-      }
+      // Atualiza descrição com todas as variáveis
+      let newDescription = selectedTier.description_template || '';
+      newDescription = newDescription
+        .replace(/{{tier_name}}/g, selectedTier.name)
+        .replace(/{{point_name}}/g, currentBaseName)
+        .replace(/{{neighborhood}}/g, currentNeighborhoodValue || 'N/A')
+        .replace(/{{price_1y}}/g, formatCurrencyBRL(selectedTier.price_1y || 0))
+        .replace(/{{price_2y}}/g, formatCurrencyBRL(selectedTier.price_2y || 0))
+        .replace(/{{price_3y}}/g, formatCurrencyBRL(selectedTier.price_3y || 0))
+        .replace(/{{price_4y}}/g, formatCurrencyBRL(selectedTier.price_4y || 0))
+        .replace(/{{price_5y}}/g, formatCurrencyBRL(selectedTier.price_5y || 0));
+      form.setValue('description', newDescription);
     } else if (currentBaseName) {
         // Se não houver tier selecionado, apenas define o nome base
         form.setValue('name', currentBaseName);
     }
-  }, [selectedTierId, pricingTiers, form.watch('street_name'), form.watch('intersection_name'), currentNeighborhood, form]);
+  }, [selectedTier, form.watch('street_name'), form.watch('intersection_name'), currentNeighborhood, form]);
 
 
   const handleTagChange = (tagId) => {
@@ -191,9 +224,6 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
     await onSave(pointDataToSave, Array.from(selectedTags));
   };
 
-  // Obter os preços do tier selecionado para exibição
-  const selectedTier = pricingTiers.find(t => t.id === selectedTierId);
-  
   // --- Map Logic for Editing ---
   const currentLat = form.watch('latitude');
   const currentLng = form.watch('longitude');
@@ -278,7 +308,7 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
         <FormField control={form.control} name="pricing_tier_id" render={({ field }) => (
           <FormItem>
             <FormLabel>Classificação do Ponto</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <Select onValueChange={field.onChange} value={field.value}>
               <FormControl><SelectTrigger><SelectValue placeholder="Selecione a classificação" /></SelectTrigger></FormControl>
               <SelectContent>
                 {pricingTiers.map(tier => <SelectItem key={tier.id} value={tier.id}>{tier.name}</SelectItem>)}
@@ -292,11 +322,11 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
             <p className="text-sm font-semibold text-blue-700 mb-2">Preços automáticos baseados na classificação:</p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-              <div>1 ano: {formatCurrencyBRL(selectedTier.price_1y)}</div>
-              <div>2 anos: {formatCurrencyBRL(selectedTier.price_2y)}</div>
-              <div>3 anos: {formatCurrencyBRL(selectedTier.price_3y)}</div>
-              <div>4 anos: {formatCurrencyBRL(selectedTier.price_4y)}</div>
-              <div>5 anos: {formatCurrencyBRL(selectedTier.price_5y)}</div>
+              <div>1 ano: {formatCurrencyBRL(selectedTier.price_1y || 0)}</div>
+              <div>2 anos: {formatCurrencyBRL(selectedTier.price_2y || 0)}</div>
+              <div>3 anos: {formatCurrencyBRL(selectedTier.price_3y || 0)}</div>
+              <div>4 anos: {formatCurrencyBRL(selectedTier.price_4y || 0)}</div>
+              <div>5 anos: {formatCurrencyBRL(selectedTier.price_5y || 0)}</div>
             </div>
           </div>
         )}
