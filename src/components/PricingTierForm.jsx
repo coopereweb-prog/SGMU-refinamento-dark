@@ -23,21 +23,30 @@ export function PricingTierForm({ tier, onSave, onCancel }) {
     resolver: zodResolver(tierSchema),
     defaultValues: {
       name: '',
-      price_1y: '',
-      price_2y: '',
-      price_3y: '',
-      price_4y: '',
-      price_5y: '',
+      price_1y: 0, // Alterado para 0
+      price_2y: 0, // Alterado para 0
+      price_3y: 0, // Alterado para 0
+      price_4y: 0, // Alterado para 0
+      price_5y: 0, // Alterado para 0
       description_template: '',
     },
   });
 
   useEffect(() => {
     if (tier) {
-      form.reset(tier);
+      // Garante que os números sejam tratados corretamente ao carregar
+      form.reset({
+        name: tier.name || '',
+        price_1y: Number(tier.price_1y) || 0,
+        price_2y: Number(tier.price_2y) || 0,
+        price_3y: Number(tier.price_3y) || 0,
+        price_4y: Number(tier.price_4y) || 0,
+        price_5y: Number(tier.price_5y) || 0,
+        description_template: tier.description_template || '',
+      });
     } else {
       form.reset({
-        name: '', price_1y: '', price_2y: '', price_3y: '', price_4y: '', price_5y: '', description_template: ''
+        name: '', price_1y: 0, price_2y: 0, price_3y: 0, price_4y: 0, price_5y: 0, description_template: ''
       });
     }
   }, [tier, form]);
