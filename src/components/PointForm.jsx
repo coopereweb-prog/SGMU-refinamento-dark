@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -11,8 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from '@/lib/supabase';
 import { compressImage } from '@/lib/image-utils';
 import { formatCurrencyBRL } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
+import { Loader2, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
+import { GoogleMap, Marker } from '@react-google-maps/api';
+import { useGoogleMapsLoader } from '@/contexts/GoogleMapsLoaderContext';
 
 const pointSchema = z.object({
   name: z.string().min(3, { message: "O nome do ponto deve ter pelo menos 3 caracteres." }),
@@ -27,12 +29,31 @@ const pointSchema = z.object({
   intersection_name: z.string().optional(),
 });
 
-export function PointForm({ point, onSave, onCancel }) {
+const mapContainerStyle = {
+  width: '100%',
+  height: '300px',
+  borderRadius: '0.5rem',
+};
+
+const EDIT_MARKER_ICON = {
+  url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+  scaledSize: new window.google.maps.Size(36, 36),
+};
+
+const CONTEXT_MARKER_ICON = {
+  url: 'http://maps.google.com/mapfiles/ms/icons/grey-dot.png',
+  scaledSize: new window.google.maps.Size(24, 24),
+};
+
+export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
   const [tags, setTags] = useState([]);
   const [pricingTiers, setPricingTiers] = useState([]);
   const [selectedTags, setSelectedTags] = useState(new Set());
   const [imageFile, setImageFile] = useState(null);
+  const { isLoaded } = useGoogleMapsLoader();
   
+  const isEditing = !!point?.id;
+
   const form = useForm({
     resolver: zodResolver(pointSchema),
     defaultValues: {
@@ -45,7 +66,7 @@ export function PointForm({ point, onSave, onCancel }) {
       image_url: '',
       street_name: '',
       intersection_name: '',
-      _temp_neighborhood: '', // Campo temporário para o bairro
+      _temp_neighborhood: '',
     },
   });
 
@@ -171,18 +192,77 @@ export function PointForm({ point, onSave, onCancel }) {
 
   // Obter os preços do tier selecionado para exibição
   const selectedTier = pricingTiers.find(t => t.id === selectedTierId);
+  
+  // --- Map Logic for Editing ---
+  const currentLat = form.watch('latitude');
+  const currentLng = form.watch('longitude');
+  
+  const mapCenter = useMemo(() => {
+    if (currentLat && currentLng) {
+      return { lat: currentLat, lng: currentLng };
+    }
+    return { lat: -22.78, lng: -47.3 }; // Default center
+  }, [currentLat, currentLng]);
+
+  const handleMarkerDragEnd = useCallback((e) => {
+    const newLat = e.latLng.lat();
+    const newLng = e.latLng.lng();
+    form.setValue('latitude', newLat, { shouldValidate: true });
+    form.setValue('longitude', newLng, { shouldValidate: true });
+    toast.info('Coordenadas atualizadas via mapa.');
+  }, [form]);
+
+  const contextPoints = useMemo(() => {
+    if (!isEditing) return [];
+    return allPoints.filter(p => p.id !== point.id && p.latitude && p.longitude);
+  }, [allPoints, isEditing, point]);
+  // --- End Map Logic ---
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
         
+        {isEditing && isLoaded && currentLat && currentLng && (
+          <div className="space-y-2">
+            <h3 className="font-semibold pt-2 border-t flex items-center">
+              <MapPin className="h-4 w-4 mr-2" /> Ajustar Localização
+            </h3>
+            <div className="relative w-full" style={mapContainerStyle}>
+              <GoogleMap
+                mapContainerStyle={mapContainerStyle}
+                center={mapCenter}
+                zoom={18}
+                options={{ disableDefaultUI: true, zoomControl: true }}
+              >
+                {/* Marcador do Ponto em Edição (Arrastável) */}
+                <Marker
+                  position={mapCenter}
+                  draggable={true}
+                  onDragEnd={handleMarkerDragEnd}
+                  icon={EDIT_MARKER_ICON}
+                />
+                
+                {/* Marcadores de Contexto (Outros Pontos) */}
+                {contextPoints.map(p => (
+                  <Marker
+                    key={p.id}
+                    position={{ lat: p.latitude, lng: p.longitude }}
+                    draggable={false}
+                    icon={CONTEXT_MARKER_ICON}
+                  />
+                ))}
+              </GoogleMap>
+            </div>
+          </div>
+        )}
+
         <h3 className="font-semibold pt-2 border-t">Localização e Nomenclatura</h3>
         <div className="grid grid-cols-2 gap-4">
           <FormField control={form.control} name="latitude" render={({ field }) => (
-            <FormItem><FormLabel>Latitude</FormLabel><FormControl><Input type="number" step="any" disabled {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Latitude</FormLabel><FormControl><Input type="number" step="any" {...field} /></FormControl><FormMessage /></FormItem>
           )} />
           <FormField control={form.control} name="longitude" render={({ field }) => (
-            <FormItem><FormLabel>Longitude</FormLabel><FormControl><Input type="number" step="any" disabled {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Longitude</FormLabel><FormControl><Input type="number" step="any" {...field} /></FormControl><FormMessage /></FormItem>
           )} />
         </div>
         
