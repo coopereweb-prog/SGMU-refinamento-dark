@@ -35,16 +35,6 @@ const mapContainerStyle = {
   borderRadius: '0.5rem',
 };
 
-const EDIT_MARKER_ICON = {
-  url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
-  scaledSize: new window.google.maps.Size(36, 36),
-};
-
-const CONTEXT_MARKER_ICON = {
-  url: 'http://maps.google.com/mapfiles/ms/icons/grey-dot.png',
-  scaledSize: new window.google.maps.Size(24, 24),
-};
-
 export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
   const [tags, setTags] = useState([]);
   const [pricingTiers, setPricingTiers] = useState([]);
@@ -53,6 +43,17 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
   const { isLoaded } = useGoogleMapsLoader();
   
   const isEditing = !!point?.id;
+
+  // Define os ícones aqui, onde isLoaded pode ser verificado antes de usar window.google.maps
+  const EDIT_MARKER_ICON = useMemo(() => isLoaded ? {
+    url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+    scaledSize: new window.google.maps.Size(36, 36),
+  } : null, [isLoaded]);
+
+  const CONTEXT_MARKER_ICON = useMemo(() => isLoaded ? {
+    url: 'http://maps.google.com/mapfiles/ms/icons/grey-dot.png',
+    scaledSize: new window.google.maps.Size(24, 24),
+  } : null, [isLoaded]);
 
   const form = useForm({
     resolver: zodResolver(pointSchema),
@@ -222,7 +223,7 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
         
-        {isEditing && isLoaded && currentLat && currentLng && (
+        {isEditing && isLoaded && currentLat && currentLng && EDIT_MARKER_ICON && CONTEXT_MARKER_ICON && (
           <div className="space-y-2">
             <h3 className="font-semibold pt-2 border-t flex items-center">
               <MapPin className="h-4 w-4 mr-2" /> Ajustar Localização
