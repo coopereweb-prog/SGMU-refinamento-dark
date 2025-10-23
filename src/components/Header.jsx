@@ -18,10 +18,8 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/co
 
 const navLinks = [
   { to: '/', label: 'Início' },
-  { to: '/mobiliario-urbano', label: 'Mobiliário Urbano' }, // Rota atualizada
-  { to: '/outdoors', label: 'Outdoors' },
-  { to: '/led-panels', label: 'Painéis de LED' },
   { to: '/quem-somos', label: 'Quem Somos' },
+  { to: '/nossos-servicos', label: 'Nossos Serviços' },
   { to: '/como-adquirir', label: 'Como Adquirir' },
   { to: '/trabalhe-conosco', label: 'Trabalhe Conosco' },
   { to: '/fale-conosco', label: 'Fale Conosco' },

@@ -65,7 +65,7 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
         setUserData({
           name: profile?.name || session.user.user_metadata?.name,
           email: profile?.email || session.user.email,
-          phone: profile?.phone || '', // Garante que o telefone está presente
+          phone: profile?.phone || '',
         });
         setStep('logged_in');
       } else {
@@ -114,7 +114,7 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
       const customerDataForOrder = {
         name: profile.name,
         email: profile.email,
-        phone: profile.phone || '', // Garante que o telefone está presente
+        phone: profile.phone || '',
       };
       await createOrder(customerDataForOrder, cartItems);
       
@@ -159,7 +159,6 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
      setLoading(true);
      setError(null);
      try {
-       // O userData já deve ter sido populado com o telefone no useEffect inicial
        await createOrder(userData, cartItems);
        toast.success('Reserva confirmada!', { description: 'Você será redirecionado para seu painel.' });
        localStorage.removeItem('pendingReservationCart');
@@ -200,7 +199,6 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
             <p>Você está reservando como:</p>
             <p className="font-bold">{userData.name}</p>
             <p>{userData.email}</p>
-            {userData.phone && <p>Telefone: {userData.phone}</p>}
           </div>
           {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertTitle>Erro</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
           <Button onClick={onLoggedInReserve} className="w-full" disabled={loading}>

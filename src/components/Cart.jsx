@@ -1,13 +1,9 @@
 import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, X, Info } from 'lucide-react';
-import { useCart } from '@/contexts/CartContext';
-import { Link } from 'react-router-dom';
+import { Trash2, X } from 'lucide-react';
 
 export function Cart({ items, onRemove, onClear, onUpdatePeriod, onShowReservationForm }) {
-  const { points } = useCart();
-
   const total = useMemo(() => {
     return items.reduce((sum, item) => sum + item.price, 0);
   }, [items]);
@@ -17,23 +13,6 @@ export function Cart({ items, onRemove, onClear, onUpdatePeriod, onShowReservati
   const handleShowReservationForm = () => {
     if (totalItems > 0) {
       onShowReservationForm();
-    }
-  };
-
-  const getPriceOptionsForItem = (item) => {
-    const point = points.find(p => p.id === item.point_id);
-    return point?.pricing_tiers?.tier_prices?.sort((a, b) => a.period_days - b.period_days) || [];
-  };
-  
-  const getInfoLink = (mediaType) => {
-    switch (mediaType) {
-      case 'outdoor':
-        return { to: '/outdoors', label: 'Condições do Outdoor' };
-      case 'led_panel':
-        return { to: '/led-panels', label: 'Condições do Painel de LED' };
-      case 'static_panel':
-      default:
-        return { to: '/nossos-servicos', label: 'Condições do Painel Estático' };
     }
   };
 
@@ -49,49 +28,36 @@ export function Cart({ items, onRemove, onClear, onUpdatePeriod, onShowReservati
       <div className="flex-grow p-4 pt-0 overflow-y-auto">
         {totalItems > 0 ? (
           <ul className="space-y-4">
-            {items.map((item, index) => {
-              const priceOptions = getPriceOptionsForItem(item);
-              const infoLink = getInfoLink(item.media_type);
-              
-              return (
-                <li key={index} className="flex items-start justify-between p-3 bg-muted/50 rounded-lg">
-                  <div className="flex-grow">
-                    <p className="font-semibold">{item.name}</p>
-                    <p className="text-sm text-status-available font-bold">
-                      {item.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </p>
-                    
-                    {/* Link de Informação */}
-                    <Link to={infoLink.to} className="flex items-center text-xs text-blue-500 hover:underline mt-1">
-                      <Info className="h-3 w-3 mr-1" /> {infoLink.label}
-                    </Link>
-
-                    {item.media_type !== 'led_panel' && priceOptions.length > 0 && (
-                      <div className="mt-2">
-                        <Select
-                          value={String(item.details.days)}
-                          onValueChange={(value) => onUpdatePeriod(index, Number(value))}
-                        >
-                          <SelectTrigger className="w-[180px] h-9">
-                            <SelectValue placeholder="Período" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {priceOptions.map(opt => (
-                              <SelectItem key={opt.period_days} value={String(opt.period_days)}>
-                                {opt.period_label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
+            {items.map((item, index) => (
+              <li key={index} className="flex items-start justify-between p-3 bg-muted/50 rounded-lg">
+                <div className="flex-grow">
+                  <p className="font-semibold">{item.name}</p>
+                  <p className="text-sm text-status-available font-bold">
+                    {item.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </p>
+                  <div className="mt-2">
+                    <Select
+                      value={String(item.period_years)}
+                      onValueChange={(value) => onUpdatePeriod(index, Number(value))}
+                    >
+                      <SelectTrigger className="w-[180px] h-9">
+                        <SelectValue placeholder="Período" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 Ano</SelectItem>
+                        <SelectItem value="2">2 Anos</SelectItem>
+                        <SelectItem value="3">3 Anos</SelectItem>
+                        <SelectItem value="4">4 Anos</SelectItem>
+                        <SelectItem value="5">5 Anos</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => onRemove(index)} className="text-muted-foreground hover:text-destructive ml-2">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </li>
-              );
-            })}
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => onRemove(index)} className="text-muted-foreground hover:text-destructive ml-2">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </li>
+            ))}
           </ul>
         ) : (
           <div className="flex-grow flex flex-col items-center justify-center text-center h-full">

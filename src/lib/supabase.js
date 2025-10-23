@@ -50,33 +50,6 @@ export const getPoints = async () => {
   return formattedData;
 };
 
-export const savePoint = async (pointData, tagIds) => {
-  const { data, error } = await supabase.rpc('save_point_with_tags', {
-    p_point_data: {
-      id: pointData.id || null,
-      name: pointData.name,
-      description: pointData.description,
-      latitude: pointData.latitude,
-      longitude: pointData.longitude,
-      // Alteração: Salvaguarda para garantir que o valor seja nulo se não for um UUID válido.
-      pricing_tier_id: pointData.pricing_tier_id || null,
-      is_available: pointData.is_available,
-      image_url: pointData.image_url,
-      street_name: pointData.street_name,
-      intersection_name: pointData.intersection_name,
-      media_type: pointData.media_type || 'static_panel',
-    },
-    p_tag_ids: tagIds,
-  });
-
-  if (error) {
-    console.error('Erro ao salvar ponto via RPC:', error);
-    throw error;
-  }
-  return data;
-};
-
-
 // Nova função para buscar todas as tags disponíveis para o painel de filtro
 export const getTags = async () => {
   const { data, error } = await supabase
@@ -117,11 +90,15 @@ export const deleteTag = async (id) => {
 export const createOrder = async (customerData, cartItems) => {
   // Verificar se há um usuário logado
   const { data: { session } } = await supabase.auth.getSession();
+  let userId = null;
   
+  if (session?.user) {
+    userId = session.user.id;
+  }
+
   const itemsForFunction = cartItems.map(item => ({
     point_id: item.point_id,
-    period_years: item.details.days / 365, // Passa o período em anos
-    details: item.details, // Passa os detalhes para a Edge Function calcular o preço
+    period_years: item.period_years,
   }));
 
   const headers = {};
@@ -131,11 +108,7 @@ export const createOrder = async (customerData, cartItems) => {
 
   const { data, error } = await supabase.functions.invoke('create-order', {
     body: {
-      customerData: {
-        name: customerData.name,
-        email: customerData.email,
-        phone: customerData.phone || null, // Garante que o telefone é enviado
-      },
+      customerData,
       items: itemsForFunction,
     },
     headers,

@@ -1,115 +1,26 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, User, Clock, AlertCircle, Tv, Wind } from 'lucide-react';
+import { Calendar, User, Clock, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export function PointDetails({ point, onAddToCart }) {
-  const [selectedPeriod, setSelectedPeriod] = useState(null);
+  const [selectedPeriod, setSelectedPeriod] = useState(1);
 
   if (!point) return null;
 
-  const priceOptions = point.pricing_tiers?.tier_prices
-    ?.sort((a, b) => a.period_days - b.period_days)
-    .map(p => ({
-      label: p.period_label,
-      price: p.price,
-      days: p.period_days,
-    })) || [];
+  const priceOptions = [
+    { years: 1, price: point.price_1y },
+    { years: 2, price: point.price_2y },
+    { years: 3, price: point.price_3y },
+    { years: 4, price: point.price_4y },
+    { years: 5, price: point.price_5y },
+  ].filter(option => option.price != null && option.price > 0);
 
-  // Define o período padrão se ainda não estiver definido
-  if (selectedPeriod === null && priceOptions.length > 0) {
-    setSelectedPeriod(priceOptions[0].days);
-  }
-
-  const selectedPrice = priceOptions.find(p => p.days === selectedPeriod)?.price ?? 0;
+  const selectedPrice = priceOptions.find(p => p.years === selectedPeriod)?.price ?? 0;
 
   const handleAddToCartClick = () => {
-    if (point.media_type === 'static_panel' || point.media_type === 'outdoor') {
-      if (selectedPeriod) {
-        onAddToCart(point, { type: 'period', days: selectedPeriod, price: selectedPrice });
-      }
-    }
-    // Lógica para LED pode ser adicionada aqui
-  };
-
-  const renderMediaTypeInfo = () => {
-    let Icon, text;
-    switch (point.media_type) {
-      case 'outdoor':
-        Icon = Wind;
-        text = 'Outdoor';
-        break;
-      case 'led_panel':
-        Icon = Tv;
-        text = 'Painel de LED';
-        break;
-      case 'static_panel':
-      default:
-        return null;
-    }
-    return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Icon className="h-4 w-4" />
-        <span>Tipo de Mídia: {text}</span>
-      </div>
-    );
-  };
-
-  const renderPurchaseControls = () => {
-    switch (point.media_type) {
-      case 'led_panel':
-        return (
-          <div className="text-center py-4 bg-muted rounded-lg">
-            <p className="font-semibold">Painel de LED</p>
-            <p className="text-sm text-muted-foreground">A compra de cotas para este produto é feita sob consulta.</p>
-            <Button className="mt-3" onClick={() => window.open('https://wa.me/' + import.meta.env.VITE_WHATSAPP_NUMBER, '_blank')}>
-              Consultar via WhatsApp
-            </Button>
-          </div>
-        );
-      case 'static_panel':
-      case 'outdoor':
-      default:
-        return (
-          <>
-            {priceOptions.length > 0 ? (
-              <>
-                <div>
-                  <h4 className="font-semibold mb-2 text-sm">Selecione o Período:</h4>
-                  <Select value={String(selectedPeriod)} onValueChange={(value) => setSelectedPeriod(Number(value))}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Selecione o período" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {priceOptions.map(option => (
-                        <SelectItem key={option.days} value={String(option.days)}>
-                          {option.label} - {Number(option.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t">
-                  <div className="text-lg text-center sm:text-left">
-                    <span className="font-medium">Valor: </span>
-                    <span className="font-bold text-green-600">
-                      {Number(selectedPrice).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </span>
-                  </div>
-                  <Button variant="default" onClick={handleAddToCartClick} className="w-full sm:w-auto">
-                    Adicionar ao Carrinho
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-4">
-                <p className="text-gray-500">Sem preços disponíveis.</p>
-              </div>
-            )}
-          </>
-        );
-    }
+    onAddToCart(point, selectedPeriod);
   };
 
   const renderContentByStatus = () => {
@@ -161,7 +72,40 @@ export function PointDetails({ point, onAddToCart }) {
       default:
         return (
           <div className="space-y-4">
-            {renderPurchaseControls()}
+            {priceOptions.length > 0 ? (
+              <>
+                <div>
+                  <h4 className="font-semibold mb-2 text-sm">Selecione o Período:</h4>
+                  <Select value={String(selectedPeriod)} onValueChange={(value) => setSelectedPeriod(Number(value))}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecione o período" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {priceOptions.map(option => (
+                        <SelectItem key={option.years} value={String(option.years)}>
+                          {option.years} Ano(s) - {Number(option.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t">
+                  <div className="text-lg text-center sm:text-left">
+                    <span className="font-medium">Valor: </span>
+                    <span className="font-bold text-green-600">
+                      {Number(selectedPrice).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </span>
+                  </div>
+                  <Button variant="default" onClick={handleAddToCartClick} className="w-full sm:w-auto">
+                    Adicionar ao Carrinho
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-gray-500">Sem preços disponíveis.</p>
+              </div>
+            )}
           </div>
         );
     }
@@ -169,7 +113,6 @@ export function PointDetails({ point, onAddToCart }) {
 
   return (
     <div className="p-1 space-y-4">
-      {renderMediaTypeInfo()}
       {point.tags && point.tags.length > 0 && (
         <div className="border-b pb-4">
           <h4 className="font-semibold mb-2 text-sm">Características:</h4>

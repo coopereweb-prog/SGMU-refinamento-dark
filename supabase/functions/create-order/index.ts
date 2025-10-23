@@ -38,7 +38,6 @@ Deno.serve(async (req: Request) => {
     const authHeader = req.headers.get('Authorization');
     if (authHeader) {
       const jwt = authHeader.replace('Bearer ', '');
-      // Usamos o admin client para verificar o JWT
       const { data: { user } } = await supabaseAdmin.auth.getUser(jwt);
       if (user) {
         userId = user.id;
@@ -50,11 +49,6 @@ Deno.serve(async (req: Request) => {
     if (!customerData || !items || !Array.isArray(items) || items.length === 0) {
       throw new Error('Dados do cliente e itens são obrigatórios.')
     }
-    
-    // Validação básica dos dados do cliente
-    if (!customerData.name || !customerData.email) {
-        throw new Error('Nome e email do cliente são obrigatórios.');
-    }
 
     const pointIds = items.map(item => item.point_id);
     const { data: pointsData, error: pointsError } = await supabaseAdmin
@@ -62,8 +56,8 @@ Deno.serve(async (req: Request) => {
       .select('id, name, price_1y, price_2y, price_3y, price_4y, price_5y')
       .in('id', pointIds);
 
-    if (pointsError) throw new Error('Erro ao buscar dados dos pontos: ' + pointsError.message);
-    if (!pointsData || pointsData.length !== pointIds.length) throw new Error('Um ou mais pontos selecionados são inválidos ou não existem.');
+    if (pointsError) throw new Error('Erro ao buscar dados dos pontos.');
+    if (!pointsData || pointsData.length !== pointIds.length) throw new Error('Um ou mais pontos selecionados são inválidos.');
 
     const pointDetailsMap = new Map((pointsData as PointData[]).map(p => [p.id, p]));
 
@@ -73,43 +67,38 @@ Deno.serve(async (req: Request) => {
       if (!pointDetails) throw new Error(`Detalhes não encontrados para o ponto ${item.point_id}`);
 
       let price;
-      // O período é passado em dias, mas o preço é armazenado por ano (1y, 2y, etc.)
-      const periodYears = item.details.days / 365; 
-      
-      switch (periodYears) {
+      switch (item.period_years) {
         case 1: price = pointDetails.price_1y; break;
         case 2: price = pointDetails.price_2y; break;
         case 3: price = pointDetails.price_3y; break;
         case 4: price = pointDetails.price_4y; break;
         case 5: price = pointDetails.price_5y; break;
-        default: throw new Error(`Período inválido (${periodYears} anos) para o ponto ${item.point_id}`);
+        default: throw new Error(`Período inválido (${item.period_years} anos) para o ponto ${item.point_id}`);
       }
 
-      if (typeof price !== 'number' || price <= 0) {
-        throw new Error(`Preço para ${periodYears} anos não definido ou inválido para o ponto ${item.point_id}`);
+      if (typeof price !== 'number') {
+        throw new Error(`Preço para ${item.period_years} anos não definido para o ponto ${item.point_id}`);
       }
       
       calculatedTotalAmount += price;
 
       return {
         ponto_id: item.point_id,
-        period_years: periodYears, // Passa o período em anos para a função RPC
+        period_years: item.period_years,
         price: price,
       };
     });
 
-    // Chamada da função RPC
     const { data: newOrderId, error: rpcError } = await supabaseAdmin.rpc('create_new_order', {
       customer_name: customerData.name,
       customer_email: customerData.email,
       customer_phone: customerData.phone || null,
       total_amount: calculatedTotalAmount,
       items: validatedItems,
-      p_user_id: userId, // Passa o ID do usuário (pode ser null para convidados)
+      p_user_id: userId, // Passa o ID do usuário para a função
     })
 
     if (rpcError) {
-      console.error('Erro RPC create_new_order:', rpcError);
       throw rpcError
     }
 
@@ -121,8 +110,8 @@ Deno.serve(async (req: Request) => {
       } else {
         const resend = new Resend(resendApiKey);
         const orderIdShort = (newOrderId as string).substring(0, 8);
-        const itemsListHtml = validatedItems.map(item => {
-          const pointDetails = pointDetailsMap.get(item.ponto_id);
+        const itemsListHtml = items.map(item => {
+          const pointDetails = pointDetailsMap.get(item.point_id);
           return `<li>${pointDetails?.name || 'Ponto desconhecido'} - ${item.period_years} ano(s)</li>`;
         }).join('');
 
@@ -151,7 +140,6 @@ Deno.serve(async (req: Request) => {
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Ocorreu um erro desconhecido.';
-    console.error('Erro na Edge Function create-order:', message);
     return new Response(JSON.stringify({ error: message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,

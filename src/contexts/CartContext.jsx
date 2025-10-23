@@ -9,11 +9,8 @@ export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState(() => {
     try {
       const savedCart = localStorage.getItem('sgmu-cart');
-      // Adicionando verificação para garantir que o valor lido é um array
-      const parsedCart = savedCart ? JSON.parse(savedCart) : [];
-      return Array.isArray(parsedCart) ? parsedCart : [];
+      return savedCart ? JSON.parse(savedCart) : [];
     } catch (error) {
-      console.error("Falha ao carregar carrinho do localStorage:", error);
       return [];
     }
   });
@@ -24,7 +21,7 @@ export function CartProvider({ children }) {
   useEffect(() => {
     const fetchPoints = async () => {
       try {
-        const { data, error } = await supabase.from('points').select('*, pricing_tiers(*, tier_prices(*))');
+        const { data, error } = await supabase.from('points').select('*');
         if (error) throw error;
         setPoints(data);
       } catch (error) {
@@ -43,24 +40,17 @@ export function CartProvider({ children }) {
     }
   }, [cartItems]);
 
-  const addToCart = useCallback((point, details) => {
+  const addToCart = useCallback((point, period) => {
     if (cartItems.some(item => item.point_id === point.id)) {
       toast.warning("Este ponto já está no seu carrinho.");
       return;
     }
-    
-    if (typeof details.price !== 'number' || details.price <= 0) {
-      toast.error("Preço inválido para o item selecionado.");
+    const price = point[`price_${period}y`];
+    if (typeof price !== 'number' || price <= 0) {
+      toast.error("Preço inválido para o período selecionado.");
       return;
     }
-
-    const newItem = { 
-      point_id: point.id, 
-      name: point.name, 
-      price: details.price, 
-      media_type: point.media_type,
-      details: details 
-    };
+    const newItem = { point_id: point.id, name: point.name, price, period_years: period };
     setCartItems(prevItems => [...prevItems, newItem]);
     toast.success(`${point.name} adicionado ao carrinho!`);
   }, [cartItems]);
@@ -74,25 +64,19 @@ export function CartProvider({ children }) {
     setIsCartModalOpen(false);
   }, []);
 
-  const updateCartItemPeriod = useCallback((index, newPeriodDays) => {
+  const updateCartItemPeriod = useCallback((index, newPeriod) => {
     const itemToUpdate = cartItems[index];
     const point = points.find(p => p.id === itemToUpdate.point_id);
-    if (!point || !point.pricing_tiers?.tier_prices) {
+    if (!point) {
       toast.error("Não foi possível encontrar os detalhes do ponto para atualizar o preço.");
       return;
     }
-    
-    const newPriceOption = point.pricing_tiers.tier_prices.find(p => p.period_days === newPeriodDays);
-    if (!newPriceOption) {
+    const newPrice = point[`price_${newPeriod}y`];
+    if (typeof newPrice !== 'number' || newPrice <= 0) {
       toast.error("Período indisponível para este ponto.");
       return;
     }
-
-    setCartItems(prev => prev.map((item, i) => 
-      i === index 
-        ? { ...item, price: newPriceOption.price, details: { ...item.details, days: newPeriodDays } } 
-        : item
-    ));
+    setCartItems(prev => prev.map((item, i) => i === index ? { ...item, period_years: newPeriod, price: newPrice } : item));
   }, [cartItems, points]);
 
   const openCartModal = () => setIsCartModalOpen(true);
@@ -122,8 +106,7 @@ export function CartProvider({ children }) {
     openReservationForm,
     closeReservationForm,
     onReservationSuccess,
-    points, // Expondo os pontos para uso no carrinho
-  }), [cartItems, addToCart, removeFromCart, clearCart, updateCartItemPeriod, isCartModalOpen, isReservationFormOpen, points]);
+  }), [cartItems, addToCart, removeFromCart, clearCart, updateCartItemPeriod, isCartModalOpen, isReservationFormOpen]);
 
   return (
     <CartContext.Provider value={value}>

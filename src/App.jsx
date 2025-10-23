@@ -26,13 +26,11 @@ import { InstallationPipelinePage } from '@/pages/InstallationPipelinePage';
 import SignUpPage from '@/pages/SignUpPage';
 import UpdatePasswordPage from '@/pages/UpdatePasswordPage';
 import AboutUsPage from '@/pages/AboutUsPage';
-import MobiliarioUrbanoPage from '@/pages/MobiliarioUrbanoPage'; // Novo Import
+import NossosServicosPage from '@/pages/NossosServicosPage';
 import ComoAdquirirPage from '@/pages/ComoAdquirirPage';
 import TrabalheConoscoPage from '@/pages/TrabalheConoscoPage';
 import FaleConoscoPage from '@/pages/FaleConoscoPage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
-import OutdoorsPage from '@/pages/OutdoorsPage';
-import LedPanelsPage from '@/pages/LedPanelsPage';
 
 import { Toaster } from "@/components/ui/sonner";
 
@@ -60,12 +58,10 @@ function App() {
                   <Route element={<AppLayout />}>
                     {/* Páginas de Conteúdo Público */}
                     <Route path="/quem-somos" element={<AboutUsPage />} />
-                    <Route path="/mobiliario-urbano" element={<MobiliarioUrbanoPage />} /> {/* Nova Rota */}
+                    <Route path="/nossos-servicos" element={<NossosServicosPage />} />
                     <Route path="/como-adquirir" element={<ComoAdquirirPage />} />
                     <Route path="/trabalhe-conosco" element={<TrabalheConoscoPage />} />
                     <Route path="/fale-conosco" element={<FaleConoscoPage />} />
-                    <Route path="/outdoors" element={<OutdoorsPage />} />
-                    <Route path="/led-panels" element={<LedPanelsPage />} />
 
                     {/* Páginas Protegidas */}
                     <Route 

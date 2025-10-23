@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { supabase, savePoint } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -74,11 +74,7 @@ export function ManagePointsPage() {
 
   const fetchPoints = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('points').select(`
-      id, name, status, latitude, longitude, pricing_tier_id, is_available, image_url, 
-      street_name, intersection_name, media_type, description
-    `).order('name');
-    
+    const { data, error } = await supabase.from('points').select('*').order('name');
     if (error) {
       console.error('Error fetching points:', error);
       toast.error("Erro", { description: "Não foi possível carregar os pontos." });
@@ -107,6 +103,12 @@ export function ManagePointsPage() {
     setEditingPoint(null);
   };
 
+  /**
+   * Tenta extrair o nome da rua e o bairro a partir das coordenadas.
+   * @param {number} lat 
+   * @param {number} lng 
+   * @param {(result: {streetName: string, neighborhood: string}) => void} callback 
+   */
   const getAddressDetailsFromCoords = (lat, lng, callback) => {
     if (!isLoaded) {
       toast.warning("Serviço de mapas não carregado. Tente novamente.");
@@ -127,6 +129,7 @@ export function ManagePointsPage() {
         neighborhood = neighborhoodComponent ? neighborhoodComponent.long_name : '';
 
         if (!streetName) {
+          // Fallback para o endereço formatado se a rua não for encontrada
           streetName = results[0].formatted_address;
         }
       } else {
@@ -144,23 +147,24 @@ export function ManagePointsPage() {
     if (selectionState === SELECTION_STATE.STREET) {
       setNewPointCoords({ lat, lng });
       getAddressDetailsFromCoords(lat, lng, ({ streetName, neighborhood }) => {
-        const newPoint = { 
+        setEditingPoint({ 
           latitude: lat, 
           longitude: lng, 
           street_name: streetName,
           intersection_name: '',
           name: streetName,
           description: '',
-          pricing_tier_id: null, // Alteração: Inicializa como null
+          pricing_tier_id: '',
           is_available: true,
           image_url: '',
+          // Armazena o bairro temporariamente para a descrição
           _temp_neighborhood: neighborhood, 
-        };
-        setEditingPoint(newPoint);
-        setSelectionState(SELECTION_STATE.FORM);
+        });
+        setSelectionState(SELECTION_STATE.FORM); // Transiciona para o formulário imediatamente
         toast.info(`Rua Principal definida: ${streetName}. Agora, clique na rua do cruzamento (opcional) ou preencha o formulário.`);
       });
     } else if (selectionState === SELECTION_STATE.FORM) {
+      // Se já estiver no estado FORM, o clique no mapa é para definir o cruzamento
       getAddressDetailsFromCoords(lat, lng, ({ streetName: intersectionName }) => {
         setEditingPoint(prev => ({
           ...prev,
@@ -189,17 +193,27 @@ export function ManagePointsPage() {
 
   const handleSavePoint = async (pointData, tagIds) => {
     try {
-      const dataToSave = {
-        ...pointData,
-        id: editingPoint?.id || null,
-        latitude: pointData.latitude === '' ? null : pointData.latitude,
-        longitude: pointData.longitude === '' ? null : pointData.longitude,
-        media_type: pointData.media_type || 'static_panel',
-      };
+      let savedPoint;
+      if (editingPoint && editingPoint.id) {
+        const { data, error } = await supabase.from('points').update(pointData).eq('id', editingPoint.id).select().single();
+        if (error) throw error;
+        savedPoint = data;
+        toast.success("Sucesso", { description: "Ponto atualizado com sucesso." });
+      } else {
+        const { data, error } = await supabase.from('points').insert(pointData).select().single();
+        if (error) throw error;
+        savedPoint = data;
+        toast.success("Sucesso", { description: "Ponto criado com sucesso." });
+      }
 
-      await savePoint(dataToSave, tagIds);
+      const { error: deleteError } = await supabase.from('point_tags').delete().eq('point_id', savedPoint.id);
+      if (deleteError) throw deleteError;
 
-      toast.success("Sucesso", { description: `Ponto ${editingPoint?.id ? 'atualizado' : 'criado'} com sucesso.` });
+      if (tagIds && tagIds.length > 0) {
+        const pointTags = tagIds.map(tagId => ({ point_id: savedPoint.id, tag_id: tagId }));
+        const { error: insertTagsError } = await supabase.from('point_tags').insert(pointTags);
+        if (insertTagsError) throw insertTagsError;
+      }
 
       setIsEditModalOpen(false);
       setEditingPoint(null);
@@ -274,6 +288,7 @@ export function ManagePointsPage() {
 
       {isAddingMode && (
         <div className="grid lg:grid-cols-2 gap-6 h-[70vh]">
+          {/* Coluna do Mapa */}
           <div className="flex flex-col gap-4 h-full">
             <div className="p-4 text-center bg-blue-50 border border-blue-200 rounded-lg">
               <p className="font-semibold text-blue-700 flex items-center justify-center">
@@ -292,6 +307,7 @@ export function ManagePointsPage() {
                   onZoomChanged={onZoomChanged}
                   options={{ ...mapOptions, draggableCursor: 'crosshair' }}
                 >
+                  {/* Marcador do novo ponto */}
                   {newPointCoords && (
                     <Marker 
                       position={newPointCoords} 
@@ -299,6 +315,7 @@ export function ManagePointsPage() {
                     />
                   )}
                   
+                  {/* Pontos existentes com lógica de cluster/individual */}
                   {activeRule.display_mode === 'cluster' ? (
                     <MarkerClustererF
                       options={{
@@ -333,6 +350,7 @@ export function ManagePointsPage() {
             </div>
           </div>
           
+          {/* Coluna do Formulário (Aparece após a primeira seleção) */}
           {selectionState === SELECTION_STATE.FORM && editingPoint && (
             <Card className="h-full overflow-y-auto">
               <CardHeader><CardTitle>Novo Ponto</CardTitle></CardHeader>
@@ -388,6 +406,7 @@ export function ManagePointsPage() {
         )
       )}
 
+      {/* Modal de Edição (Mantido para edição de pontos existentes) */}
       <Modal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
