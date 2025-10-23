@@ -229,11 +229,16 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
   const currentLng = form.watch('longitude');
   
   const mapCenter = useMemo(() => {
-    if (currentLat && currentLng) {
-      return { lat: currentLat, lng: currentLng };
+    const lat = Number(currentLat);
+    const lng = Number(currentLng);
+    if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+      return { lat, lng };
     }
     return { lat: -22.78, lng: -47.3 }; // Default center
   }, [currentLat, currentLng]);
+
+  // Verifica se as coordenadas são válidas para renderizar o mapa
+  const isMapReady = isLoaded && isEditing && Number(currentLat) !== 0 && Number(currentLng) !== 0;
 
   const handleMarkerDragEnd = useCallback((e) => {
     const newLat = e.latLng.lat();
@@ -253,7 +258,7 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
         
-        {isEditing && isLoaded && currentLat && currentLng && EDIT_MARKER_ICON && CONTEXT_MARKER_ICON && (
+        {isMapReady && EDIT_MARKER_ICON && CONTEXT_MARKER_ICON && (
           <div className="space-y-2">
             <h3 className="font-semibold pt-2 border-t flex items-center">
               <MapPin className="h-4 w-4 mr-2" /> Ajustar Localização
