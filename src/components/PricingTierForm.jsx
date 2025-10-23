@@ -31,6 +31,7 @@ const PERIOD_OPTIONS = [
 
 export function PricingTierForm({ tier, tierPrices, onSave, onCancel }) {
   const defaultPrices = PERIOD_OPTIONS.map(option => {
+    // period_days é years * 365
     const existingPrice = tierPrices?.find(p => p.period_days === option.years * 365);
     return {
       period_years: option.years,
