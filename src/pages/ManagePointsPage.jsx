@@ -247,8 +247,20 @@ export function ManagePointsPage() {
   const onZoomChanged = useCallback(() => { if (mapInstance) setCurrentZoom(mapInstance.getZoom()); }, [mapInstance]);
 
   const activeRule = useMemo(() => {
-    if (loadingConfig || !rules.length) return { display_mode: currentZoom > 14 ? 'individual' : 'cluster', cluster_radius: 60, min_cluster_size: 2 };
-    return rules.find(r => r.zoom_level === currentZoom) || rules[rules.length - 1];
+    // Regra padrão: cluster até zoom 14, individual acima disso
+    const defaultRule = { 
+      display_mode: currentZoom > 14 ? 'individual' : 'cluster', 
+      cluster_radius: 60, 
+      min_cluster_size: 2 
+    };
+    
+    if (loadingConfig || !rules.length) return defaultRule;
+    
+    // Tenta encontrar a regra exata para o zoom atual
+    const foundRule = rules.find(r => r.zoom_level === currentZoom);
+    
+    // Se encontrar, usa a regra. Se não, usa a regra padrão.
+    return foundRule || defaultRule;
   }, [currentZoom, rules, loadingConfig]);
 
   const clustererCalculator = (markers, numStyles) => {
@@ -407,7 +419,7 @@ export function ManagePointsPage() {
                   }
                 </MarkerClustererF>
               ) : (
-                // CORREÇÃO: Renderiza marcadores individuais quando o modo é 'individual'
+                // Renderiza marcadores individuais quando o modo é 'individual'
                 contextPoints.map((point) => (
                   <Marker
                     key={point.id}
