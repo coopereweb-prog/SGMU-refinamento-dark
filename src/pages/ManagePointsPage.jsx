@@ -18,6 +18,7 @@ import { useGoogleMapsLoader } from '@/contexts/GoogleMapsLoaderContext';
 import { GoogleMap, Marker, MarkerClustererF } from '@react-google-maps/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useMapConfig } from '@/contexts/MapConfigContext';
+import { cn } from '@/lib/utils'; // Importar cn para classes condicionais
 
 const mapContainerStyle = {
   width: '100%',
@@ -88,6 +89,11 @@ export function ManagePointsPage() {
     setEditingPoint(null); // Limpa qualquer ponto em edição
     setIsAddingMode(true);
     setSelectionState(SELECTION_STATE.AWAITING_LOCATION);
+    // Centraliza no default ao iniciar a adição
+    if (mapInstance) {
+      mapInstance.panTo(defaultCenter);
+      mapInstance.setZoom(14);
+    }
   };
 
   const handleCancelEdit = () => {
@@ -169,7 +175,7 @@ export function ManagePointsPage() {
     
     // Centraliza o mapa no ponto
     if (mapInstance && point.latitude && point.longitude) {
-      mapInstance.panTo({ lat: point.latitude, lng: point.longitude });
+      mapInstance.panTo({ lat: Number(point.latitude), lng: Number(point.longitude) });
       mapInstance.setZoom(19);
     }
   };
@@ -284,132 +290,136 @@ export function ManagePointsPage() {
     <div className="container mx-auto p-4 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Gerenciar Pontos</h1>
-        {!isFormView ? (
-          <Button onClick={handleAddNew}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Novo Ponto
-          </Button>
-        ) : (
+        {isFormView ? (
           <Button variant="destructive" onClick={handleCancelEdit}>
             <XCircle className="mr-2 h-4 w-4" /> Cancelar {editingPoint?.id ? 'Edição' : 'Adição'}
+          </Button>
+        ) : (
+          <Button onClick={handleAddNew}>
+            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Novo Ponto
           </Button>
         )}
       </div>
 
-      {isFormView && (
-        <div className="grid lg:grid-cols-2 gap-6 h-[70vh]">
-          {/* Coluna do Mapa */}
-          <div className="flex flex-col gap-4 h-full">
-            <div className="p-4 text-center bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="font-semibold text-blue-700 flex items-center justify-center">
-                {(selectionState === SELECTION_STATE.FORM_OPEN) && <CornerDownRight className="h-5 w-5 mr-2" />}
-                {getInstruction()}
-              </p>
-            </div>
-            <div className="relative flex-grow w-full rounded-lg overflow-hidden shadow-md">
-              {isLoaded ? (
-                <GoogleMap
-                  mapContainerStyle={mapContainerStyle}
-                  center={currentPointCoords || defaultCenter}
-                  zoom={currentPointCoords ? 19 : currentZoom}
-                  onClick={handleMapClick}
-                  onLoad={onMapLoad}
-                  onZoomChanged={onZoomChanged}
-                  options={{ ...mapOptions, draggableCursor: 'crosshair' }}
-                >
-                  {/* Marcador do ponto em edição/adição (azul e arrastável) */}
-                  {currentPointCoords && (
-                    <Marker 
-                      position={currentPointCoords} 
-                      draggable={true}
-                      onDragEnd={handleMarkerDragEnd}
-                      icon={{ url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png' }}
+      <div className={cn("grid gap-6", isFormView ? "lg:grid-cols-2 h-[70vh]" : "grid-cols-1")}>
+        
+        {/* Coluna do Formulário/Tabela */}
+        <div className={cn("flex flex-col", isFormView ? "h-full" : "h-auto")}>
+          {isFormView ? (
+            <>
+              <div className="p-4 text-center bg-blue-50 border border-blue-200 rounded-lg mb-4">
+                <p className="font-semibold text-blue-700 flex items-center justify-center">
+                  {(selectionState === SELECTION_STATE.FORM_OPEN) && <CornerDownRight className="h-5 w-5 mr-2" />}
+                  {getInstruction()}
+                </p>
+              </div>
+              {editingPoint && (
+                <Card className="flex-grow overflow-y-auto">
+                  <CardHeader><CardTitle>{editingPoint.id ? 'Editar Ponto' : 'Novo Ponto'}</CardTitle></CardHeader>
+                  <CardContent>
+                    <PointForm
+                      point={editingPoint}
+                      onSave={handleSavePoint}
+                      onCancel={handleCancelEdit}
                     />
-                  )}
-                  
-                  {/* Pontos existentes (cinzas, contexto) */}
-                  {activeRule.display_mode === 'cluster' ? (
-                    <MarkerClustererF
-                      options={{
-                        gridSize: activeRule.cluster_radius,
-                        minimumClusterSize: activeRule.min_cluster_size,
-                        styles: clusterStyles,
-                      }}
-                      calculator={clustererCalculator}
-                    >
-                      {(clusterer) =>
-                        contextPoints.map((point) => (
-                          <Marker
-                            key={point.id}
-                            position={{ lat: point.latitude, lng: point.longitude }}
-                            clusterer={clusterer}
-                            onClick={() => toast.info(`Ponto existente: ${point.name}`)}
-                            icon={{ url: 'http://maps.google.com/mapfiles/ms/icons/grey-dot.png' }}
-                          />
-                        ))
-                      }
-                    </MarkerClustererF>
-                  ) : (
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          ) : (
+            loading ? (
+              <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {points.map((point) => (
+                    <TableRow key={point.id}>
+                      <TableCell>{point.name}</TableCell>
+                      <TableCell>{point.status}</TableCell>
+                      <TableCell className="text-right flex justify-end space-x-2">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(point)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(point)}>
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )
+          )}
+        </div>
+
+        {/* Coluna do Mapa (Sempre Montado) */}
+        <div className={cn(
+          "relative w-full rounded-lg overflow-hidden shadow-md",
+          isFormView ? "h-full" : "h-[50vh] lg:h-[70vh]" // Altura diferente se estiver em modo de tabela
+        )}>
+          {isLoaded ? (
+            <GoogleMap
+              mapContainerStyle={mapContainerStyle}
+              center={currentPointCoords || defaultCenter}
+              zoom={currentPointCoords ? 19 : currentZoom}
+              onClick={handleMapClick}
+              onLoad={onMapLoad}
+              onZoomChanged={onZoomChanged}
+              options={{ ...mapOptions, draggableCursor: isFormView ? 'crosshair' : 'default' }}
+            >
+              {/* Marcador do ponto em edição/adição (azul e arrastável) */}
+              {isFormView && currentPointCoords && (
+                <Marker 
+                  position={currentPointCoords} 
+                  draggable={true}
+                  onDragEnd={handleMarkerDragEnd}
+                  icon={{ url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png' }}
+                />
+              )}
+              
+              {/* Pontos existentes (cinzas, contexto) */}
+              {activeRule.display_mode === 'cluster' ? (
+                <MarkerClustererF
+                  options={{
+                    gridSize: activeRule.cluster_radius,
+                    minimumClusterSize: activeRule.min_cluster_size,
+                    styles: clusterStyles,
+                  }}
+                  calculator={clustererCalculator}
+                >
+                  {(clusterer) =>
                     contextPoints.map((point) => (
                       <Marker
                         key={point.id}
                         position={{ lat: point.latitude, lng: point.longitude }}
+                        clusterer={clusterer}
                         onClick={() => toast.info(`Ponto existente: ${point.name}`)}
                         icon={{ url: 'http://maps.google.com/mapfiles/ms/icons/grey-dot.png' }}
                       />
                     ))
-                  )}
-                </GoogleMap>
-              ) : <Skeleton className="w-full h-full" />}
-            </div>
-          </div>
-          
-          {/* Coluna do Formulário */}
-          {editingPoint && (
-            <Card className="h-full overflow-y-auto">
-              <CardHeader><CardTitle>{editingPoint.id ? 'Editar Ponto' : 'Novo Ponto'}</CardTitle></CardHeader>
-              <CardContent>
-                <PointForm
-                  point={editingPoint}
-                  onSave={handleSavePoint}
-                  onCancel={handleCancelEdit}
-                />
-              </CardContent>
-            </Card>
-          )}
+                  }
+                </MarkerClustererF>
+              ) : (
+                contextPoints.map((point) => (
+                  <Marker
+                    key={point.id}
+                    position={{ lat: point.latitude, lng: point.longitude }}
+                    onClick={() => toast.info(`Ponto existente: ${point.name}`)}
+                    icon={{ url: 'http://maps.google.com/mapfiles/ms/icons/grey-dot.png' }}
+                  />
+                ))
+              )}
+            </GoogleMap>
+          ) : <Skeleton className="w-full h-full" />}
         </div>
-      )}
-
-      {!isFormView && (
-        loading ? (
-          <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {points.map((point) => (
-                <TableRow key={point.id}>
-                  <TableCell>{point.name}</TableCell>
-                  <TableCell>{point.status}</TableCell>
-                  <TableCell className="text-right flex justify-end space-x-2">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(point)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(point)}>
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )
-      )}
+      </div>
 
       {/* Modal de Deleção (Mantido) */}
       <Modal
