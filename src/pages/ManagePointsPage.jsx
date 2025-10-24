@@ -41,9 +41,8 @@ const mapOptions = {
 // Estados de seleção de rua
 const SELECTION_STATE = {
   NONE: 0,
-  STREET: 1,
-  INTERSECTION: 2,
-  FORM: 3, // Estado final onde o formulário está aberto
+  AWAITING_LOCATION: 1, // Novo estado: esperando o primeiro clique
+  FORM_OPEN: 2, // Estado final onde o formulário está aberto
 };
 
 // Estilos de cluster (simplificados para o painel admin)
@@ -91,7 +90,7 @@ export function ManagePointsPage() {
     setEditingPoint(null);
     setNewPointCoords(null);
     setIsAddingMode(true);
-    setSelectionState(SELECTION_STATE.STREET);
+    setSelectionState(SELECTION_STATE.AWAITING_LOCATION);
     setIsEditModalOpen(false);
   };
 
@@ -143,7 +142,8 @@ export function ManagePointsPage() {
     const lat = e.latLng.lat();
     const lng = e.latLng.lng();
     
-    if (selectionState === SELECTION_STATE.STREET) {
+    if (selectionState === SELECTION_STATE.AWAITING_LOCATION) {
+      // Primeiro clique: Define a localização principal e abre o formulário
       setNewPointCoords({ lat, lng });
       getAddressDetailsFromCoords(lat, lng, ({ streetName, neighborhood }) => {
         setEditingPoint({ 
@@ -156,14 +156,13 @@ export function ManagePointsPage() {
           pricing_tier_id: '',
           is_available: true,
           image_url: '',
-          // Armazena o bairro temporariamente para a descrição
           _temp_neighborhood: neighborhood, 
         });
-        setSelectionState(SELECTION_STATE.FORM); // Transiciona para o formulário imediatamente
-        toast.info(`Rua Principal definida: ${streetName}. Agora, clique na rua do cruzamento (opcional) ou preencha o formulário.`);
+        setSelectionState(SELECTION_STATE.FORM_OPEN);
+        toast.info(`Localização principal definida: ${streetName}. Clique no mapa novamente para definir o cruzamento (opcional).`);
       });
-    } else if (selectionState === SELECTION_STATE.FORM) {
-      // Se já estiver no estado FORM, o clique no mapa é para definir o cruzamento
+    } else if (selectionState === SELECTION_STATE.FORM_OPEN && editingPoint) {
+      // Segundo clique (opcional): Define o cruzamento
       getAddressDetailsFromCoords(lat, lng, ({ streetName: intersectionName }) => {
         setEditingPoint(prev => ({
           ...prev,
@@ -238,10 +237,10 @@ export function ManagePointsPage() {
   };
 
   const getInstruction = () => {
-    if (selectionState === SELECTION_STATE.STREET) {
+    if (selectionState === SELECTION_STATE.AWAITING_LOCATION) {
       return "1. Clique no mapa para definir a localização e a Rua Principal.";
     }
-    if (selectionState === SELECTION_STATE.FORM) {
+    if (selectionState === SELECTION_STATE.FORM_OPEN) {
       return `2. Clique na Rua do Cruzamento (Opcional) ou preencha o formulário.`;
     }
     return "Clique no mapa para definir a localização do novo ponto.";
@@ -282,7 +281,7 @@ export function ManagePointsPage() {
           <div className="flex flex-col gap-4 h-full">
             <div className="p-4 text-center bg-blue-50 border border-blue-200 rounded-lg">
               <p className="font-semibold text-blue-700 flex items-center justify-center">
-                {(selectionState === SELECTION_STATE.FORM) && <CornerDownRight className="h-5 w-5 mr-2" />}
+                {(selectionState === SELECTION_STATE.FORM_OPEN) && <CornerDownRight className="h-5 w-5 mr-2" />}
                 {getInstruction()}
               </p>
             </div>
@@ -290,8 +289,8 @@ export function ManagePointsPage() {
               {isLoaded ? (
                 <GoogleMap
                   mapContainerStyle={mapContainerStyle}
-                  center={defaultCenter}
-                  zoom={currentZoom}
+                  center={newPointCoords || defaultCenter}
+                  zoom={newPointCoords ? 19 : currentZoom}
                   onClick={handleMapClick}
                   onLoad={onMapLoad}
                   onZoomChanged={onZoomChanged}
@@ -341,7 +340,7 @@ export function ManagePointsPage() {
           </div>
           
           {/* Coluna do Formulário (Aparece após a primeira seleção) */}
-          {selectionState === SELECTION_STATE.FORM && editingPoint && (
+          {selectionState === SELECTION_STATE.FORM_OPEN && editingPoint && (
             <Card className="h-full overflow-y-auto">
               <CardHeader><CardTitle>Novo Ponto</CardTitle></CardHeader>
               <CardContent>
