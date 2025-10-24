@@ -46,6 +46,12 @@ const PERIOD_MAP = {
   1825: 'price_5y',
 };
 
+// Helper para garantir que a coordenada seja uma string com ponto decimal
+const normalizeCoordString = (coord) => {
+  if (coord === null || coord === undefined) return '';
+  return String(coord).replace(',', '.');
+};
+
 export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
   const [tags, setTags] = useState([]);
   const [pricingTiers, setPricingTiers] = useState([]);
@@ -89,8 +95,9 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
       form.reset({
         name: point.name || '',
         description: point.description || '',
-        latitude: point.latitude || '',
-        longitude: point.longitude || '',
+        // Normaliza as coordenadas ao carregar o formulário
+        latitude: normalizeCoordString(point.latitude) || '',
+        longitude: normalizeCoordString(point.longitude) || '',
         pricing_tier_id: point.pricing_tier_id || '',
         is_available: point.is_available ?? true,
         image_url: point.image_url || '',
@@ -228,29 +235,19 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
   const currentLatString = form.watch('latitude');
   const currentLngString = form.watch('longitude');
   
-  // Função auxiliar para converter string (com vírgula ou ponto) para número
-  const parseCoordinate = (coordString) => {
-    if (typeof coordString === 'number') return coordString;
-    if (typeof coordString === 'string') {
-      const cleanedString = coordString.replace(',', '.');
-      const num = parseFloat(cleanedString);
-      return isNaN(num) ? null : num;
-    }
-    return null;
-  };
-
-  const currentLat = parseCoordinate(currentLatString);
-  const currentLng = parseCoordinate(currentLngString);
+  // Converte a string observada (que agora deve ter ponto) para número
+  const currentLat = parseFloat(currentLatString);
+  const currentLng = parseFloat(currentLngString);
   
   const mapCenter = useMemo(() => {
-    if (currentLat !== null && currentLng !== null && currentLat !== 0 && currentLng !== 0) {
+    if (!isNaN(currentLat) && !isNaN(currentLng) && currentLat !== 0 && currentLng !== 0) {
       return { lat: currentLat, lng: currentLng };
     }
     return { lat: -22.78, lng: -47.3 }; // Default center
   }, [currentLat, currentLng]);
 
   // Verifica se as coordenadas são válidas para renderizar o mapa
-  const isMapReady = isLoaded && isEditing && currentLat !== null && currentLng !== null && currentLat !== 0 && currentLng !== 0;
+  const isMapReady = isLoaded && isEditing && !isNaN(currentLat) && !isNaN(currentLng) && currentLat !== 0 && currentLng !== 0;
 
   const handleMarkerDragEnd = useCallback((e) => {
     const newLat = e.latLng.lat();
