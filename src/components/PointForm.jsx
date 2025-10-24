@@ -235,19 +235,29 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
   const currentLatString = form.watch('latitude');
   const currentLngString = form.watch('longitude');
   
-  // Converte a string observada (que agora deve ter ponto) para número
-  const currentLat = parseFloat(currentLatString);
-  const currentLng = parseFloat(currentLngString);
+  // Função auxiliar para converter string (com vírgula ou ponto) para número
+  const parseCoordinate = (coordString) => {
+    if (typeof coordString === 'number') return coordString;
+    if (typeof coordString === 'string') {
+      const cleanedString = coordString.replace(',', '.');
+      const num = parseFloat(cleanedString);
+      return isNaN(num) ? null : num;
+    }
+    return null;
+  };
+
+  const currentLat = parseCoordinate(currentLatString);
+  const currentLng = parseCoordinate(currentLngString);
   
   const mapCenter = useMemo(() => {
-    if (!isNaN(currentLat) && !isNaN(currentLng) && currentLat !== 0 && currentLng !== 0) {
+    if (currentLat !== null && currentLng !== null && currentLat !== 0 && currentLng !== 0) {
       return { lat: currentLat, lng: currentLng };
     }
     return { lat: -22.78, lng: -47.3 }; // Default center
   }, [currentLat, currentLng]);
 
   // Verifica se as coordenadas são válidas para renderizar o mapa
-  const isMapReady = isLoaded && isEditing && !isNaN(currentLat) && !isNaN(currentLng) && currentLat !== 0 && currentLng !== 0;
+  const isMapReady = isLoaded && isEditing && currentLat !== null && currentLng !== null && currentLat !== 0 && currentLng !== 0;
 
   const handleMarkerDragEnd = useCallback((e) => {
     const newLat = e.latLng.lat();
