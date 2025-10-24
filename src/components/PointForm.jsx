@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -11,31 +11,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from '@/lib/supabase';
 import { compressImage } from '@/lib/image-utils';
 import { formatCurrencyBRL } from '@/lib/utils';
-import { Loader2, MapPin } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { GoogleMap, Marker } from '@react-google-maps/api';
-import { useGoogleMapsLoader } from '@/contexts/GoogleMapsLoaderContext';
 
 const pointSchema = z.object({
   name: z.string().min(3, { message: "O nome do ponto deve ter pelo menos 3 caracteres." }),
   description: z.string().optional(),
+  // Coordenadas agora são obrigatórias e tratadas como strings para flexibilidade de entrada
   latitude: z.coerce.number({ invalid_type_error: "Latitude deve ser um número." }),
   longitude: z.coerce.number({ invalid_type_error: "Longitude deve ser um número." }),
-  // Permite string vazia para novo ponto, mas valida se for submetido
   pricing_tier_id: z.string().min(1, "Você deve selecionar um nível de preço."),
   is_available: z.boolean().default(true),
   image_url: z.string().optional(),
-  // Novos campos
   street_name: z.string().min(1, { message: "O nome da rua principal é obrigatório." }),
   intersection_name: z.string().optional(),
   _temp_neighborhood: z.string().optional(), // Campo temporário
 });
-
-const mapContainerStyle = {
-  width: '100%',
-  height: '300px',
-  borderRadius: '0.5rem',
-};
 
 // Mapeamento de dias para anos para facilitar a busca de preços
 const PERIOD_MAP = {
@@ -52,25 +43,12 @@ const normalizeCoordString = (coord) => {
   return String(coord).replace(',', '.');
 };
 
-export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
+export function PointForm({ point, onSave, onCancel }) {
   const [tags, setTags] = useState([]);
   const [pricingTiers, setPricingTiers] = useState([]);
   const [selectedTags, setSelectedTags] = useState(new Set());
   const [imageFile, setImageFile] = useState(null);
-  const { isLoaded } = useGoogleMapsLoader();
   
-  const isEditing = !!point?.id;
-
-  const EDIT_MARKER_ICON = useMemo(() => isLoaded ? {
-    url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
-    scaledSize: new window.google.maps.Size(36, 36),
-  } : null, [isLoaded]);
-
-  const CONTEXT_MARKER_ICON = useMemo(() => isLoaded ? {
-    url: 'http://maps.google.com/mapfiles/ms/icons/grey-dot.png',
-    scaledSize: new window.google.maps.Size(24, 24),
-  } : null, [isLoaded]);
-
   const form = useForm({
     resolver: zodResolver(pointSchema),
     defaultValues: {
@@ -95,7 +73,6 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
       form.reset({
         name: point.name || '',
         description: point.description || '',
-        // Normaliza as coordenadas ao carregar o formulário
         latitude: normalizeCoordString(point.latitude) || '',
         longitude: normalizeCoordString(point.longitude) || '',
         pricing_tier_id: point.pricing_tier_id || '',
@@ -126,7 +103,6 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
       const { data: tagsData } = await supabase.from('tags').select('*');
       setTags(tagsData || []);
       
-      // Busca os tiers e os preços aninhados
       const { data: tiersData, error: tiersError } = await supabase
         .from('pricing_tiers')
         .select(`
@@ -138,7 +114,6 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
         toast.error("Erro ao carregar níveis de preço.", { description: tiersError.message });
         setPricingTiers([]);
       } else {
-        // Mapeia os preços aninhados para um formato fácil de usar (price_1y, price_2y, etc.)
         const formattedTiers = tiersData.map(tier => {
           const prices = {};
           tier.tier_prices.forEach(tp => {
@@ -155,10 +130,8 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
     fetchInitialData();
   }, []);
 
-  // Obter os preços do tier selecionado para exibição e preenchimento
   const selectedTier = pricingTiers.find(t => t.id === selectedTierId);
   
-  // Efeito para atualizar nome e descrição automaticamente
   useEffect(() => {
     const streetName = form.getValues('street_name');
     const intersectionName = form.getValues('intersection_name');
@@ -166,11 +139,9 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
     const currentNeighborhoodValue = form.getValues('_temp_neighborhood');
     
     if (selectedTier && currentBaseName) {
-      // Atualiza nome com o novo separador
       const newName = `${selectedTier.name} | ${currentBaseName}`;
       form.setValue('name', newName);
 
-      // Atualiza descrição com todas as variáveis
       let newDescription = selectedTier.description_template || '';
       newDescription = newDescription
         .replace(/{{tier_name}}/g, selectedTier.name)
@@ -183,7 +154,6 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
         .replace(/{{price_5y}}/g, formatCurrencyBRL(selectedTier.price_5y || 0));
       form.setValue('description', newDescription);
     } else if (currentBaseName) {
-        // Se não houver tier selecionado, apenas define o nome base
         form.setValue('name', currentBaseName);
     }
   }, [selectedTier, form.watch('street_name'), form.watch('intersection_name'), currentNeighborhood, form]);
@@ -219,11 +189,9 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
       }
     }
     
-    // Remove o campo temporário antes de salvar no banco
     const { _temp_neighborhood, ...pointDataToSave } = { 
       ...values, 
       image_url: imageUrl,
-      // Garante que o nome final seja o composto pelas regras do tier
       name: form.getValues('name'),
       description: form.getValues('description'),
     };
@@ -231,87 +199,10 @@ export function PointForm({ point, onSave, onCancel, allPoints = [] }) {
     await onSave(pointDataToSave, Array.from(selectedTags));
   };
 
-  // --- Map Logic for Editing ---
-  const currentLatString = form.watch('latitude');
-  const currentLngString = form.watch('longitude');
-  
-  // Função auxiliar para converter string (com vírgula ou ponto) para número
-  const parseCoordinate = (coordString) => {
-    if (typeof coordString === 'number') return coordString;
-    if (typeof coordString === 'string') {
-      const cleanedString = coordString.replace(',', '.');
-      const num = parseFloat(cleanedString);
-      return isNaN(num) ? null : num;
-    }
-    return null;
-  };
-
-  const currentLat = parseCoordinate(currentLatString);
-  const currentLng = parseCoordinate(currentLngString);
-  
-  const mapCenter = useMemo(() => {
-    if (currentLat !== null && currentLng !== null && currentLat !== 0 && currentLng !== 0) {
-      return { lat: currentLat, lng: currentLng };
-    }
-    return { lat: -22.78, lng: -47.3 }; // Default center
-  }, [currentLat, currentLng]);
-
-  // Verifica se as coordenadas são válidas para renderizar o mapa
-  const isMapReady = isLoaded && isEditing && currentLat !== null && currentLng !== null && currentLat !== 0 && currentLng !== 0;
-
-  const handleMarkerDragEnd = useCallback((e) => {
-    const newLat = e.latLng.lat();
-    const newLng = e.latLng.lng();
-    // Atualiza o formulário com o formato numérico (ponto decimal)
-    form.setValue('latitude', newLat, { shouldValidate: true });
-    form.setValue('longitude', newLng, { shouldValidate: true });
-    toast.info('Coordenadas atualizadas via mapa.');
-  }, [form]);
-
-  const contextPoints = useMemo(() => {
-    if (!isEditing) return [];
-    return allPoints.filter(p => p.id !== point.id && p.latitude && p.longitude);
-  }, [allPoints, isEditing, point]);
-  // --- End Map Logic ---
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
         
-        {isMapReady && EDIT_MARKER_ICON && CONTEXT_MARKER_ICON && (
-          <div className="space-y-2">
-            <h3 className="font-semibold pt-2 border-t flex items-center">
-              <MapPin className="h-4 w-4 mr-2" /> Ajustar Localização
-            </h3>
-            <div className="relative w-full" style={mapContainerStyle}>
-              <GoogleMap
-                mapContainerStyle={mapContainerStyle}
-                center={mapCenter}
-                zoom={19}
-                options={{ disableDefaultUI: true, zoomControl: true }}
-              >
-                {/* Marcador do Ponto em Edição (Arrastável) */}
-                <Marker
-                  position={mapCenter}
-                  draggable={true}
-                  onDragEnd={handleMarkerDragEnd}
-                  icon={EDIT_MARKER_ICON}
-                />
-                
-                {/* Marcadores de Contexto (Outros Pontos) */}
-                {contextPoints.map(p => (
-                  <Marker
-                    key={p.id}
-                    position={{ lat: p.latitude, lng: p.longitude }}
-                    draggable={false}
-                    icon={CONTEXT_MARKER_ICON}
-                  />
-                ))}
-              </GoogleMap>
-            </div>
-          </div>
-        )}
-
         <h3 className="font-semibold pt-2 border-t">Localização e Nomenclatura</h3>
         <div className="grid grid-cols-2 gap-4">
           <FormField control={form.control} name="latitude" render={({ field }) => (

@@ -17,7 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useGoogleMapsLoader } from '@/contexts/GoogleMapsLoaderContext';
 import { GoogleMap, Marker, MarkerClustererF } from '@react-google-maps/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useMapConfig } from '@/contexts/MapConfigContext'; // Importando configurações do mapa
+import { useMapConfig } from '@/contexts/MapConfigContext';
 
 const mapContainerStyle = {
   width: '100%',
@@ -53,25 +53,23 @@ const clusterStyles = [
 export function ManagePointsPage() {
   const [points, setPoints] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingPoint, setEditingPoint] = useState(null);
+  const [editingPoint, setEditingPoint] = useState(null); // Ponto em edição ou novo ponto
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [pointToDelete, setPointToDelete] = useState(null);
   const [isAddingMode, setIsAddingMode] = useState(false);
-  const [newPointCoords, setNewPointCoords] = useState(null);
   const [selectionState, setSelectionState] = useState(SELECTION_STATE.NONE);
   const [currentZoom, setCurrentZoom] = useState(14);
   const [mapInstance, setMapInstance] = useState(null);
   
   const { isLoaded } = useGoogleMapsLoader();
-  const { rules, settings, loading: loadingConfig } = useMapConfig();
+  const { rules, loading: loadingConfig } = useMapConfig();
 
   const fetchPoints = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('points')
       .select('*')
-      .order('updated_at', { ascending: false }); // Alterado para ordenar por updated_at
+      .order('updated_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching points:', error);
@@ -87,26 +85,17 @@ export function ManagePointsPage() {
   }, []);
 
   const handleAddNew = () => {
-    setEditingPoint(null);
-    setNewPointCoords(null);
+    setEditingPoint(null); // Limpa qualquer ponto em edição
     setIsAddingMode(true);
     setSelectionState(SELECTION_STATE.AWAITING_LOCATION);
-    setIsEditModalOpen(false);
   };
 
-  const handleCancelAdd = () => {
+  const handleCancelEdit = () => {
     setIsAddingMode(false);
-    setNewPointCoords(null);
-    setSelectionState(SELECTION_STATE.NONE);
     setEditingPoint(null);
+    setSelectionState(SELECTION_STATE.NONE);
   };
 
-  /**
-   * Tenta extrair o nome da rua e o bairro a partir das coordenadas.
-   * @param {number} lat 
-   * @param {number} lng 
-   * @param {(result: {streetName: string, neighborhood: string}) => void} callback 
-   */
   const getAddressDetailsFromCoords = (lat, lng, callback) => {
     if (!isLoaded) {
       toast.warning("Serviço de mapas não carregado. Tente novamente.");
@@ -127,7 +116,6 @@ export function ManagePointsPage() {
         neighborhood = neighborhoodComponent ? neighborhoodComponent.long_name : '';
 
         if (!streetName) {
-          // Fallback para o endereço formatado se a rua não for encontrada
           streetName = results[0].formatted_address;
         }
       } else {
@@ -138,13 +126,13 @@ export function ManagePointsPage() {
   };
 
   const handleMapClick = (e) => {
-    if (!isAddingMode) return;
+    if (!isAddingMode && !editingPoint) return;
+    
     const lat = e.latLng.lat();
     const lng = e.latLng.lng();
     
     if (selectionState === SELECTION_STATE.AWAITING_LOCATION) {
-      // Primeiro clique: Define a localização principal e abre o formulário
-      setNewPointCoords({ lat, lng });
+      // Modo Adição: Primeiro clique
       getAddressDetailsFromCoords(lat, lng, ({ streetName, neighborhood }) => {
         setEditingPoint({ 
           latitude: lat, 
@@ -162,7 +150,7 @@ export function ManagePointsPage() {
         toast.info(`Localização principal definida: ${streetName}. Clique no mapa novamente para definir o cruzamento (opcional).`);
       });
     } else if (selectionState === SELECTION_STATE.FORM_OPEN && editingPoint) {
-      // Segundo clique (opcional): Define o cruzamento
+      // Modo Adição/Edição: Segundo clique (opcional) para cruzamento
       getAddressDetailsFromCoords(lat, lng, ({ streetName: intersectionName }) => {
         setEditingPoint(prev => ({
           ...prev,
@@ -174,10 +162,16 @@ export function ManagePointsPage() {
   };
 
   const handleEdit = (point) => {
-    setEditingPoint(point);
-    setIsEditModalOpen(true);
+    // Entra no modo de edição
     setIsAddingMode(false); 
-    setSelectionState(SELECTION_STATE.NONE);
+    setSelectionState(SELECTION_STATE.FORM_OPEN);
+    setEditingPoint(point);
+    
+    // Centraliza o mapa no ponto
+    if (mapInstance && point.latitude && point.longitude) {
+      mapInstance.panTo({ lat: point.latitude, lng: point.longitude });
+      mapInstance.setZoom(19);
+    }
   };
 
   const handleSavePoint = async (pointData, tagIds) => {
@@ -204,10 +198,7 @@ export function ManagePointsPage() {
         if (insertTagsError) throw insertTagsError;
       }
 
-      setIsEditModalOpen(false);
-      setEditingPoint(null);
-      setIsAddingMode(false);
-      setSelectionState(SELECTION_STATE.NONE);
+      handleCancelEdit(); // Volta para a tabela
       fetchPoints();
     } catch (error) {
       console.error('Error saving point:', error);
@@ -259,23 +250,52 @@ export function ManagePointsPage() {
     const index = Math.min(String(count).length, numStyles);
     return { text: String(count), index, title: `${count} pontos` };
   };
+  
+  // Coordenadas do ponto em edição/adição
+  const currentPointCoords = useMemo(() => {
+    if (editingPoint && editingPoint.latitude && editingPoint.longitude) {
+      return { lat: Number(editingPoint.latitude), lng: Number(editingPoint.longitude) };
+    }
+    return null;
+  }, [editingPoint]);
+
+  // Pontos de contexto (todos os outros pontos)
+  const contextPoints = useMemo(() => {
+    if (!editingPoint) return points;
+    return points.filter(p => p.id !== editingPoint.id && p.latitude && p.longitude);
+  }, [points, editingPoint]);
+
+  // Renderiza o mapa e o formulário lado a lado se estiver em modo de adição ou edição
+  const isFormView = isAddingMode || (editingPoint && selectionState === SELECTION_STATE.FORM_OPEN);
+
+  const handleMarkerDragEnd = useCallback((e) => {
+    const newLat = e.latLng.lat();
+    const newLng = e.latLng.lng();
+    
+    setEditingPoint(prev => ({
+      ...prev,
+      latitude: newLat,
+      longitude: newLng,
+    }));
+    toast.info('Coordenadas atualizadas via mapa.');
+  }, []);
 
   return (
     <div className="container mx-auto p-4 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Gerenciar Pontos</h1>
-        {!isAddingMode ? (
+        {!isFormView ? (
           <Button onClick={handleAddNew}>
             <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Novo Ponto
           </Button>
         ) : (
-          <Button variant="destructive" onClick={handleCancelAdd}>
-            <XCircle className="mr-2 h-4 w-4" /> Cancelar Adição
+          <Button variant="destructive" onClick={handleCancelEdit}>
+            <XCircle className="mr-2 h-4 w-4" /> Cancelar {editingPoint?.id ? 'Edição' : 'Adição'}
           </Button>
         )}
       </div>
 
-      {isAddingMode && (
+      {isFormView && (
         <div className="grid lg:grid-cols-2 gap-6 h-[70vh]">
           {/* Coluna do Mapa */}
           <div className="flex flex-col gap-4 h-full">
@@ -289,22 +309,24 @@ export function ManagePointsPage() {
               {isLoaded ? (
                 <GoogleMap
                   mapContainerStyle={mapContainerStyle}
-                  center={newPointCoords || defaultCenter}
-                  zoom={newPointCoords ? 19 : currentZoom}
+                  center={currentPointCoords || defaultCenter}
+                  zoom={currentPointCoords ? 19 : currentZoom}
                   onClick={handleMapClick}
                   onLoad={onMapLoad}
                   onZoomChanged={onZoomChanged}
                   options={{ ...mapOptions, draggableCursor: 'crosshair' }}
                 >
-                  {/* Marcador do novo ponto */}
-                  {newPointCoords && (
+                  {/* Marcador do ponto em edição/adição (azul e arrastável) */}
+                  {currentPointCoords && (
                     <Marker 
-                      position={newPointCoords} 
+                      position={currentPointCoords} 
+                      draggable={true}
+                      onDragEnd={handleMarkerDragEnd}
                       icon={{ url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png' }}
                     />
                   )}
                   
-                  {/* Pontos existentes com lógica de cluster/individual */}
+                  {/* Pontos existentes (cinzas, contexto) */}
                   {activeRule.display_mode === 'cluster' ? (
                     <MarkerClustererF
                       options={{
@@ -315,22 +337,24 @@ export function ManagePointsPage() {
                       calculator={clustererCalculator}
                     >
                       {(clusterer) =>
-                        points.map((point) => (
+                        contextPoints.map((point) => (
                           <Marker
                             key={point.id}
                             position={{ lat: point.latitude, lng: point.longitude }}
                             clusterer={clusterer}
                             onClick={() => toast.info(`Ponto existente: ${point.name}`)}
+                            icon={{ url: 'http://maps.google.com/mapfiles/ms/icons/grey-dot.png' }}
                           />
                         ))
                       }
                     </MarkerClustererF>
                   ) : (
-                    points.map((point) => (
+                    contextPoints.map((point) => (
                       <Marker
                         key={point.id}
                         position={{ lat: point.latitude, lng: point.longitude }}
                         onClick={() => toast.info(`Ponto existente: ${point.name}`)}
+                        icon={{ url: 'http://maps.google.com/mapfiles/ms/icons/grey-dot.png' }}
                       />
                     ))
                   )}
@@ -339,16 +363,15 @@ export function ManagePointsPage() {
             </div>
           </div>
           
-          {/* Coluna do Formulário (Aparece após a primeira seleção) */}
-          {selectionState === SELECTION_STATE.FORM_OPEN && editingPoint && (
+          {/* Coluna do Formulário */}
+          {editingPoint && (
             <Card className="h-full overflow-y-auto">
-              <CardHeader><CardTitle>Novo Ponto</CardTitle></CardHeader>
+              <CardHeader><CardTitle>{editingPoint.id ? 'Editar Ponto' : 'Novo Ponto'}</CardTitle></CardHeader>
               <CardContent>
                 <PointForm
                   point={editingPoint}
-                  allPoints={points}
                   onSave={handleSavePoint}
-                  onCancel={handleCancelAdd}
+                  onCancel={handleCancelEdit}
                 />
               </CardContent>
             </Card>
@@ -356,7 +379,7 @@ export function ManagePointsPage() {
         </div>
       )}
 
-      {!isAddingMode && (
+      {!isFormView && (
         loading ? (
           <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
@@ -388,21 +411,7 @@ export function ManagePointsPage() {
         )
       )}
 
-      {/* Modal de Edição (Mantido para edição de pontos existentes) */}
-      <Modal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        title={editingPoint?.id ? 'Editar Ponto' : 'Novo Ponto'}
-        description="Preencha os detalhes do ponto abaixo."
-      >
-        <PointForm
-          point={editingPoint}
-          allPoints={points}
-          onSave={handleSavePoint}
-          onCancel={() => setIsEditModalOpen(false)}
-        />
-      </Modal>
-
+      {/* Modal de Deleção (Mantido) */}
       <Modal
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
