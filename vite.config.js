@@ -42,7 +42,8 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true, // Permite acesso externo
-    open: false
+    open: false,
+    strictPort: true, // Força o uso da porta 5173 ou falha
   },
   // Otimizações de dependências
   optimizeDeps: {
