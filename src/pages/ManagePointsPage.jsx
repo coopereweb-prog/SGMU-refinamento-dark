@@ -407,10 +407,11 @@ export function ManagePointsPage() {
                   }
                 </MarkerClustererF>
               ) : (
+                // CORREÇÃO: Renderiza marcadores individuais quando o modo é 'individual'
                 contextPoints.map((point) => (
                   <Marker
                     key={point.id}
-                    position={{ lat: point.latitude, lng: point.longitude }}
+                    position={{ lat: Number(point.latitude), lng: Number(point.longitude) }}
                     onClick={() => toast.info(`Ponto existente: ${point.name}`)}
                     icon={{ url: 'http://maps.google.com/mapfiles/ms/icons/grey-dot.png' }}
                   />
