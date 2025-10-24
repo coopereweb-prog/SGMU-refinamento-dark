@@ -279,9 +279,13 @@ export function ManagePointsPage() {
 
   // Pontos de contexto (todos os outros pontos)
   const contextPoints = useMemo(() => {
-    if (!editingPoint) return points;
+    // Se estivermos apenas adicionando (isAddingMode), queremos ver TODOS os pontos como contexto.
+    // Se estivermos editando, queremos ver todos MENOS o ponto que estamos editando.
+    if (!editingPoint || isAddingMode) {
+        return points.filter(p => p.latitude && p.longitude);
+    }
     return points.filter(p => p.id !== editingPoint.id && p.latitude && p.longitude);
-  }, [points, editingPoint]);
+  }, [points, editingPoint, isAddingMode]);
 
   // Renderiza o mapa e o formulário lado a lado se estiver em modo de adição ou edição
   const isFormView = isAddingMode || (editingPoint && selectionState === SELECTION_STATE.FORM_OPEN);
@@ -419,7 +423,6 @@ export function ManagePointsPage() {
                   }
                 </MarkerClustererF>
               ) : (
-                // Renderiza marcadores individuais quando o modo é 'individual'
                 contextPoints.map((point) => (
                   <Marker
                     key={point.id}
