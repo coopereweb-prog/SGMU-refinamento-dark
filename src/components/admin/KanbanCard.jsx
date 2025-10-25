@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { assignTaskToTechnician } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils'; // Importar cn para classes condicionais
 
 const kitTypeMap = {
   kit_completo: 'Kit Completo',
@@ -52,15 +53,22 @@ export function KanbanCard({ task, technicians, onTaskUpdate, onOpenModal, onTas
               <DropdownMenuSubTrigger>Mover para...</DropdownMenuSubTrigger>
               <DropdownMenuPortal>
                 <DropdownMenuSubContent>
-                  {allColumns.map(col => (
-                    <DropdownMenuItem 
-                      key={col.id} 
-                      disabled={col.id === task.status}
-                      onSelect={() => onTaskMove(task.id, col.id)}
-                    >
-                      {col.title}
-                    </DropdownMenuItem>
-                  ))}
+                  {allColumns.map(col => {
+                    const isActive = col.id === task.status;
+                    return (
+                      <DropdownMenuItem 
+                        key={col.id} 
+                        disabled={isActive}
+                        onSelect={() => onTaskMove(task.id, col.id)}
+                        className={cn(
+                          isActive && "text-primary font-semibold cursor-default opacity-100 hover:bg-transparent focus:bg-transparent",
+                          isActive && "pointer-events-none" // Garante que não é clicável
+                        )}
+                      >
+                        {col.title}
+                      </DropdownMenuItem>
+                    );
+                  })}
                 </DropdownMenuSubContent>
               </DropdownMenuPortal>
             </DropdownMenuSub>
