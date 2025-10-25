@@ -110,7 +110,12 @@ Deno.serve(async (req: Request) => {
       console.error('Erro RPC create_new_order:', rpcError);
       // Tenta extrair a mensagem de erro do PostgreSQL
       const dbErrorMessage = rpcError.message.match(/PGRST\d{3}: (.*)/)?.[1] || rpcError.message;
-      throw new Error(dbErrorMessage);
+      
+      // Retorna a resposta 400 imediatamente com a mensagem de erro do banco de dados
+      return new Response(JSON.stringify({ error: dbErrorMessage }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
     }
 
     // --- LÓGICA DE ENVIO DE E-MAIL (sem alterações) ---
@@ -157,4 +162,4 @@ Deno.serve(async (req: Request) => {
       status: 400,
     })
   }
-})
+});
