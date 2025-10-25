@@ -115,8 +115,20 @@ export const createOrder = async (customerData, cartItems) => {
   })
 
   if (error) {
-    console.error('Erro ao invocar a Edge Function create-order:', error)
-    throw error
+    console.error('Erro ao invocar a Edge Function create-order:', error);
+    
+    // Tenta extrair a mensagem de erro detalhada do corpo da resposta 400
+    let errorMessage = error.message;
+    try {
+      const errorBody = JSON.parse(error.context.body);
+      if (errorBody.error) {
+        errorMessage = errorBody.error;
+      }
+    } catch (e) {
+      // Ignora se o corpo não for JSON
+    }
+    
+    throw new Error(errorMessage);
   }
 
   return data

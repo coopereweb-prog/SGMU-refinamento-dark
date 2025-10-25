@@ -108,7 +108,9 @@ Deno.serve(async (req: Request) => {
 
     if (rpcError) {
       console.error('Erro RPC create_new_order:', rpcError);
-      throw rpcError
+      // Tenta extrair a mensagem de erro do PostgreSQL
+      const dbErrorMessage = rpcError.message.match(/PGRST\d{3}: (.*)/)?.[1] || rpcError.message;
+      throw new Error(dbErrorMessage);
     }
 
     // --- LÓGICA DE ENVIO DE E-MAIL (sem alterações) ---
