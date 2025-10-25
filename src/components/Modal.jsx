@@ -8,6 +8,9 @@ export function Modal({ isOpen, onClose, title, description, children, className
     return null;
   }
 
+  // Gera um ID único para a descrição
+  const descriptionId = title ? `modal-description-${title.replace(/\s/g, '-')}` : 'modal-description';
+
   return (
     <div 
       className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center p-4"
@@ -19,6 +22,10 @@ export function Modal({ isOpen, onClose, title, description, children, className
           className
         )}
         onClick={(e) => e.stopPropagation()}
+        // Adiciona o atributo aria-describedby para resolver o aviso de acessibilidade
+        aria-describedby={descriptionId}
+        role="dialog"
+        aria-modal="true"
       >
         <Button 
           variant="ghost" 
@@ -31,7 +38,9 @@ export function Modal({ isOpen, onClose, title, description, children, className
 
         <CardHeader className="pr-12">
           <CardTitle>{title}</CardTitle>
-          {description && <CardDescription>{description}</CardDescription>}
+          {/* Usa o ID gerado para a descrição */}
+          {description && <CardDescription id={descriptionId}>{description}</CardDescription>}
+          {!description && <CardDescription id={descriptionId} className="sr-only">Conteúdo do modal.</CardDescription>}
         </CardHeader>
         <CardContent>
           {children}
