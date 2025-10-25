@@ -29,6 +29,7 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
+  // Modificado para retornar o resultado da promessa
   const signOut = useCallback(() => supabase.auth.signOut(), []);
 
   const value = useMemo(() => ({

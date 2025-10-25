@@ -15,6 +15,7 @@ import {
 import { LayoutDashboard, LogOut, User as UserIcon, Menu } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { toast } from 'sonner'; // Importar toast
 
 const navLinks = [
   { to: '/', label: 'Início' },
@@ -32,8 +33,19 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/login');
+    try {
+      const { error } = await signOut();
+      if (error) throw error;
+      
+      // Limpa o localStorage do carrinho pendente, se houver
+      localStorage.removeItem('pendingReservationCart');
+      
+      toast.success('Sessão encerrada com sucesso.');
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      toast.error('Falha ao sair', { description: 'Não foi possível encerrar a sessão. Tente novamente.' });
+    }
   };
 
   const getDashboardPath = () => {
