@@ -123,6 +123,7 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
       onReservationSuccess();
       navigate('/dashboard');
     } catch (err) {
+      console.error("Erro detalhado na reserva:", err); // LOG AGRESSIVO
       setError(err.message || 'Ocorreu um erro desconhecido.');
       setLoading(false);
     }
@@ -149,6 +150,7 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
       onReservationSuccess();
       navigate('/dashboard');
     } catch (err) {
+      console.error("Erro detalhado na reserva:", err); // LOG AGRESSIVO
       setError(err.message || 'Ocorreu um erro no cadastro.');
       setLoading(false);
     }
@@ -171,6 +173,7 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
        onReservationSuccess();
        navigate('/dashboard');
      } catch (err) {
+        console.error("Erro detalhado na reserva:", err); // LOG AGRESSIVO
         setError(err.message || 'Ocorreu um erro ao criar sua reserva.');
         setLoading(false);
      }
