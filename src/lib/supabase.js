@@ -120,12 +120,13 @@ export const createOrder = async (customerData, cartItems) => {
     // Tenta extrair a mensagem de erro detalhada do corpo da resposta 400
     let errorMessage = error.message;
     try {
+      // Se o erro for um FunctionsHttpError, o corpo da resposta pode estar em error.context.body
       const errorBody = JSON.parse(error.context.body);
       if (errorBody.error) {
         errorMessage = errorBody.error;
       }
     } catch (e) {
-      // Ignora se o corpo não for JSON
+      // Ignora se o corpo não for JSON ou se não houver corpo
     }
     
     throw new Error(errorMessage);
