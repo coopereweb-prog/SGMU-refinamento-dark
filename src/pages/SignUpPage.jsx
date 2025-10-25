@@ -100,7 +100,7 @@ function SignUpPage() {
           <img 
             src="/logo.png" 
             alt="SGMU Logo" 
-            className="w-24 mx-auto mb-4"
+            className="w-32 mx-auto mb-4"
           />
           <h1 className="text-3xl font-bold">Crie sua Conta</h1>
           <p className="text-balance text-muted-foreground">
