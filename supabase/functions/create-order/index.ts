@@ -108,14 +108,8 @@ Deno.serve(async (req: Request) => {
 
     if (rpcError) {
       console.error('Erro RPC create_new_order:', rpcError);
-      // Tenta extrair a mensagem de erro do PostgreSQL
-      const dbErrorMessage = rpcError.message.match(/PGRST\d{3}: (.*)/)?.[1] || rpcError.message;
-      
-      // Retorna a resposta 400 imediatamente com a mensagem de erro do banco de dados
-      return new Response(JSON.stringify({ error: dbErrorMessage }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      });
+      // Se houver um erro RPC, lançamos ele para o bloco catch
+      throw rpcError;
     }
 
     // --- LÓGICA DE ENVIO DE E-MAIL (sem alterações) ---
@@ -155,11 +149,18 @@ Deno.serve(async (req: Request) => {
       status: 200,
     })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Ocorreu um erro desconhecido.';
+    // Tratamento de erro unificado
+    let message = error instanceof Error ? error.message : 'Ocorreu um erro desconhecido.';
+    
+    // Tenta extrair a mensagem de erro do PostgreSQL se for um erro RPC
+    if (error.message && error.message.includes('PGRST')) {
+        message = error.message.match(/PGRST\d{3}: (.*)/)?.[1] || message;
+    }
+
     console.error('Erro na Edge Function create-order:', message);
     return new Response(JSON.stringify({ error: message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     })
   }
-});
+})
