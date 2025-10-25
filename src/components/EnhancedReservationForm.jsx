@@ -114,7 +114,7 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
       const customerDataForOrder = {
         name: profile.name,
         email: profile.email,
-        phone: profile.phone || '',
+        phone: profile.phone || '', // Garante que é uma string vazia se for null
       };
       await createOrder(customerDataForOrder, cartItems);
       
@@ -159,7 +159,13 @@ export function EnhancedReservationForm({ cartItems, onReservationSuccess }) {
      setLoading(true);
      setError(null);
      try {
-       await createOrder(userData, cartItems);
+       // Garante que o phone é uma string vazia se for null
+       const customerData = {
+         name: userData.name,
+         email: userData.email,
+         phone: userData.phone || '',
+       };
+       await createOrder(customerData, cartItems);
        toast.success('Reserva confirmada!', { description: 'Você será redirecionado para seu painel.' });
        localStorage.removeItem('pendingReservationCart');
        onReservationSuccess();
