@@ -83,8 +83,9 @@ Deno.serve(async (req: Request) => {
         default: throw new Error(`Período inválido (${item.period_years} anos) para o ponto ${item.point_id}`);
       }
 
-      if (typeof price !== 'number') {
-        throw new Error(`Preço para ${item.period_years} anos não definido para o ponto ${item.point_id}`);
+      // Verificação robusta: o preço deve ser um número e maior que zero
+      if (typeof price !== 'number' || price <= 0) {
+        throw new Error(`Preço para ${item.period_years} anos não definido ou é zero para o ponto ${pointDetails.name} (${item.point_id}).`);
       }
       
       calculatedTotalAmount += price;
