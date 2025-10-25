@@ -46,8 +46,15 @@ Deno.serve(async (req: Request) => {
 
     const { customerData, items } = await req.json()
 
+    console.log('Dados recebidos:', { customerData, items, userId });
+
     if (!customerData || !items || !Array.isArray(items) || items.length === 0) {
       throw new Error('Dados do cliente e itens são obrigatórios.')
+    }
+    
+    // Validação explícita das propriedades do cliente
+    if (!customerData.name || !customerData.email) {
+        throw new Error('Nome e email do cliente são obrigatórios.');
     }
 
     const pointIds = items.map(item => item.point_id);
@@ -99,6 +106,7 @@ Deno.serve(async (req: Request) => {
     })
 
     if (rpcError) {
+      console.error('Erro RPC create_new_order:', rpcError);
       throw rpcError
     }
 
@@ -140,6 +148,7 @@ Deno.serve(async (req: Request) => {
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Ocorreu um erro desconhecido.';
+    console.error('Erro na Edge Function create-order:', message);
     return new Response(JSON.stringify({ error: message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
