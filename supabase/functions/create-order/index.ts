@@ -107,7 +107,7 @@ Deno.serve(async (req: Request) => {
     })
 
     if (rpcError) {
-      console.error('Erro RPC create_new_order:', rpcError);
+      console.error('Erro RPC create_new_order DETALHADO:', rpcError); // Log detalhado
       // Se houver um erro RPC, lançamos ele para o bloco catch
       throw rpcError;
     }
@@ -152,7 +152,7 @@ Deno.serve(async (req: Request) => {
     // Tratamento de erro unificado
     let message = error instanceof Error ? error.message : 'Ocorreu um erro desconhecido.';
     
-    // Tenta extrair a mensagem de erro do PostgreSQL se for um erro RPC
+    // Tenta extrair a mensagem de erro detalhada do PostgreSQL se for um erro RPC
     if (error.message && error.message.includes('PGRST')) {
         message = error.message.match(/PGRST\d{3}: (.*)/)?.[1] || message;
     }
