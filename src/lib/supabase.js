@@ -182,18 +182,55 @@ export const getUsers = async () => {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error("Usuário não autenticado.");
 
-  const { data, error } = await supabase.functions.invoke('get-users', {
+  // 1. Busca usuários de autenticação (via Edge Function)
+  const { data: authData, error: authError } = await supabase.functions.invoke('get-users', {
     headers: {
       Authorization: `Bearer ${session.access_token}`
     }
   });
 
-  if (error) {
-    console.error('Error fetching users via function:', error);
-    throw error;
+  if (authError) {
+    console.error('Error fetching users via function:', authError);
+    throw authError;
   }
   
-  return data.users;
+  const authUsers = authData.users;
+  const userIds = authUsers.map(u => u.id);
+
+  // 2. Busca perfis correspondentes para obter o 'role' e 'name'
+  const { data: profiles, error: profilesError } = await supabase
+    .from('profiles')
+    .select('id, role, name')
+    .in('id', userIds);
+
+  if (profilesError) {
+    console.error('Error fetching profiles:', profilesError);
+    // Continua, mas os dados de perfil podem estar incompletos
+  }
+
+  const profilesMap = new Map((profiles || []).map(p => [p.id, p]));
+
+  // 3. Mescla os dados
+  return authUsers.map(user => {
+    const profile = profilesMap.get(user.id);
+    
+    // Usa o role do perfil como fonte de verdade, mas mantém o app_metadata para compatibilidade
+    const role = profile?.role || user.app_metadata?.role || 'client';
+    
+    return {
+      ...user,
+      // Sobrescreve app_metadata para garantir que o role esteja sempre presente
+      app_metadata: {
+        ...user.app_metadata,
+        role: role,
+      },
+      // Sobrescreve user_metadata para garantir que o nome esteja presente
+      user_metadata: {
+        ...user.user_metadata,
+        full_name: profile?.name || user.user_metadata?.full_name,
+      }
+    };
+  });
 };
 
 export const inviteUser = async (email, name, role) => {
