@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Admins e Gerentes podem gerenciar todas as tarefas" ON public.installation_tasks;
