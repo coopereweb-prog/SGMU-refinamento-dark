@@ -21,7 +21,7 @@ const taskSchema = z.object({
   // Tornando kit_type obrigatório com mensagem personalizada
   kit_type: z.enum(['kit_completo', 'kit_placas', 'troca_propaganda'], {
     required_error: "Escolha um Kit para salvar",
-    invalid_type_error: "Escolha um Kit para salvar", // Adicionado para cobrir o caso de string vazia
+    invalid_type_error: "Escolha um Kit para salvar",
   }),
 });
 
