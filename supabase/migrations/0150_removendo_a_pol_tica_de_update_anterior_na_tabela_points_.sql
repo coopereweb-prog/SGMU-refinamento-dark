@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Field technicians can update installation details" ON public.points;
