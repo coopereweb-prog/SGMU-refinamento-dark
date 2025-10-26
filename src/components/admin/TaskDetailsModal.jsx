@@ -18,9 +18,10 @@ const taskSchema = z.object({
   notes: z.string().optional(),
   // Tornando due_date obrigatório
   due_date: z.string().min(1, { message: "A data de entrega é obrigatória." }),
-  // Tornando kit_type obrigatório
+  // Tornando kit_type obrigatório com mensagem personalizada
   kit_type: z.enum(['kit_completo', 'kit_placas', 'troca_propaganda'], {
-    required_error: "O tipo de kit é obrigatório.",
+    required_error: "Escolha um Kit para salvar",
+    invalid_type_error: "Escolha um Kit para salvar", // Adicionado para cobrir o caso de string vazia
   }),
 });
 
