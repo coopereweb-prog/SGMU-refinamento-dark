@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Allow status updates" ON public.points;
