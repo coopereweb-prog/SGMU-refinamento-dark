@@ -16,8 +16,9 @@ import { compressImage } from '@/lib/image-utils';
 
 const taskSchema = z.object({
   notes: z.string().optional(),
-  due_date: z.string().optional(),
-  // Tornando kit_type obrigatório, pois é um campo crucial para o fluxo de trabalho
+  // Tornando due_date obrigatório
+  due_date: z.string().min(1, { message: "A data de entrega é obrigatória." }),
+  // Tornando kit_type obrigatório
   kit_type: z.enum(['kit_completo', 'kit_placas', 'troca_propaganda'], {
     required_error: "O tipo de kit é obrigatório.",
   }),
@@ -157,6 +158,12 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
           <p><strong>Cliente:</strong> {task.customer_name}</p>
           <p><strong>Pedido:</strong> <Button variant="link" asChild className="p-0 h-auto"><Link to={`/admin/orders/${task.order_items.orders.id}`}>#{task.order_items.orders.id.substring(0, 8)}</Link></Button></p>
         </div>
+        
+        <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+          <p className="font-semibold">Atenção:</p>
+          <p>O <strong>Tipo de Kit</strong> e a <strong>Data de Entrega</strong> são obrigatórios para o fluxo de trabalho.</p>
+        </div>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
             
