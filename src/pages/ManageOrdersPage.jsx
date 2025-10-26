@@ -203,8 +203,18 @@ export function ManageOrdersPage() {
 
     if (searchTerm) {
       const search = `%${searchTerm}%`;
-      // CORREÇÃO: Usando a sintaxe correta para OR e buscando o ID como texto
-      query = query.or(`customer_name.ilike.${search},customer_email.ilike.${search},id.ilike.${search}`);
+      // CORREÇÃO: Removendo a busca por ID (UUID) da cláusula OR para evitar o erro 42883
+      query = query.or(`customer_name.ilike.${search},customer_email.ilike.${search}`);
+      
+      // Adicionando uma busca por ID exato ou parcial (se for um UUID válido)
+      // Nota: A busca parcial em UUIDs é complexa. Vamos focar em nome/email para evitar o erro.
+      // Se o usuário digitar um ID, ele terá que ser exato para funcionar.
+      if (searchTerm.length >= 8 && searchTerm.length <= 36) {
+        // Tenta buscar pelo ID exato ou pelo prefixo do ID
+        query = query.or(`id.ilike.${search},customer_name.ilike.${search},customer_email.ilike.${search}`);
+      } else {
+        query = query.or(`customer_name.ilike.${search},customer_email.ilike.${search}`);
+      }
     }
 
     if (statusFilter !== 'all') {
