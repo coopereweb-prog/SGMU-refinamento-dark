@@ -75,12 +75,22 @@ function FieldTechnicianPage() {
       const fileExt = file.name.split('.').pop();
       const fileName = `${pointId}-${Date.now()}.${fileExt}`;
       
+      // 1. Upload da Imagem
       const { error: uploadError } = await supabase.storage.from('installation-photos').upload(fileName, file);
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Upload Error:", uploadError);
+        throw new Error(`Falha no upload: ${uploadError.message}`);
+      }
 
+      // 2. Obter URL Pública
       const { data: urlData } = supabase.storage.from('installation-photos').getPublicUrl(fileName);
       const publicUrl = urlData.publicUrl;
+      
+      if (!publicUrl) {
+        throw new Error("Não foi possível obter a URL pública após o upload.");
+      }
 
+      // 3. Atualizar Ponto no DB
       const { error: updateError } = await supabase
         .from('points')
         .update({ 
@@ -88,8 +98,12 @@ function FieldTechnicianPage() {
           installation_notes: comment || null
         })
         .eq('id', pointId);
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("DB Update Error:", updateError);
+        throw new Error(`Falha ao atualizar ponto: ${updateError.message}`);
+      }
 
+      // 4. Concluir Tarefa
       await completeInstallationTask(taskId);
 
       toast.success('Tarefa concluída com sucesso!');
@@ -97,7 +111,8 @@ function FieldTechnicianPage() {
 
     } catch (error) {
       console.error("Error completing task:", error);
-      toast.error(`Falha ao concluir tarefa: ${error.message}`);
+      // Exibe a mensagem de erro detalhada
+      toast.error(`Falha ao concluir tarefa: ${error.message || 'Erro desconhecido'}`);
     } finally {
       setUploading(prev => ({ ...prev, [pointId]: false }));
     }
