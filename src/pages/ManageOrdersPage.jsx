@@ -202,8 +202,9 @@ export function ManageOrdersPage() {
       .order('created_at', { ascending: false });
 
     if (searchTerm) {
-      // Ajuste na busca: agora inclui o ID do pedido (substring)
-      query = query.or(`customer_name.ilike.%${searchTerm}%,customer_email.ilike.%${searchTerm}%,id.ilike.%${searchTerm}%`);
+      const search = `%${searchTerm}%`;
+      // CORREÇÃO: Usando a sintaxe correta para OR e buscando o ID como texto
+      query = query.or(`customer_name.ilike.${search},customer_email.ilike.${search},id.ilike.${search}`);
     }
 
     if (statusFilter !== 'all') {
