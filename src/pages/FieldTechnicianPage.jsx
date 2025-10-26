@@ -76,7 +76,10 @@ function FieldTechnicianPage() {
       const fileName = `${pointId}-${Date.now()}.${fileExt}`;
       
       // 1. Upload da Imagem
-      const { error: uploadError } = await supabase.storage.from('installation-photos').upload(fileName, file);
+      const { error: uploadError } = await supabase.storage.from('installation-photos').upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: true, // Adicionado upsert: true para garantir que não haja conflito de nome
+      });
       if (uploadError) {
         console.error("Upload Error:", uploadError);
         throw new Error(`Falha no upload: ${uploadError.message}`);
