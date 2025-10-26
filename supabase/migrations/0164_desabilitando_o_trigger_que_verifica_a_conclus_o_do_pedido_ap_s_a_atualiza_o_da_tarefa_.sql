@@ -1,0 +1,1 @@
+ALTER TABLE public.installation_tasks DISABLE TRIGGER on_task_completed_check_order;
