@@ -98,7 +98,11 @@ export function ManagePricingPage() {
       setIsFormOpen(false);
       fetchTiers();
     } catch (error) {
-      toast.error("Falha ao salvar o nível de preço.", { description: error.message });
+      let errorMessage = error.message;
+      if (error.code === '23505') { // Código de erro PostgreSQL para violação de unicidade
+        errorMessage = "Já existe um nível de preço com este nome. Por favor, escolha um nome diferente.";
+      }
+      toast.error("Falha ao salvar o nível de preço.", { description: errorMessage });
     }
   };
   
