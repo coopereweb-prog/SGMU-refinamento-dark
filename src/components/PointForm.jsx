@@ -75,7 +75,8 @@ export function PointForm({ point, onSave, onCancel }) {
         description: point.description || '',
         latitude: normalizeCoordString(point.latitude) || '',
         longitude: normalizeCoordString(point.longitude) || '',
-        pricing_tier_id: point.pricing_tier_id || '',
+        // CORREÇÃO: Garante que pricing_tier_id é uma string
+        pricing_tier_id: point.pricing_tier_id || '', 
         is_available: point.is_available ?? true,
         image_url: point.image_url || '',
         street_name: point.street_name || '',
