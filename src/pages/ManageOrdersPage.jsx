@@ -202,7 +202,8 @@ export function ManageOrdersPage() {
       .order('created_at', { ascending: false });
 
     if (searchTerm) {
-      query = query.or(`customer_name.ilike.%${searchTerm}%,customer_email.ilike.%${searchTerm}%`);
+      // Ajuste na busca: agora inclui o ID do pedido (substring)
+      query = query.or(`customer_name.ilike.%${searchTerm}%,customer_email.ilike.%${searchTerm}%,id.ilike.%${searchTerm}%`);
     }
 
     if (statusFilter !== 'all') {
@@ -342,7 +343,7 @@ export function ManageOrdersPage() {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Buscar por cliente..."
+              placeholder="Buscar por cliente, email ou ID..."
               className="pl-8"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -370,7 +371,7 @@ export function ManageOrdersPage() {
                       <div className="flex-1 min-w-0">
                         <CardTitle className="truncate">Pedido #{order.id.substring(0, 8)}</CardTitle>
                         <CardDescription className="break-words">
-                          Cliente: {order.customer_name} - {order.customer_email}
+                          <span className="font-semibold">{order.customer_name}</span> | {order.customer_email} | {order.customer_phone}
                         </CardDescription>
                         <CardDescription>
                           Criado em: {format(new Date(order.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
