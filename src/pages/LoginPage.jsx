@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { supabase, createOrder } from '../lib/supabase';
 import { toast } from 'sonner';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { WhatsAppButton } from '../components/WhatsAppButton';
 
 // Função para processar uma reserva pendente após o login
@@ -121,7 +121,9 @@ function LoginPage() {
     <div className="w-full min-h-screen flex items-center justify-center py-12">
       <div className="mx-auto grid w-[350px] gap-6">
         <div className="grid gap-2 text-center">
-          <img src="/logo.png" alt="SGMU Logo" className="w-32 mx-auto mb-4" />
+          <Link to="/" className="mx-auto">
+            <img src="/logo.png" alt="SGMU Logo" className="w-32 mx-auto mb-4" />
+          </Link>
           <h1 className="text-3xl font-bold">Área Restrita</h1>
           <p className="text-balance text-muted-foreground">
             Insira suas credenciais para acessar o painel
@@ -157,6 +159,11 @@ function LoginPage() {
           Ainda não tem uma conta?{" "}
           <Link to="/signup" className="underline font-bold">Cadastre-se</Link>
         </div>
+        <Button asChild variant="outline" className="w-full mt-2">
+          <Link to="/">
+            <ArrowLeft className="h-4 w-4 mr-2" /> Voltar ao Mapa
+          </Link>
+        </Button>
       </div>
       <WhatsAppButton />
     </div>
