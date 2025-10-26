@@ -5,6 +5,7 @@ import { MapConfigProvider } from '@/contexts/MapConfigContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { GoogleMapsLoaderProvider } from '@/contexts/GoogleMapsLoaderContext';
 import { GlobalCart } from '@/components/GlobalCart';
+import { AuthRedirectHandler } from '@/components/AuthRedirectHandler'; // Importação
 
 import { AppLayout } from '@/components/AppLayout';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -46,6 +47,7 @@ function App() {
           <CartProvider>
             <GoogleMapsLoaderProvider>
               <Router>
+                <AuthRedirectHandler /> {/* Adicionado aqui */}
                 <Routes>
                   {/* Rotas Públicas */}
                   <Route path="/" element={<HomePage />} />
