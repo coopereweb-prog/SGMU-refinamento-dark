@@ -381,7 +381,7 @@ export function ManagePointsPage() {
                     <TableHead>Nome</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
-                  </TableRow> {/* <-- ERRO CORRIGIDO AQUI (era </TabelRow>) */}
+                  </TableRow>
                 </TableHeader>
                 <TableBody>
                   {points.map((point) => (
