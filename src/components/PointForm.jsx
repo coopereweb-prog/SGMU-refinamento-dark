@@ -139,10 +139,20 @@ export function PointForm({ point, onSave, onCancel }) {
     const currentBaseName = streetName + (intersectionName ? ` c/ ${intersectionName}` : '');
     const currentNeighborhoodValue = form.getValues('_temp_neighborhood');
     
+    // Verifica se é um novo ponto OU se o nome/descrição estão vazios (para preencher automaticamente)
+    const isNewPoint = !point?.id;
+    const isNameEmpty = !form.getValues('name') || form.getValues('name') === currentBaseName;
+    const isDescriptionEmpty = !form.getValues('description');
+
     if (selectedTier && currentBaseName) {
       const newName = `${selectedTier.name} | ${currentBaseName}`;
-      form.setValue('name', newName);
+      
+      // 1. Preenchimento do Nome
+      if (isNewPoint || isNameEmpty) {
+        form.setValue('name', newName);
+      }
 
+      // 2. Preenchimento da Descrição
       let newDescription = selectedTier.description_template || '';
       newDescription = newDescription
         .replace(/{{tier_name}}/g, selectedTier.name)
@@ -153,11 +163,15 @@ export function PointForm({ point, onSave, onCancel }) {
         .replace(/{{price_3y}}/g, formatCurrencyBRL(selectedTier.price_3y || 0))
         .replace(/{{price_4y}}/g, formatCurrencyBRL(selectedTier.price_4y || 0))
         .replace(/{{price_5y}}/g, formatCurrencyBRL(selectedTier.price_5y || 0));
-      form.setValue('description', newDescription);
-    } else if (currentBaseName) {
+        
+      if (isNewPoint || isDescriptionEmpty) {
+        form.setValue('description', newDescription);
+      }
+      
+    } else if (currentBaseName && (isNewPoint || isNameEmpty)) {
         form.setValue('name', currentBaseName);
     }
-  }, [selectedTier, form.watch('street_name'), form.watch('intersection_name'), currentNeighborhood, form]);
+  }, [selectedTier, form.watch('street_name'), form.watch('intersection_name'), currentNeighborhood, form, point]);
 
 
   const handleTagChange = (tagId) => {
@@ -193,8 +207,9 @@ export function PointForm({ point, onSave, onCancel }) {
     const { _temp_neighborhood, ...pointDataToSave } = { 
       ...values, 
       image_url: imageUrl,
-      name: form.getValues('name'),
-      description: form.getValues('description'),
+      // Remove a leitura automática, pois o valor já está no formulário (editável)
+      // name: form.getValues('name'), 
+      // description: form.getValues('description'),
     };
     
     await onSave(pointDataToSave, Array.from(selectedTags));
@@ -248,11 +263,13 @@ export function PointForm({ point, onSave, onCancel }) {
           </div>
         )}
         
+        {/* CAMPO NOME: AGORA EDITÁVEL */}
         <FormField control={form.control} name="name" render={({ field }) => (
-          <FormItem><FormLabel>Nome do Ponto (Automático)</FormLabel><FormControl><Input placeholder="Será preenchido automaticamente" {...field} disabled /></FormControl><FormMessage /></FormItem>
+          <FormItem><FormLabel>Nome do Ponto</FormLabel><FormControl><Input placeholder="Será preenchido automaticamente" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
+        {/* CAMPO DESCRIÇÃO: AGORA EDITÁVEL */}
         <FormField control={form.control} name="description" render={({ field }) => (
-          <FormItem><FormLabel>Descrição (Automática)</FormLabel><FormControl><Textarea placeholder="Será preenchida automaticamente" {...field} disabled /></FormControl><FormMessage /></FormItem>
+          <FormItem><FormLabel>Descrição</FormLabel><FormControl><Textarea placeholder="Será preenchida automaticamente" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
         
         <h3 className="font-semibold pt-2 border-t">Outras Informações</h3>
