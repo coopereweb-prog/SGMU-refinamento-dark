@@ -51,6 +51,13 @@ const clusterStyles = [
   { url: 'data:image/svg+xml;charset=UTF-8,<svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg"><circle cx="25" cy="25" r="23" fill="oklch(0.85 0.2 90)" stroke="oklch(0.145 0 0)" stroke-width="2"/><text x="25" y="30" font-family="sans-serif" font-size="16" fill="oklch(0.145 0 0)" text-anchor="middle" font-weight="bold"></text></svg>', height: 50, width: 50, textColor: 'oklch(0.145 0 0)', textSize: 16, fontWeight: 'bold' },
 ];
 
+// Função auxiliar para truncar o nome
+const truncateName = (name, maxLength = 150) => {
+  if (!name) return '';
+  if (name.length <= maxLength) return name;
+  return name.substring(0, maxLength) + '...';
+};
+
 export function ManagePointsPage() {
   const [points, setPoints] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -386,7 +393,7 @@ export function ManagePointsPage() {
                 <TableBody>
                   {points.map((point) => (
                     <TableRow key={point.id}>
-                      <TableCell>{point.name}</TableCell>
+                      <TableCell title={point.name}>{truncateName(point.name)}</TableCell>
                       <TableCell>{point.status}</TableCell>
                       <TableCell className="text-right flex justify-end space-x-2">
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(point)}>
