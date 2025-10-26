@@ -82,13 +82,22 @@ export function ManageUsersPage() {
   };
 
   const getRoleBadge = (role) => {
+    const roleMap = {
+      admin: "Administrador",
+      operations_manager: "Gerente de Operações",
+      field_technician: "Técnico de Campo",
+      client: "Cliente",
+    };
+    
     const variants = {
       admin: "destructive",
       operations_manager: "default",
       field_technician: "secondary",
       client: "outline",
     };
-    return <Badge variant={variants[role] || "outline"}>{role}</Badge>;
+    
+    const label = roleMap[role] || role;
+    return <Badge variant={variants[role] || "outline"}>{label}</Badge>;
   };
 
   return (
