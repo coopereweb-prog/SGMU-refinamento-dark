@@ -17,7 +17,10 @@ import { compressImage } from '@/lib/image-utils';
 const taskSchema = z.object({
   notes: z.string().optional(),
   due_date: z.string().optional(),
-  kit_type: z.enum(['kit_completo', 'kit_placas', 'troca_propaganda']).optional(),
+  // Tornando kit_type obrigatório, pois é um campo crucial para o fluxo de trabalho
+  kit_type: z.enum(['kit_completo', 'kit_placas', 'troca_propaganda'], {
+    required_error: "O tipo de kit é obrigatório.",
+  }),
 });
 
 export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
@@ -39,7 +42,8 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
       form.reset({
         notes: task.notes || '',
         due_date: task.due_date ? task.due_date.split('T')[0] : '',
-        kit_type: task.kit_type || '',
+        // O kit_type é lido do pedido, mas o formulário precisa do valor inicial
+        kit_type: task.kit_type || '', 
       });
     }
     setArtFile(null);
