@@ -356,8 +356,9 @@ export const completeInstallationTask = async (taskId) => {
   const { error } = await supabase
     .from('installation_tasks')
     .update({ status: 'completed' })
-    .eq('id', taskId);
-
+    .eq('id', taskId)
+    .select(); // Adicionado select()
+  
   if (error) {
     console.error('Error completing task:', error);
     throw error;
@@ -369,7 +370,8 @@ export const updateInstallationTaskStatus = async (taskId, newStatus) => {
   const { error } = await supabase
     .from('installation_tasks')
     .update({ status: newStatus })
-    .eq('id', taskId);
+    .eq('id', taskId)
+    .select(); // Adicionado select()
 
   if (error) {
     console.error('Error updating task status:', error);
@@ -431,7 +433,8 @@ export const returnTaskToHold = async (taskId, pointId, notes) => {
   const { error: pointUpdateError } = await supabase
     .from('points')
     .update({ installation_notes: notes })
-    .eq('id', pointId);
+    .eq('id', pointId)
+    .select(); // Adicionado select()
 
   if (pointUpdateError) {
     console.error('Error updating point notes:', pointUpdateError);
@@ -445,7 +448,8 @@ export const returnTaskToHold = async (taskId, pointId, notes) => {
       status: 'on_hold',
       // REMOVIDO: assigned_technician_id: null 
     })
-    .eq('id', taskId);
+    .eq('id', taskId)
+    .select(); // Adicionado select()
 
   if (taskUpdateError) {
     console.error('Error returning task to hold:', taskUpdateError);
@@ -458,7 +462,8 @@ export const updateOrderKitType = async (orderId, kitType) => {
   const { error } = await supabase
     .from('orders')
     .update({ kit_type: kitType })
-    .eq('id', orderId);
+    .eq('id', orderId)
+    .select(); // Adicionado select()
 
   if (error) {
     console.error('Error updating order kit type:', error);
