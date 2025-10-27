@@ -111,19 +111,44 @@ Deno.serve(async (req: Request) => {
       // Se houver um erro RPC, lançamos ele para o bloco catch
       throw rpcError;
     }
+    
+    const orderIdShort = (newOrderId as string).substring(0, 8);
+    const itemsListHtml = items.map(item => {
+      const pointDetails = pointDetailsMap.get(item.point_id);
+      return `<li>${pointDetails?.name || 'Ponto desconhecido'} - ${item.period_years} ano(s)</li>`;
+    }).join('');
 
-    // --- LÓGICA DE ENVIO DE E-MAIL (sem alterações) ---
+    // --- LÓGICA DE NOTIFICAÇÃO INTERNA PARA ADMINS ---
+    try {
+        const { data: adminProfiles } = await supabaseAdmin
+            .from('profiles')
+            .select('id')
+            .in('role', ['admin', 'operations_manager']);
+
+        if (adminProfiles && adminProfiles.length > 0) {
+            const notificationMessage = `O cliente ${customerData.name} (${customerData.email}) realizou uma nova reserva no valor de R$ ${calculatedTotalAmount.toFixed(2)}.`;
+            
+            const notificationsToInsert = adminProfiles.map(p => ({
+                user_id: p.id,
+                title: `Novo Pedido #${orderIdShort}`,
+                message: notificationMessage,
+                link: `/admin/orders/${newOrderId}`,
+            }));
+
+            await supabaseAdmin.from('notifications').insert(notificationsToInsert);
+        }
+    } catch (notificationError) {
+        console.error('Falha ao criar notificação interna para admins:', notificationError);
+    }
+    // --- FIM DA LÓGICA DE NOTIFICAÇÃO INTERNA ---
+
+    // --- LÓGICA DE ENVIO DE E-MAIL (mantida) ---
     try {
       const resendApiKey = Deno.env.get('RESEND_API_KEY');
       if (!resendApiKey) {
         console.warn('RESEND_API_KEY não encontrada. E-mails não serão enviados.');
       } else {
         const resend = new Resend(resendApiKey);
-        const orderIdShort = (newOrderId as string).substring(0, 8);
-        const itemsListHtml = items.map(item => {
-          const pointDetails = pointDetailsMap.get(item.point_id);
-          return `<li>${pointDetails?.name || 'Ponto desconhecido'} - ${item.period_years} ano(s)</li>`;
-        }).join('');
 
         await resend.emails.send({
           from: 'Placas Nova Odessa <onboarding@resend.dev>',
