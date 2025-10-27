@@ -7,8 +7,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { LogOut, Camera, UploadCloud, Loader2, RotateCcw } from 'lucide-react';
+import { LogOut, Camera, UploadCloud, Loader2, RotateCcw, Package, MapPin } from 'lucide-react';
 import { RouteGenerator } from '@/components/RouteGenerator';
+import { Badge } from '@/components/ui/badge';
+
+const kitTypeMap = {
+  kit_completo: 'Kit Completo',
+  kit_placas: 'Kit Placas',
+  troca_propaganda: 'Troca de Propaganda',
+};
 
 function FieldTechnicianPage() {
   const [tasks, setTasks] = useState([]);
@@ -177,46 +184,70 @@ function FieldTechnicianPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {tasks.map(task => (
-                  <div key={task.id} className="p-3 border rounded-md bg-gray-50 space-y-4">
-                    <div>
-                      <p className="font-medium">{task.points.name}</p>
-                      <p className="text-sm text-gray-600">Cliente: {task.customer_name}</p>
-                    </div>
-                    <div className="space-y-3">
-                      <Input 
-                        type="file" 
-                        accept="image/*"
-                        onChange={(e) => handleFileChange(task.points.id, e.target.files[0])} 
-                        disabled={uploading[task.points.id] || compressing[task.points.id] || returning[task.points.id]} 
-                      />
-                      {compressing[task.points.id] && <p className="text-sm text-gray-600 flex items-center"><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Comprimindo imagem...</p>}
-                      <Textarea 
-                        placeholder="Adicionar um comentário (obrigatório para devolver)..."
-                        value={comments[task.points.id] || ''}
-                        onChange={(e) => handleCommentChange(task.points.id, e.target.value)}
-                        disabled={uploading[task.points.id] || returning[task.points.id]}
-                      />
-                      <div className="flex flex-col sm:flex-row items-center gap-2">
-                        <Button 
-                          onClick={() => handleCompleteTask(task.id, task.points.id, selectedFiles[task.points.id], comments[task.points.id])} 
-                          disabled={!selectedFiles[task.points.id] || uploading[task.points.id] || compressing[task.points.id] || returning[task.points.id]}
-                          className="w-full sm:w-auto flex-1"
-                        >
-                          {uploading[task.points.id] ? <Loader2 className="animate-spin" /> : <><UploadCloud className="h-4 w-4 mr-2" /> Concluir Instalação</>}
-                        </Button>
-                        <Button 
-                          variant="destructive"
-                          onClick={() => handleReturnToHold(task.id, task.points.id, comments[task.points.id])}
+                {tasks.map(task => {
+                  const point = task.points;
+                  const address = point.street_name + (point.intersection_name ? ` c/ ${point.intersection_name}` : '');
+                  const kitLabel = kitTypeMap[task.kit_type] || 'Tipo de Kit Indefinido';
+
+                  return (
+                    <div key={task.id} className="p-4 border rounded-md bg-white shadow-sm space-y-4">
+                      <div className="space-y-1">
+                        {/* Nome do Ponto (Agora legível) */}
+                        <p className="font-bold text-lg text-gray-900">{point.name}</p>
+                        
+                        {/* Endereço */}
+                        <p className="text-sm text-gray-700 flex items-center">
+                          <MapPin className="h-4 w-4 mr-2 text-gray-500 flex-shrink-0" />
+                          {address}
+                        </p>
+                        
+                        {/* Cliente e Kit Type */}
+                        <div className="flex flex-wrap gap-2 pt-2">
+                          <Badge variant="secondary" className="text-sm">
+                            Cliente: {task.customer_name || 'N/A'}
+                          </Badge>
+                          <Badge className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm">
+                            <Package className="h-3 w-3 mr-1" />
+                            Kit: {kitLabel}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <Input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={(e) => handleFileChange(task.points.id, e.target.files[0])} 
+                          disabled={uploading[task.points.id] || compressing[task.points.id] || returning[task.points.id]} 
+                        />
+                        {compressing[task.points.id] && <p className="text-sm text-gray-600 flex items-center"><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Comprimindo imagem...</p>}
+                        <Textarea 
+                          placeholder="Adicionar um comentário (obrigatório para devolver)..."
+                          value={comments[task.points.id] || ''}
+                          onChange={(e) => handleCommentChange(task.points.id, e.target.value)}
                           disabled={uploading[task.points.id] || returning[task.points.id]}
-                          className="w-full sm:w-auto flex-1"
-                        >
-                          {returning[task.points.id] ? <Loader2 className="animate-spin" /> : <><RotateCcw className="h-4 w-4 mr-2" /> Devolver para Pendências</>}
-                        </Button>
+                        />
+                        <div className="flex flex-col sm:flex-row items-center gap-2">
+                          <Button 
+                            onClick={() => handleCompleteTask(task.id, task.points.id, selectedFiles[task.points.id], comments[task.points.id])} 
+                            disabled={!selectedFiles[task.points.id] || uploading[task.points.id] || compressing[task.points.id] || returning[task.points.id]}
+                            className="w-full sm:w-auto flex-1"
+                          >
+                            {uploading[task.points.id] ? <Loader2 className="animate-spin" /> : <><UploadCloud className="h-4 w-4 mr-2" /> Concluir Instalação</>}
+                          </Button>
+                          <Button 
+                            variant="destructive"
+                            onClick={() => handleReturnToHold(task.id, task.points.id, comments[task.points.id])}
+                            disabled={uploading[task.points.id] || returning[task.points.id]}
+                            className="w-full sm:w-auto flex-1"
+                          >
+                            {returning[task.points.id] ? <Loader2 className="animate-spin" /> : <><RotateCcw className="h-4 w-4 mr-2" /> Devolver para Pendências</>}
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </CardContent>
             </Card>
           </div>

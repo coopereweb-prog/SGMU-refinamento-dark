@@ -315,7 +315,7 @@ export const getInstallationTasks = async () => {
   return data.map(task => ({
     ...task,
     customer_name: task.order_items?.orders?.customer_name,
-    kit_type: task.order_items?.orders?.kit_type, // Adicionado kit_type
+    kit_type: task.order_items?.orders?.kit_type,
     point_name: task.points?.name,
     technician_name: task.technician?.name,
   }));
@@ -330,8 +330,8 @@ export const getTechnicianTasks = async () => {
     .from('installation_tasks')
     .select(`
       id,
-      points (id, name, installation_photo_url, latitude, longitude, installation_notes),
-      order_items ( orders ( customer_name ) )
+      points (id, name, installation_photo_url, latitude, longitude, installation_notes, street_name, intersection_name),
+      order_items ( orders ( customer_name, kit_type ) )
     `)
     .eq('assigned_technician_id', user.id)
     .eq('status', 'assigned');
@@ -344,6 +344,7 @@ export const getTechnicianTasks = async () => {
   return data.map(task => ({
     ...task,
     customer_name: task.order_items?.orders?.customer_name,
+    kit_type: task.order_items?.orders?.kit_type, // Adicionado kit_type
   }));
 };
 
