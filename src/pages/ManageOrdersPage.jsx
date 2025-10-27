@@ -8,11 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Loader2, Search, Calendar, CheckCircle, XCircle, Printer, Map, Clock, Copy } from 'lucide-react';
+import { Loader2, Search, Calendar, CheckCircle, XCircle, Printer, Map, Clock, Copy, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getOrderStatusProps } from '@/lib/utils';
 import { generateOptimizedRouteUrl } from '@/lib/maps-utils';
+import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -188,6 +189,7 @@ export function ManageOrdersPage() {
   const [selectedPoints, setSelectedPoints] = useState(new Set());
   const [extendingOrder, setExtendingOrder] = useState(null);
   const [newReservedUntil, setNewReservedUntil] = useState('');
+  const navigate = useNavigate(); // Adicionado useNavigate
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -336,6 +338,10 @@ export function ManageOrdersPage() {
     navigator.clipboard.writeText(orderId);
     toast.success("ID do pedido copiado!", { description: `#${orderId.substring(0, 8)}` });
   };
+  
+  const handleViewDetails = (orderId) => {
+    navigate(`/admin/orders/${orderId}`);
+  };
 
   return (
     <div className="space-y-6">
@@ -445,6 +451,9 @@ export function ManageOrdersPage() {
                       Total: {Number(order.total_amount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </div>
                     <div className="flex flex-wrap gap-2">
+                      <Button variant="secondary" onClick={() => handleViewDetails(order.id)}>
+                        <Eye className="h-4 w-4 mr-2" /> Ver Detalhes
+                      </Button>
                       {order.status === 'pending' && (
                         <>
                           <Button variant="outline" onClick={() => setExtendingOrder(order.id)}>
