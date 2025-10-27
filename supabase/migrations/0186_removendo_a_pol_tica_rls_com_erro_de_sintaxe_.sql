@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Field technicians can update their assigned tasks" ON public.installation_tasks;
