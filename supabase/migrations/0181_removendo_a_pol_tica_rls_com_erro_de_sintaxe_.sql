@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Field technicians can update their assigned tasks and return to hold" ON public.installation_tasks;
