@@ -93,7 +93,6 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
   const handleSave = async (values) => {
     if (!task) return;
     let updatedTaskData = { notes: values.notes, due_date: values.due_date };
-    let updatedOrderData = { kit_type: values.kit_type };
     let newArtFileUrl = null;
 
     if (artFile) {
@@ -118,8 +117,9 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
 
     try {
       // 1. Atualiza o kit_type no PEDIDO
-      if (updatedOrderData.kit_type !== task.kit_type) {
-        await updateOrderKitType(task.order_items.orders.id, updatedOrderData.kit_type);
+      // O valor do kit_type vem de values.kit_type
+      if (values.kit_type !== task.kit_type) {
+        await updateOrderKitType(task.order_items.orders.id, values.kit_type);
       }
 
       // 2. Atualiza a TAREFA (notas, data de entrega, URL da arte)
@@ -137,11 +137,12 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
       
       if (error) throw error;
       
-      // Formata o resultado para o onUpdate
+      // Formata o resultado para o onUpdate, garantindo que o kit_type seja o valor recém-salvo
       const updatedTask = {
         ...data,
         customer_name: data.order_items?.orders?.customer_name,
-        kit_type: data.order_items?.orders?.kit_type,
+        // CORREÇÃO: Garante que o kit_type é lido do objeto orders aninhado
+        kit_type: data.order_items?.orders?.kit_type, 
         point_name: data.points?.name,
         technician_name: data.technician?.name,
         installation_notes: data.points?.installation_notes,
