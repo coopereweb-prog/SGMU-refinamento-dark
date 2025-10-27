@@ -192,8 +192,8 @@ function FieldTechnicianPage() {
                   return (
                     <div key={task.id} className="p-4 border rounded-md bg-white shadow-sm space-y-4">
                       <div className="space-y-1">
-                        {/* Nome do Ponto: Forçando text-black para máxima visibilidade */}
-                        <p className="font-bold text-lg text-black">{point.name}</p>
+                        {/* Nome do Ponto: Usando text-gray-900 para garantir contraste */}
+                        <p className="font-bold text-lg text-gray-900">{point.name}</p>
                         
                         {/* Endereço */}
                         <p className="text-sm text-gray-700 flex items-center">
