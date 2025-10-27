@@ -419,9 +419,10 @@ export const assignTaskToTechnician = async (taskId, technicianId) => {
   };
 };
 
-// Nova função para devolver uma tarefa para o estado 'on_hold'
+// CORREÇÃO: O técnico agora apenas muda o status para 'on_hold'. A desatribuição (assigned_technician_id: null)
+// será feita manualmente por um administrador no Kanban, se necessário, para evitar o erro RLS.
 export const returnTaskToHold = async (taskId, pointId, notes) => {
-  // Primeiro, atualiza as notas no próprio ponto
+  // 1. Atualiza as notas no próprio ponto
   const { error: pointUpdateError } = await supabase
     .from('points')
     .update({ installation_notes: notes })
@@ -432,12 +433,12 @@ export const returnTaskToHold = async (taskId, pointId, notes) => {
     throw pointUpdateError;
   }
 
-  // Em seguida, atualiza o status da tarefa e desatribui o técnico
+  // 2. Em seguida, atualiza o status da tarefa. O técnico permanece atribuído.
   const { error: taskUpdateError } = await supabase
     .from('installation_tasks')
     .update({ 
       status: 'on_hold',
-      assigned_technician_id: null 
+      // REMOVIDO: assigned_technician_id: null 
     })
     .eq('id', taskId);
 
