@@ -92,8 +92,14 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
 
   const handleSave = async (values) => {
     if (!task) return;
-    let updatedTaskData = { notes: values.notes, due_date: values.due_date };
+    
+    // Garante que notes seja null se for uma string vazia, para consistência
+    const notesToSave = values.notes || null;
+    
+    let updatedTaskData = { notes: notesToSave, due_date: values.due_date };
     let newArtFileUrl = null;
+
+    console.log("Dados da Tarefa a Salvar:", updatedTaskData); // LOG DE VERIFICAÇÃO
 
     if (artFile) {
       setIsUploading(true);
@@ -117,7 +123,6 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
 
     try {
       // 1. Atualiza o kit_type no PEDIDO
-      // O valor do kit_type vem de values.kit_type
       if (values.kit_type !== task.kit_type) {
         await updateOrderKitType(task.order_items.orders.id, values.kit_type);
       }
