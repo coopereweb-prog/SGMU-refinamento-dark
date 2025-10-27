@@ -178,9 +178,9 @@ function FieldTechnicianPage() {
             <RouteGenerator points={allPendingPoints} />
             <Card>
               <CardHeader>
-                {/* Forçando cores escuras para o título e descrição do CardHeader */}
-                <CardTitle className="text-gray-900">Minhas Tarefas de Instalação</CardTitle>
-                <CardDescription className="text-gray-700">
+                {/* Forçando cores brancas para o título e descrição */}
+                <CardTitle className="text-white">Minhas Tarefas de Instalação</CardTitle>
+                <CardDescription className="text-white/90">
                   Complete as tarefas abaixo enviando a foto da placa instalada.
                 </CardDescription>
               </CardHeader>
