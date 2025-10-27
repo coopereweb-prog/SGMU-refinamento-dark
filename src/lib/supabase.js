@@ -296,7 +296,7 @@ export const getInstallationTasks = async () => {
       order_items (
         orders ( id, customer_name, kit_type )
       ),
-      points ( name ),
+      points ( name, installation_notes, installation_photo_url ),
       technician:profiles ( name )
     `)
     .order('created_at', { ascending: false });
@@ -318,6 +318,9 @@ export const getInstallationTasks = async () => {
     kit_type: task.order_items?.orders?.kit_type,
     point_name: task.points?.name,
     technician_name: task.technician?.name,
+    // Adiciona as notas e URL da foto do ponto diretamente na tarefa
+    installation_notes: task.points?.installation_notes,
+    installation_photo_url: task.points?.installation_photo_url,
   }));
 };
 
@@ -400,7 +403,7 @@ export const assignTaskToTechnician = async (taskId, technicianId) => {
     .select(`
       *,
       order_items ( orders ( id, customer_name, kit_type ) ),
-      points ( name ),
+      points ( name, installation_notes, installation_photo_url ),
       technician:profiles ( name )
     `)
     .single();
@@ -416,6 +419,8 @@ export const assignTaskToTechnician = async (taskId, technicianId) => {
     kit_type: data.order_items?.orders?.kit_type, // Adicionado kit_type
     point_name: data.points?.name,
     technician_name: data.technician?.name,
+    installation_notes: data.points?.installation_notes,
+    installation_photo_url: data.points?.installation_photo_url,
   };
 };
 

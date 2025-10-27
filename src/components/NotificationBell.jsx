@@ -21,13 +21,11 @@ import { cn } from '@/lib/utils';
 
 export function NotificationBell() {
   const { user } = useAuth();
-  const { profile } = useUser();
   const { notifications, loading, unreadCount, markAsRead } = useNotifications();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  if (!user || profile?.role === 'admin' || profile?.role === 'operations_manager' || profile?.role === 'field_technician') {
-    // Apenas clientes (ou usuários sem perfil carregado) recebem notificações por enquanto
+  if (!user) {
     return null;
   }
 

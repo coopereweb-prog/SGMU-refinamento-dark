@@ -10,9 +10,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from 'sonner';
-import { Loader2, X } from 'lucide-react';
+import { Loader2, X, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { compressImage } from '@/lib/image-utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const taskSchema = z.object({
   notes: z.string().optional(),
@@ -62,7 +63,11 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
 
     setIsDeletingArt(true);
     try {
-      const filePath = new URL(task.art_file_url).pathname.split('/installation-photos/')[1];
+      // A URL pública é algo como: .../storage/v1/object/public/installation-photos/art-files/id-timestamp.ext
+      // Precisamos do caminho a partir do bucket: art-files/id-timestamp.ext
+      const urlParts = new URL(task.art_file_url).pathname.split('/installation-photos/');
+      const filePath = urlParts.length > 1 ? urlParts[1] : null;
+      
       if (!filePath) throw new Error("URL do arquivo inválida.");
 
       const { error: storageError } = await supabase.storage.from('installation-photos').remove([filePath]);
@@ -125,7 +130,7 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
         .select(`
           *,
           order_items ( orders ( id, customer_name, kit_type ) ),
-          points ( name ),
+          points ( name, installation_notes, installation_photo_url ),
           technician:profiles ( name )
         `)
         .single();
@@ -139,6 +144,8 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
         kit_type: data.order_items?.orders?.kit_type,
         point_name: data.points?.name,
         technician_name: data.technician?.name,
+        installation_notes: data.points?.installation_notes,
+        installation_photo_url: data.points?.installation_photo_url,
       };
       
       toast.success("Tarefa atualizada com sucesso!");
@@ -160,6 +167,18 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
           <p><strong>Pedido:</strong> <Button variant="link" asChild className="p-0 h-auto"><Link to={`/admin/orders/${task.order_items.orders.id}`}>#{task.order_items.orders.id.substring(0, 8)}</Link></Button></p>
         </div>
         
+        {/* Exibe a nota de devolução do técnico se a tarefa estiver em 'on_hold' */}
+        {task.status === 'on_hold' && task.installation_notes && (
+          <Alert variant="destructive">
+            <Info className="h-4 w-4" />
+            <AlertTitle>Devolvido pelo Técnico</AlertTitle>
+            <AlertDescription>
+              <p className="font-semibold mb-1">Motivo:</p>
+              <p>{task.installation_notes}</p>
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
           <p className="font-semibold">Atenção:</p>
           <p>O <strong>Tipo de Kit</strong> e a <strong>Data de Entrega</strong> são obrigatórios para o fluxo de trabalho.</p>
@@ -188,7 +207,7 @@ export function TaskDetailsModal({ task, isOpen, onClose, onUpdate }) {
             )} />
             
             <FormField control={form.control} name="notes" render={({ field }) => (
-              <FormItem><FormLabel>Notas</FormLabel><FormControl><Textarea placeholder="Adicione observações sobre a tarefa..." {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Notas (Internas)</FormLabel><FormControl><Textarea placeholder="Adicione observações sobre a tarefa..." {...field} /></FormControl><FormMessage /></FormItem>
             )} />
             <FormField control={form.control} name="due_date" render={({ field }) => (
               <FormItem><FormLabel>Data de Entrega</FormLabel><FormControl><Input type="date" {...field} className="yellow-accent" /></FormControl><FormMessage /></FormItem>
