@@ -25,6 +25,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+// Regex simples para verificar se a string se parece com um UUID completo
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function generatePrintableHTML(order) {
   if (!order) return '';
 
@@ -60,7 +63,7 @@ function generatePrintableHTML(order) {
           <tr class="bg-gray-100">
             <th style="padding: 6px; border: 1px solid #ddd; text-align: left; font-size: 12px;">Ponto de Instalação</th>
             <th style="padding: 6px; border: 1px solid #ddd; text-align: center; font-size: 12px;">Período Contratado</th>
-            <th style="padding: 6px; border: 1px solid #ddd; text-align: right; font-size: 12px;">Valor</th>
+            <th class="text-right">Valor</th>
           </tr>
         </thead>
         <tbody>
@@ -202,12 +205,17 @@ export function ManageOrdersPage() {
       .order('created_at', { ascending: false });
 
     if (searchTerm) {
-      const search = `%${searchTerm}%`;
-      // Busca simplificada: Apenas nome e email.
-      query = query.or(`customer_name.ilike.${search},customer_email.ilike.${search}`);
+      const trimmedSearchTerm = searchTerm.trim();
       
-      // Se o termo for um UUID completo, ele ainda será buscado pelo PostgREST,
-      // mas a busca parcial em ID está desativada para evitar o erro 42883.
+      // 1. Tenta busca exata por UUID completo
+      if (UUID_REGEX.test(trimmedSearchTerm)) {
+        query = query.eq('id', trimmedSearchTerm);
+      } 
+      // 2. Se não for UUID completo, busca por nome/email (busca parcial)
+      else {
+        const search = `%${trimmedSearchTerm}%`;
+        query = query.or(`customer_name.ilike.${search},customer_email.ilike.${search}`);
+      }
     }
 
     if (statusFilter !== 'all') {
@@ -352,7 +360,7 @@ export function ManageOrdersPage() {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Buscar por cliente ou email..."
+              placeholder="Buscar por cliente, email ou ID completo..."
               className="pl-8"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
