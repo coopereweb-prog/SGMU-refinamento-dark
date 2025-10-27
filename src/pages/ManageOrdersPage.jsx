@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Loader2, Search, Calendar, CheckCircle, XCircle, Printer, Map, Clock } from 'lucide-react';
+import { Loader2, Search, Calendar, CheckCircle, XCircle, Printer, Map, Clock, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getOrderStatusProps } from '@/lib/utils';
@@ -203,9 +203,11 @@ export function ManageOrdersPage() {
 
     if (searchTerm) {
       const search = `%${searchTerm}%`;
-      // CORREÇÃO: Usando a sintaxe de conversão de tipo (::text) para permitir a busca parcial (ilike) no UUID.
-      // Isso deve resolver o erro 42883.
-      query = query.or(`customer_name.ilike.${search},customer_email.ilike.${search},id::text.ilike.${search}`);
+      // Busca simplificada: Apenas nome e email.
+      query = query.or(`customer_name.ilike.${search},customer_email.ilike.${search}`);
+      
+      // Se o termo for um UUID completo, ele ainda será buscado pelo PostgREST,
+      // mas a busca parcial em ID está desativada para evitar o erro 42883.
     }
 
     if (statusFilter !== 'all') {
@@ -321,6 +323,11 @@ export function ManageOrdersPage() {
     });
     setSelectedPoints(newSelected);
   };
+  
+  const handleCopyOrderId = (orderId) => {
+    navigator.clipboard.writeText(orderId);
+    toast.success("ID do pedido copiado!", { description: `#${orderId.substring(0, 8)}` });
+  };
 
   return (
     <div className="space-y-6">
@@ -345,7 +352,7 @@ export function ManageOrdersPage() {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Buscar por cliente, email ou ID..."
+              placeholder="Buscar por cliente ou email..."
               className="pl-8"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -371,7 +378,18 @@ export function ManageOrdersPage() {
                   <CardHeader>
                     <div className="flex flex-wrap justify-between items-start gap-4">
                       <div className="flex-1 min-w-0">
-                        <CardTitle className="truncate">Pedido #{order.id.substring(0, 8)}</CardTitle>
+                        <CardTitle className="truncate flex items-center gap-2">
+                          Pedido #{order.id.substring(0, 8)}
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 text-muted-foreground hover:text-primary"
+                            onClick={() => handleCopyOrderId(order.id)}
+                            title="Copiar ID completo"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </CardTitle>
                         <CardDescription className="break-words">
                           <span className="font-semibold">{order.customer_name}</span> | {order.customer_email} | {order.customer_phone}
                         </CardDescription>
