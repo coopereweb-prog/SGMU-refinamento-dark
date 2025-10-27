@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Admins and Ops Managers can update tasks" ON public.installation_tasks;
