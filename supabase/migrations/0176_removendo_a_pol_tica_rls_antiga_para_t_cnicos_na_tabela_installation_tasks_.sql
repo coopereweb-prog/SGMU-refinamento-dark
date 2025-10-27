@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Técnicos podem atualizar suas próprias tarefas" ON public.installation_tasks;
