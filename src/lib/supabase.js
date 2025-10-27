@@ -459,14 +459,15 @@ export const returnTaskToHold = async (taskId, pointId, notes) => {
 
 // Nova função para atualizar o kit_type do pedido
 export const updateOrderKitType = async (orderId, kitType) => {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('orders')
     .update({ kit_type: kitType })
     .eq('id', orderId)
-    .select(); // Adicionado select()
+    .select(); // Adicionado select() para garantir que a operação seja confirmada
 
   if (error) {
     console.error('Error updating order kit type:', error);
     throw error;
   }
+  return data;
 };
