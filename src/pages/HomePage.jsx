@@ -167,7 +167,8 @@ function HomePage() {
             *,
             tags (id, name),
             pricing_tiers (*)
-          `);
+          `)
+        .limit(2000); // <-- AUMENTANDO O LIMITE PARA GARANTIR TODOS OS PONTOS
         if (error) throw error;
         
         const validPoints = data.filter(p => p.latitude && p.longitude);
