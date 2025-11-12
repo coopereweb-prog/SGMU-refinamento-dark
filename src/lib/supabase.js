@@ -14,7 +14,8 @@ export const getPoints = async () => {
   const { data: points, error: pointsError } = await supabase
     .from('points')
     .select('*')
-    .order('created_at', { ascending: true });
+    .order('created_at', { ascending: true })
+  .limit(2000); // <--- ADICIONE ESTE LIMITE AQUI
 
   if (pointsError) {
     console.error('Erro ao buscar pontos:', pointsError);
