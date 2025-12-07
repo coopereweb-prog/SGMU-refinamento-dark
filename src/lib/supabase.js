@@ -11,6 +11,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Funções para gerenciar pontos
 export const getPoints = async () => {
+<<<<<<< HEAD
   const pageSize = 1000;
   let from = 0;
   let to = pageSize - 1;
@@ -30,6 +31,17 @@ export const getPoints = async () => {
     if (data.length < pageSize) break;
     from += pageSize;
     to += pageSize;
+=======
+  const { data: points, error: pointsError } = await supabase
+    .from('points')
+    .select('*')
+    .order('created_at', { ascending: true })
+  .limit(2000); // <--- ADICIONE ESTE LIMITE AQUI
+
+  if (pointsError) {
+    console.error('Erro ao buscar pontos:', pointsError);
+    return [];
+>>>>>>> e95e2bf9f80c13025a60a8c1043e1682c99c2c91
   }
   if (allPoints.length === 0) return [];
 
