@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useId } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -12,6 +12,7 @@ export function EditOrderDialog({ order, isOpen, onClose, onSave }) {
   const [itemsToKeep, setItemsToKeep] = useState(order?.order_items.map(item => item.id) || []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const descId = useId();
 
   // Reseta o estado quando o pedido muda (ao abrir o diálogo para um novo pedido)
   useEffect(() => {
@@ -59,10 +60,10 @@ export function EditOrderDialog({ order, isOpen, onClose, onSave }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[525px]" ariaDescribedBy={descId}>
         <DialogHeader>
           <DialogTitle>Editar Pedido #{order.id.substring(0, 8)}</DialogTitle>
-          <DialogDescription>
+          <DialogDescription id={descId}>
             Selecione os pontos que devem permanecer no pedido. Os itens desmarcados serão removidos e os pontos voltarão a ficar disponíveis.
           </DialogDescription>
         </DialogHeader>

@@ -12,7 +12,19 @@ on public.pricing_tiers for select
 using (true);
 
 -- Política para permitir que administradores e gerentes de operações criem, atualizem e excluam níveis de preço
-create policy "Allow admins and managers to write to pricing tiers"
-on public.pricing_tiers for insert, update, delete
-using ( (select role from public.profiles where id = auth.uid()) in ('admin', 'operations_manager') )
-with check ( (select role from public.profiles where id = auth.uid()) in ('admin', 'operations_manager') );
+-- Criar políticas separadas para cada operação e evitar erro de enum inexistente
+-- Insert
+create policy "Allow admins and managers to insert pricing tiers"
+on public.pricing_tiers for insert
+with check ( (select role::text from public.profiles where id = auth.uid()) in ('admin','operations_manager') );
+
+-- Update
+create policy "Allow admins and managers to update pricing tiers"
+on public.pricing_tiers for update
+using ( (select role::text from public.profiles where id = auth.uid()) in ('admin','operations_manager') )
+with check ( (select role::text from public.profiles where id = auth.uid()) in ('admin','operations_manager') );
+
+-- Delete
+create policy "Allow admins and managers to delete pricing tiers"
+on public.pricing_tiers for delete
+using ( (select role::text from public.profiles where id = auth.uid()) in ('admin','operations_manager') );

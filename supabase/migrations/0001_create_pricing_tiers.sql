@@ -1,7 +1,7 @@
 -- 0001_create_pricing_tiers.sql
 
 -- Cria a nova tabela para os níveis de precificação
-CREATE TABLE public.pricing_tiers (
+CREATE TABLE IF NOT EXISTS public.pricing_tiers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL UNIQUE,
     price_1y NUMERIC(10, 2) NOT NULL,
@@ -14,8 +14,8 @@ CREATE TABLE public.pricing_tiers (
 );
 
 -- Adiciona a coluna de chave estrangeira na tabela de pontos
-ALTER TABLE public.points
-ADD COLUMN pricing_tier_id UUID REFERENCES public.pricing_tiers(id);
+ALTER TABLE IF EXISTS public.points
+  ADD COLUMN IF NOT EXISTS pricing_tier_id UUID REFERENCES public.pricing_tiers(id);
 
 -- (Opcional, mas recomendado) Remove as colunas de preço antigas da tabela de pontos
 -- Descomente as linhas abaixo se tiver certeza que não precisa mais dos preços antigos
