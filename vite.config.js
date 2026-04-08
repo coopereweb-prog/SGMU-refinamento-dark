@@ -11,6 +11,14 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    include: [
+      '@react-google-maps/api',
+      'date-fns',
+      'date-fns/locale/pt-BR',
+      'react-dom/client',
+    ],
+  },
   build: {
     // Otimizações para produção
     rollupOptions: {
@@ -45,14 +53,4 @@ export default defineConfig({
     open: false,
     strictPort: true, // Força o uso da porta 5173 ou falha
   },
-  // Otimizações de dependências
-  optimizeDeps: {
-    include: [
-      'react',
-      'react-dom',
-      '@react-google-maps/api',
-      '@supabase/supabase-js',
-      'lucide-react'
-    ]
-  }
 })

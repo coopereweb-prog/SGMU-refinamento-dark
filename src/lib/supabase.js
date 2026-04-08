@@ -11,6 +11,27 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Funções para gerenciar pontos
 export const getPoints = async () => {
+<<<<<<< HEAD
+  const pageSize = 1000;
+  let from = 0;
+  let to = pageSize - 1;
+  let allPoints = [];
+  for (;;) {
+    const { data, error } = await supabase
+      .from('points')
+      .select('*')
+      .order('created_at', { ascending: true })
+      .range(from, to);
+    if (error) {
+      console.error('Erro ao buscar pontos:', error);
+      return [];
+    }
+    if (!data || data.length === 0) break;
+    allPoints.push(...data);
+    if (data.length < pageSize) break;
+    from += pageSize;
+    to += pageSize;
+=======
   const { data: points, error: pointsError } = await supabase
     .from('points')
     .select('*')
@@ -20,32 +41,68 @@ export const getPoints = async () => {
   if (pointsError) {
     console.error('Erro ao buscar pontos:', pointsError);
     return [];
+>>>>>>> e95e2bf9f80c13025a60a8c1043e1682c99c2c91
   }
-  if (!points) return [];
+  if (allPoints.length === 0) return [];
 
-  const { data: relations, error: relationsError } = await supabase
-    .from('point_tags')
-    .select('point_id, tags(id, name)');
-
-  if (relationsError) {
-    console.error('Erro ao buscar relações de tags:', relationsError);
-    // Retorna os pontos sem tags se a busca de relações falhar
-    return points.map(p => ({ ...p, tags: [] }));
+  const pointIds = allPoints.map(p => p.id).filter(Boolean);
+  let relations = [];
+  const chunkSize = 1000;
+  for (let i = 0; i < pointIds.length; i += chunkSize) {
+    const idsChunk = pointIds.slice(i, i + chunkSize);
+    const { data: rel, error: relError } = await supabase
+      .from('point_tags')
+      .select('point_id, tag_id')
+      .in('point_id', idsChunk);
+    if (relError) {
+      console.error('Erro ao buscar relações de tags:', relError);
+      break;
+    }
+    if (rel && rel.length) relations.push(...rel);
   }
 
-  const tagsByPointId = relations.reduce((acc, relation) => {
-    if (!acc[relation.point_id]) {
-      acc[relation.point_id] = [];
+  // Fetch tag details separately
+  const tagIds = [...new Set(relations.map(r => r.tag_id).filter(Boolean))];
+  let tagDetails = [];
+  for (let i = 0; i < tagIds.length; i += chunkSize) {
+    const idsChunk = tagIds.slice(i, i + chunkSize);
+    const { data: tags, error: tagsError } = await supabase
+      .from('tags')
+      .select('id, name')
+      .in('id', idsChunk);
+    if (tagsError) {
+      console.error('Erro ao buscar detalhes das tags:', tagsError);
+      break;
     }
-    if (relation.tags) {
-      acc[relation.point_id].push(relation.tags);
-    }
+    if (tags && tags.length) tagDetails.push(...tags);
+  }
+
+  // Create a map of tag details
+  const tagMap = tagDetails.reduce((acc, tag) => {
+    acc[tag.id] = tag;
     return acc;
   }, {});
 
-  const formattedData = points.map(point => ({
+  const tagsByPointId = relations.reduce((acc, relation) => {
+    const pid = relation.point_id;
+    if (!acc[pid]) acc[pid] = [];
+    const tagDetail = tagMap[relation.tag_id];
+    if (tagDetail) acc[pid].push(tagDetail);
+    return acc;
+  }, {});
+
+  const { data: pricingTiers, error: tierError } = await supabase
+    .from('pricing_tiers')
+    .select('*');
+  if (tierError) {
+    console.error('Erro ao buscar pricing_tiers:', tierError);
+  }
+  const tiersById = new Map((pricingTiers || []).map(t => [t.id, t]));
+
+  const formattedData = allPoints.map(point => ({
     ...point,
     tags: tagsByPointId[point.id] || [],
+    pricing_tiers: tiersById.get(point.pricing_tier_id) || null,
   }));
 
   return formattedData;

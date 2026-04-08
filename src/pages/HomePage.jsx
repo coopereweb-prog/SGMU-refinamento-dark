@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { GoogleMap, Marker, MarkerClustererF } from '@react-google-maps/api';
-import { supabase } from '@/lib/supabase';
+import { supabase, getPoints } from '@/lib/supabase';
 import { PointDetailsSheet } from '@/components/PointDetailsSheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMapConfig } from '@/contexts/MapConfigContext';
@@ -161,6 +161,10 @@ function HomePage() {
     const fetchPoints = async () => {
       setLoadingPoints(true);
       try {
+<<<<<<< HEAD
+        const all = await getPoints();
+        const validPoints = (all || []).filter(p => p.latitude && p.longitude);
+=======
         const { data, error } = await supabase
           .from('points')
           .select(`
@@ -172,6 +176,7 @@ function HomePage() {
         if (error) throw error;
         
         const validPoints = data.filter(p => p.latitude && p.longitude);
+>>>>>>> e95e2bf9f80c13025a60a8c1043e1682c99c2c91
         setPoints(validPoints);
         setFilteredPoints(validPoints.filter(p => activeFilters.statuses.includes(p.status)));
       } catch (error) {

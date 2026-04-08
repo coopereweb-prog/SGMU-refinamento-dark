@@ -77,18 +77,31 @@ export function ManagePointsPage() {
 
   const fetchPoints = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('points')
-      .select('*')
-      .order('updated_at', { ascending: false });
-
-    if (error) {
+    try {
+      const pageSize = 1000;
+      let from = 0;
+      let to = pageSize - 1;
+      let all = [];
+      for (;;) {
+        const { data, error } = await supabase
+          .from('points')
+          .select('*')
+          .order('updated_at', { ascending: false })
+          .range(from, to);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all.push(...data);
+        if (data.length < pageSize) break;
+        from += pageSize;
+        to += pageSize;
+      }
+      setPoints(all);
+    } catch (error) {
       console.error('Error fetching points:', error);
       toast.error("Erro", { description: "Não foi possível carregar os pontos." });
-    } else {
-      setPoints(data);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {

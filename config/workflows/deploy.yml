@@ -1,0 +1,14 @@
+# Cópia de referência do pipeline. O arquivo funcional está em .github/workflows/deploy.yml
+# Ajuste conforme necessário e mantenha este arquivo como documentação.
+
+name: CI/CD (ref)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Consulte .github/workflows/deploy.yml para a versão ativa do pipeline."
+
