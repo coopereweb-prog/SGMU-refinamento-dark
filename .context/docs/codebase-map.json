@@ -1,0 +1,851 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-01-14T22:06:59.142Z",
+  "stack": {
+    "primaryLanguage": "typescript",
+    "languages": [
+      "javascript",
+      "typescript"
+    ],
+    "frameworks": [],
+    "buildTools": [
+      "vite"
+    ],
+    "testFrameworks": [],
+    "packageManager": "pnpm",
+    "isMonorepo": false,
+    "hasDocker": false,
+    "hasCI": false
+  },
+  "structure": {
+    "totalFiles": 341,
+    "topDirectories": [
+      {
+        "name": "AI_RULES.md",
+        "fileCount": 1
+      },
+      {
+        "name": "index.html",
+        "fileCount": 1
+      },
+      {
+        "name": "package.json",
+        "fileCount": 1
+      },
+      {
+        "name": "pnpm-lock.yaml",
+        "fileCount": 1
+      },
+      {
+        "name": "public",
+        "fileCount": 4
+      },
+      {
+        "name": "src",
+        "fileCount": 123
+      },
+      {
+        "name": "supabase",
+        "fileCount": 207
+      },
+      {
+        "name": "tsconfig.json",
+        "fileCount": 1
+      },
+      {
+        "name": "vercel.json",
+        "fileCount": 1
+      },
+      {
+        "name": "vite.config.js",
+        "fileCount": 1
+      }
+    ],
+    "languageDistribution": [
+      {
+        "extension": ".sql",
+        "count": 200
+      },
+      {
+        "extension": ".jsx",
+        "count": 115
+      },
+      {
+        "extension": ".js",
+        "count": 7
+      },
+      {
+        "extension": ".ts",
+        "count": 6
+      },
+      {
+        "extension": ".json",
+        "count": 3
+      },
+      {
+        "extension": ".png",
+        "count": 3
+      },
+      {
+        "extension": ".svg",
+        "count": 2
+      },
+      {
+        "extension": ".yaml",
+        "count": 1
+      },
+      {
+        "extension": ".html",
+        "count": 1
+      },
+      {
+        "extension": ".md",
+        "count": 1
+      }
+    ]
+  },
+  "architecture": {
+    "layers": [
+      {
+        "name": "Config",
+        "description": "Configuration and constants",
+        "directories": [
+          ".",
+          "src\\config",
+          "src\\contexts"
+        ],
+        "symbolCount": 2,
+        "dependsOn": []
+      },
+      {
+        "name": "Utils",
+        "description": "Shared utilities and helpers",
+        "directories": [
+          "src\\lib"
+        ],
+        "symbolCount": 7,
+        "dependsOn": []
+      },
+      {
+        "name": "Components",
+        "description": "UI components and views",
+        "directories": [
+          "src\\pages",
+          "src\\components",
+          "src\\components\\admin",
+          "src\\components\\ui"
+        ],
+        "symbolCount": 55,
+        "dependsOn": [
+          "Utils",
+          "Controllers"
+        ]
+      },
+      {
+        "name": "Controllers",
+        "description": "Request handling and routing",
+        "directories": [
+          "src\\components"
+        ],
+        "symbolCount": 5,
+        "dependsOn": []
+      }
+    ],
+    "patterns": [],
+    "entryPoints": [
+      "supabase\\functions\\send-completion-email\\index.ts",
+      "supabase\\functions\\invite-user\\index.ts",
+      "supabase\\functions\\handle-daily-tasks\\index.ts",
+      "supabase\\functions\\get-users\\index.ts",
+      "supabase\\functions\\delete-user\\index.ts",
+      "supabase\\functions\\create-order\\index.ts",
+      "src\\main.jsx"
+    ]
+  },
+  "symbols": {
+    "classes": [],
+    "interfaces": [
+      {
+        "name": "PointData",
+        "kind": "interface",
+        "file": "supabase\\functions\\create-order\\index.ts",
+        "line": 15,
+        "exported": false
+      }
+    ],
+    "functions": [
+      {
+        "name": "AdminLayout",
+        "kind": "function",
+        "file": "src\\components\\admin\\AdminLayout.jsx",
+        "line": 7,
+        "exported": true
+      },
+      {
+        "name": "AppLayout",
+        "kind": "function",
+        "file": "src\\components\\AppLayout.jsx",
+        "line": 4,
+        "exported": true
+      },
+      {
+        "name": "AuthProvider",
+        "kind": "function",
+        "file": "src\\contexts\\AuthContext.jsx",
+        "line": 6,
+        "exported": true
+      },
+      {
+        "name": "AuthRedirectHandler",
+        "kind": "function",
+        "file": "src\\components\\AuthRedirectHandler.jsx",
+        "line": 6,
+        "exported": true
+      },
+      {
+        "name": "CartModal",
+        "kind": "function",
+        "file": "src\\components\\CartModal.jsx",
+        "line": 4,
+        "exported": true
+      },
+      {
+        "name": "CartProvider",
+        "kind": "function",
+        "file": "src\\contexts\\CartContext.jsx",
+        "line": 7,
+        "exported": true
+      },
+      {
+        "name": "cn",
+        "kind": "function",
+        "file": "src\\lib\\utils.js",
+        "line": 4,
+        "exported": true
+      },
+      {
+        "name": "compressImage",
+        "kind": "function",
+        "file": "src\\lib\\image-utils.js",
+        "line": 12,
+        "exported": true
+      },
+      {
+        "name": "FilterSheet",
+        "kind": "function",
+        "file": "src\\components\\FilterSheet.jsx",
+        "line": 10,
+        "exported": true
+      },
+      {
+        "name": "formatCurrencyBRL",
+        "kind": "function",
+        "file": "src\\lib\\utils.js",
+        "line": 43,
+        "exported": true
+      },
+      {
+        "name": "generateOptimizedRouteUrl",
+        "kind": "function",
+        "file": "src\\lib\\maps-utils.js",
+        "line": 73,
+        "exported": true
+      },
+      {
+        "name": "getOrderStatusProps",
+        "kind": "function",
+        "file": "src\\lib\\utils.js",
+        "line": 13,
+        "exported": true
+      },
+      {
+        "name": "GlobalCart",
+        "kind": "function",
+        "file": "src\\components\\GlobalCart.jsx",
+        "line": 10,
+        "exported": true
+      },
+      {
+        "name": "GoogleMapsLoaderProvider",
+        "kind": "function",
+        "file": "src\\contexts\\GoogleMapsLoaderContext.jsx",
+        "line": 10,
+        "exported": true
+      },
+      {
+        "name": "GuestRoute",
+        "kind": "function",
+        "file": "src\\components\\GuestRoute.jsx",
+        "line": 6,
+        "exported": true
+      },
+      {
+        "name": "InstallationPipelinePage",
+        "kind": "function",
+        "file": "src\\pages\\InstallationPipelinePage.jsx",
+        "line": 4,
+        "exported": true
+      },
+      {
+        "name": "ManageUsersPage",
+        "kind": "function",
+        "file": "src\\pages\\ManageUsersPage.jsx",
+        "line": 12,
+        "exported": true
+      },
+      {
+        "name": "MapConfigProvider",
+        "kind": "function",
+        "file": "src\\contexts\\MapConfigContext.jsx",
+        "line": 10,
+        "exported": true
+      },
+      {
+        "name": "MobileFilterButton",
+        "kind": "function",
+        "file": "src\\components\\MobileFilterButton.jsx",
+        "line": 4,
+        "exported": true
+      },
+      {
+        "name": "Modal",
+        "kind": "function",
+        "file": "src\\components\\Modal.jsx",
+        "line": 6,
+        "exported": true
+      },
+      {
+        "name": "OrderDetailPage",
+        "kind": "function",
+        "file": "src\\pages\\OrderDetailPage.jsx",
+        "line": 29,
+        "exported": true
+      },
+      {
+        "name": "OrderList",
+        "kind": "function",
+        "file": "src\\components\\OrderList.jsx",
+        "line": 19,
+        "exported": true
+      },
+      {
+        "name": "PrintableOrder",
+        "kind": "function",
+        "file": "src\\components\\PrintableOrder.jsx",
+        "line": 4,
+        "exported": true
+      },
+      {
+        "name": "PrintablePointsReport",
+        "kind": "function",
+        "file": "src\\components\\PrintablePointsReport.jsx",
+        "line": 4,
+        "exported": true
+      },
+      {
+        "name": "ProtectedRoute",
+        "kind": "function",
+        "file": "src\\components\\ProtectedRoute.jsx",
+        "line": 7,
+        "exported": true
+      },
+      {
+        "name": "RouteGenerator",
+        "kind": "function",
+        "file": "src\\components\\RouteGenerator.jsx",
+        "line": 12,
+        "exported": true
+      },
+      {
+        "name": "RoutePlannerModal",
+        "kind": "function",
+        "file": "src\\components\\RoutePlannerModal.jsx",
+        "line": 12,
+        "exported": true
+      },
+      {
+        "name": "SettingsManager",
+        "kind": "function",
+        "file": "src\\components\\admin\\SettingsManager.jsx",
+        "line": 8,
+        "exported": true
+      },
+      {
+        "name": "useAuth",
+        "kind": "function",
+        "file": "src\\contexts\\AuthContext.jsx",
+        "line": 50,
+        "exported": true
+      },
+      {
+        "name": "useCart",
+        "kind": "function",
+        "file": "src\\contexts\\CartContext.jsx",
+        "line": 118,
+        "exported": true
+      },
+      {
+        "name": "useGoogleMapsLoader",
+        "kind": "function",
+        "file": "src\\contexts\\GoogleMapsLoaderContext.jsx",
+        "line": 26,
+        "exported": true
+      },
+      {
+        "name": "useMapConfig",
+        "kind": "function",
+        "file": "src\\contexts\\MapConfigContext.jsx",
+        "line": 6,
+        "exported": true
+      },
+      {
+        "name": "useNotifications",
+        "kind": "function",
+        "file": "src\\hooks\\useNotifications.js",
+        "line": 6,
+        "exported": true
+      },
+      {
+        "name": "UserProvider",
+        "kind": "function",
+        "file": "src\\contexts\\UserContext.jsx",
+        "line": 7,
+        "exported": true
+      },
+      {
+        "name": "useUser",
+        "kind": "function",
+        "file": "src\\contexts\\UserContext.jsx",
+        "line": 59,
+        "exported": true
+      },
+      {
+        "name": "AboutUsPage",
+        "kind": "function",
+        "file": "src\\pages\\AboutUsPage.jsx",
+        "line": 3,
+        "exported": false
+      },
+      {
+        "name": "AccordionContent",
+        "kind": "function",
+        "file": "src\\components\\ui\\accordion.jsx",
+        "line": 47,
+        "exported": false
+      },
+      {
+        "name": "AccordionItem",
+        "kind": "function",
+        "file": "src\\components\\ui\\accordion.jsx",
+        "line": 13,
+        "exported": false
+      },
+      {
+        "name": "AccordionTrigger",
+        "kind": "function",
+        "file": "src\\components\\ui\\accordion.jsx",
+        "line": 25,
+        "exported": false
+      },
+      {
+        "name": "Alert",
+        "kind": "function",
+        "file": "src\\components\\ui\\alert.jsx",
+        "line": 22,
+        "exported": false
+      },
+      {
+        "name": "AlertTitle",
+        "kind": "function",
+        "file": "src\\components\\ui\\alert.jsx",
+        "line": 36,
+        "exported": false
+      },
+      {
+        "name": "Avatar",
+        "kind": "function",
+        "file": "src\\components\\ui\\avatar.jsx",
+        "line": 8,
+        "exported": false
+      },
+      {
+        "name": "AvatarFallback",
+        "kind": "function",
+        "file": "src\\components\\ui\\avatar.jsx",
+        "line": 32,
+        "exported": false
+      },
+      {
+        "name": "AvatarImage",
+        "kind": "function",
+        "file": "src\\components\\ui\\avatar.jsx",
+        "line": 20,
+        "exported": false
+      },
+      {
+        "name": "Badge",
+        "kind": "function",
+        "file": "src\\components\\ui\\badge.jsx",
+        "line": 28,
+        "exported": false
+      },
+      {
+        "name": "Breadcrumb",
+        "kind": "function",
+        "file": "src\\components\\ui\\breadcrumb.jsx",
+        "line": 7,
+        "exported": false
+      },
+      {
+        "name": "Carousel",
+        "kind": "function",
+        "file": "src\\components\\ui\\carousel.jsx",
+        "line": 21,
+        "exported": false
+      },
+      {
+        "name": "ChartContainer",
+        "kind": "function",
+        "file": "src\\components\\ui\\chart.jsx",
+        "line": 24,
+        "exported": false
+      },
+      {
+        "name": "Checkbox",
+        "kind": "function",
+        "file": "src\\components\\ui\\checkbox.jsx",
+        "line": 9,
+        "exported": false
+      },
+      {
+        "name": "ComoAdquirirPage",
+        "kind": "function",
+        "file": "src\\pages\\ComoAdquirirPage.jsx",
+        "line": 3,
+        "exported": false
+      }
+    ],
+    "types": [],
+    "enums": []
+  },
+  "publicAPI": [
+    {
+      "name": "AdminLayout",
+      "kind": "function",
+      "file": "src\\components\\admin\\AdminLayout.jsx",
+      "line": 7,
+      "exported": true
+    },
+    {
+      "name": "AppLayout",
+      "kind": "function",
+      "file": "src\\components\\AppLayout.jsx",
+      "line": 4,
+      "exported": true
+    },
+    {
+      "name": "AuthProvider",
+      "kind": "function",
+      "file": "src\\contexts\\AuthContext.jsx",
+      "line": 6,
+      "exported": true
+    },
+    {
+      "name": "AuthRedirectHandler",
+      "kind": "function",
+      "file": "src\\components\\AuthRedirectHandler.jsx",
+      "line": 6,
+      "exported": true
+    },
+    {
+      "name": "CartModal",
+      "kind": "function",
+      "file": "src\\components\\CartModal.jsx",
+      "line": 4,
+      "exported": true
+    },
+    {
+      "name": "CartProvider",
+      "kind": "function",
+      "file": "src\\contexts\\CartContext.jsx",
+      "line": 7,
+      "exported": true
+    },
+    {
+      "name": "cn",
+      "kind": "function",
+      "file": "src\\lib\\utils.js",
+      "line": 4,
+      "exported": true
+    },
+    {
+      "name": "compressImage",
+      "kind": "function",
+      "file": "src\\lib\\image-utils.js",
+      "line": 12,
+      "exported": true
+    },
+    {
+      "name": "FilterSheet",
+      "kind": "function",
+      "file": "src\\components\\FilterSheet.jsx",
+      "line": 10,
+      "exported": true
+    },
+    {
+      "name": "formatCurrencyBRL",
+      "kind": "function",
+      "file": "src\\lib\\utils.js",
+      "line": 43,
+      "exported": true
+    },
+    {
+      "name": "generateOptimizedRouteUrl",
+      "kind": "function",
+      "file": "src\\lib\\maps-utils.js",
+      "line": 73,
+      "exported": true
+    },
+    {
+      "name": "getOrderStatusProps",
+      "kind": "function",
+      "file": "src\\lib\\utils.js",
+      "line": 13,
+      "exported": true
+    },
+    {
+      "name": "GlobalCart",
+      "kind": "function",
+      "file": "src\\components\\GlobalCart.jsx",
+      "line": 10,
+      "exported": true
+    },
+    {
+      "name": "GoogleMapsLoaderProvider",
+      "kind": "function",
+      "file": "src\\contexts\\GoogleMapsLoaderContext.jsx",
+      "line": 10,
+      "exported": true
+    },
+    {
+      "name": "GuestRoute",
+      "kind": "function",
+      "file": "src\\components\\GuestRoute.jsx",
+      "line": 6,
+      "exported": true
+    },
+    {
+      "name": "InstallationPipelinePage",
+      "kind": "function",
+      "file": "src\\pages\\InstallationPipelinePage.jsx",
+      "line": 4,
+      "exported": true
+    },
+    {
+      "name": "ManageUsersPage",
+      "kind": "function",
+      "file": "src\\pages\\ManageUsersPage.jsx",
+      "line": 12,
+      "exported": true
+    },
+    {
+      "name": "MapConfigProvider",
+      "kind": "function",
+      "file": "src\\contexts\\MapConfigContext.jsx",
+      "line": 10,
+      "exported": true
+    },
+    {
+      "name": "MobileFilterButton",
+      "kind": "function",
+      "file": "src\\components\\MobileFilterButton.jsx",
+      "line": 4,
+      "exported": true
+    },
+    {
+      "name": "Modal",
+      "kind": "function",
+      "file": "src\\components\\Modal.jsx",
+      "line": 6,
+      "exported": true
+    },
+    {
+      "name": "OrderDetailPage",
+      "kind": "function",
+      "file": "src\\pages\\OrderDetailPage.jsx",
+      "line": 29,
+      "exported": true
+    },
+    {
+      "name": "OrderList",
+      "kind": "function",
+      "file": "src\\components\\OrderList.jsx",
+      "line": 19,
+      "exported": true
+    },
+    {
+      "name": "PrintableOrder",
+      "kind": "function",
+      "file": "src\\components\\PrintableOrder.jsx",
+      "line": 4,
+      "exported": true
+    },
+    {
+      "name": "PrintablePointsReport",
+      "kind": "function",
+      "file": "src\\components\\PrintablePointsReport.jsx",
+      "line": 4,
+      "exported": true
+    },
+    {
+      "name": "ProtectedRoute",
+      "kind": "function",
+      "file": "src\\components\\ProtectedRoute.jsx",
+      "line": 7,
+      "exported": true
+    },
+    {
+      "name": "RouteGenerator",
+      "kind": "function",
+      "file": "src\\components\\RouteGenerator.jsx",
+      "line": 12,
+      "exported": true
+    },
+    {
+      "name": "RoutePlannerModal",
+      "kind": "function",
+      "file": "src\\components\\RoutePlannerModal.jsx",
+      "line": 12,
+      "exported": true
+    },
+    {
+      "name": "SettingsManager",
+      "kind": "function",
+      "file": "src\\components\\admin\\SettingsManager.jsx",
+      "line": 8,
+      "exported": true
+    },
+    {
+      "name": "useAuth",
+      "kind": "function",
+      "file": "src\\contexts\\AuthContext.jsx",
+      "line": 50,
+      "exported": true
+    },
+    {
+      "name": "useCart",
+      "kind": "function",
+      "file": "src\\contexts\\CartContext.jsx",
+      "line": 118,
+      "exported": true
+    },
+    {
+      "name": "useGoogleMapsLoader",
+      "kind": "function",
+      "file": "src\\contexts\\GoogleMapsLoaderContext.jsx",
+      "line": 26,
+      "exported": true
+    },
+    {
+      "name": "useMapConfig",
+      "kind": "function",
+      "file": "src\\contexts\\MapConfigContext.jsx",
+      "line": 6,
+      "exported": true
+    },
+    {
+      "name": "useNotifications",
+      "kind": "function",
+      "file": "src\\hooks\\useNotifications.js",
+      "line": 6,
+      "exported": true
+    },
+    {
+      "name": "UserProvider",
+      "kind": "function",
+      "file": "src\\contexts\\UserContext.jsx",
+      "line": 7,
+      "exported": true
+    },
+    {
+      "name": "useUser",
+      "kind": "function",
+      "file": "src\\contexts\\UserContext.jsx",
+      "line": 59,
+      "exported": true
+    }
+  ],
+  "dependencies": {
+    "mostImported": [
+      {
+        "file": "C:\\Users\\Coopere Web\\Desktop\\Coopere Web\\SGMU-Nova-Odessa\\SGMU-OFICIAL-VERCEL\\src\\lib\\supabase.js",
+        "importedBy": 13
+      },
+      {
+        "file": "C:\\Users\\Coopere Web\\Desktop\\Coopere Web\\SGMU-Nova-Odessa\\SGMU-OFICIAL-VERCEL\\src\\components\\WhatsAppButton.jsx",
+        "importedBy": 4
+      },
+      {
+        "file": "C:\\Users\\Coopere Web\\Desktop\\Coopere Web\\SGMU-Nova-Odessa\\SGMU-OFICIAL-VERCEL\\src\\components\\RoutePlannerModal.jsx",
+        "importedBy": 2
+      },
+      {
+        "file": "C:\\Users\\Coopere Web\\Desktop\\Coopere Web\\SGMU-Nova-Odessa\\SGMU-OFICIAL-VERCEL\\src\\App.jsx",
+        "importedBy": 1
+      },
+      {
+        "file": "C:\\Users\\Coopere Web\\Desktop\\Coopere Web\\SGMU-Nova-Odessa\\SGMU-OFICIAL-VERCEL\\src\\App.css",
+        "importedBy": 1
+      },
+      {
+        "file": "C:\\Users\\Coopere Web\\Desktop\\Coopere Web\\SGMU-Nova-Odessa\\SGMU-OFICIAL-VERCEL\\src\\lib\\image-utils.js",
+        "importedBy": 1
+      },
+      {
+        "file": "C:\\Users\\Coopere Web\\Desktop\\Coopere Web\\SGMU-Nova-Odessa\\SGMU-OFICIAL-VERCEL\\src\\components\\EditOrderDialog.jsx",
+        "importedBy": 1
+      },
+      {
+        "file": "C:\\Users\\Coopere Web\\Desktop\\Coopere Web\\SGMU-Nova-Odessa\\SGMU-OFICIAL-VERCEL\\src\\contexts\\UserContext.jsx",
+        "importedBy": 1
+      },
+      {
+        "file": "C:\\Users\\Coopere Web\\Desktop\\Coopere Web\\SGMU-Nova-Odessa\\SGMU-OFICIAL-VERCEL\\src\\components\\ClientProfileForm.jsx",
+        "importedBy": 1
+      },
+      {
+        "file": "C:\\Users\\Coopere Web\\Desktop\\Coopere Web\\SGMU-Nova-Odessa\\SGMU-OFICIAL-VERCEL\\src\\components\\ContractedPointsView.jsx",
+        "importedBy": 1
+      },
+      {
+        "file": "C:\\Users\\Coopere Web\\Desktop\\Coopere Web\\SGMU-Nova-Odessa\\SGMU-OFICIAL-VERCEL\\src\\components\\NotificationBell.jsx",
+        "importedBy": 1
+      },
+      {
+        "file": "C:\\Users\\Coopere Web\\Desktop\\Coopere Web\\SGMU-Nova-Odessa\\SGMU-OFICIAL-VERCEL\\src\\components\\Header.jsx",
+        "importedBy": 1
+      },
+      {
+        "file": "C:\\Users\\Coopere Web\\Desktop\\Coopere Web\\SGMU-Nova-Odessa\\SGMU-OFICIAL-VERCEL\\src\\components\\admin\\KanbanCard.jsx",
+        "importedBy": 1
+      },
+      {
+        "file": "C:\\Users\\Coopere Web\\Desktop\\Coopere Web\\SGMU-Nova-Odessa\\SGMU-OFICIAL-VERCEL\\src\\components\\admin\\KanbanColumn.jsx",
+        "importedBy": 1
+      },
+      {
+        "file": "C:\\Users\\Coopere Web\\Desktop\\Coopere Web\\SGMU-Nova-Odessa\\SGMU-OFICIAL-VERCEL\\src\\components\\admin\\TaskDetailsModal.jsx",
+        "importedBy": 1
+      },
+      {
+        "file": "C:\\Users\\Coopere Web\\Desktop\\Coopere Web\\SGMU-Nova-Odessa\\SGMU-OFICIAL-VERCEL\\src\\components\\admin\\AdminNav.jsx",
+        "importedBy": 1
+      }
+    ]
+  },
+  "stats": {
+    "totalSymbols": 79,
+    "exportedSymbols": 35,
+    "analysisTimeMs": 988
+  }
+}
