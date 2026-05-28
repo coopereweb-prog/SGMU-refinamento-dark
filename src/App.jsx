@@ -1,109 +1,87 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { UserProvider } from '@/contexts/UserContext';
-import { MapConfigProvider } from '@/contexts/MapConfigContext';
-import { CartProvider } from '@/contexts/CartContext';
-import { GoogleMapsLoaderProvider } from '@/contexts/GoogleMapsLoaderContext';
-import { GlobalCart } from '@/components/GlobalCart';
-import { AuthRedirectHandler } from '@/components/AuthRedirectHandler'; // Importação
+import { useState, useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { Toaster } from 'sonner'
+import { supabase } from '@/lib/supabase'
+import { useAuthStore } from '@/stores'
 
-import { AppLayout } from '@/components/AppLayout';
-import { AdminLayout } from '@/components/admin/AdminLayout';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { GuestRoute } from '@/components/GuestRoute';
+// Páginas
+import HomePage from '@/pages/HomePage'
+import LoginPage from '@/pages/LoginPage'
+import SignUpPage from '@/pages/SignUpPage'
 
-import HomePage from '@/pages/HomePage';
-import LoginPage from '@/pages/LoginPage';
-import ClientDashboardPage from '@/pages/ClientDashboardPage';
-import FieldTechnicianPage from '@/pages/FieldTechnicianPage';
-import { ManageOrdersPage } from '@/pages/ManageOrdersPage';
-import { OrderDetailPage } from '@/pages/OrderDetailPage';
-import { ManagePointsPage } from '@/pages/ManagePointsPage';
-import { ManageUsersPage } from '@/pages/ManageUsersPage';
-import { ManageTagsPage } from '@/pages/ManageTagsPage';
-import { ManagePricingPage } from '@/pages/ManagePricingPage';
-import { ManageMapSettingsPage } from '@/pages/ManageMapSettingsPage';
-import { InstallationPipelinePage } from '@/pages/InstallationPipelinePage';
-import SignUpPage from '@/pages/SignUpPage';
-import UpdatePasswordPage from '@/pages/UpdatePasswordPage';
-import AboutUsPage from '@/pages/AboutUsPage';
-import NossosServicosPage from '@/pages/NossosServicosPage';
-import ComoAdquirirPage from '@/pages/ComoAdquirirPage';
-import TrabalheConoscoPage from '@/pages/TrabalheConoscoPage';
-import FaleConoscoPage from '@/pages/FaleConoscoPage';
-import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
-
-import { Toaster } from "@/components/ui/sonner";
-
-const ADMIN_ROLES = ['admin', 'operations_manager'];
-const TECHNICIAN_ROLES = ['field_technician'];
-const CLIENT_ROLES = ['client'];
+// Componentes
+import Header from '@/components/Header'
+import ProtectedRoute from '@/components/ProtectedRoute'
 
 function App() {
+  const { setUser, setLoading } = useAuthStore()
+  const [isInitializing, setIsInitializing] = useState(true)
+
+  useEffect(() => {
+    // Verificar sessão atual
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        // Buscar dados completos do usuário
+        fetchUserData(session.user.id)
+      } else {
+        setLoading(false)
+        setIsInitializing(false)
+      }
+    })
+
+    // Ouvir mudanças de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        await fetchUserData(session.user.id)
+      } else {
+        setUser(null)
+        setLoading(false)
+      }
+      setIsInitializing(false)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const fetchUserData = async (userId) => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      if (error) throw error
+      if (data) {
+        setUser(data)
+      }
+    } catch (error) {
+      console.error('Erro ao buscar dados do usuário:', error)
+    } finally {
+      setLoading(false)
+      setIsInitializing(false)
+    }
+  }
+
+  if (isInitializing) {
+    return <div className="flex items-center justify-center min-h-screen">Carregando...</div>
+  }
+
   return (
-    <AuthProvider>
-      <UserProvider>
-        <MapConfigProvider>
-          <CartProvider>
-            <GoogleMapsLoaderProvider>
-              <Router>
-                <AuthRedirectHandler /> {/* Adicionado aqui */}
-                <Routes>
-                  {/* Rotas Públicas */}
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
-                  <Route path="/signup" element={<GuestRoute><SignUpPage /></GuestRoute>} />
-                  <Route path="/forgot-password" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
-                  <Route path="/update-password" element={<UpdatePasswordPage />} />
-
-                  {/* Rotas com o layout principal (cabeçalho e rodapé) */}
-                  <Route element={<AppLayout />}>
-                    {/* Páginas de Conteúdo Público */}
-                    <Route path="/quem-somos" element={<AboutUsPage />} />
-                    <Route path="/nossos-servicos" element={<NossosServicosPage />} />
-                    <Route path="/como-adquirir" element={<ComoAdquirirPage />} />
-                    <Route path="/trabalhe-conosco" element={<TrabalheConoscoPage />} />
-                    <Route path="/fale-conosco" element={<FaleConoscoPage />} />
-
-                    {/* Páginas Protegidas */}
-                    <Route 
-                      path="/dashboard" 
-                      element={<ProtectedRoute allowedRoles={CLIENT_ROLES}><ClientDashboardPage /></ProtectedRoute>} 
-                    />
-                    <Route 
-                      path="/technician-panel" 
-                      element={<ProtectedRoute allowedRoles={TECHNICIAN_ROLES}><FieldTechnicianPage /></ProtectedRoute>} 
-                    />
-                    
-                    {/* Rotas de Administração com Layout aninhado */}
-                    <Route 
-                      path="/admin" 
-                      element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><AdminLayout /></ProtectedRoute>}
-                    >
-                      <Route index element={<Navigate to="orders" replace />} />
-                      <Route path="orders" element={<ManageOrdersPage />} />
-                      <Route path="orders/:orderId" element={<OrderDetailPage />} />
-                      <Route path="pipeline" element={<InstallationPipelinePage />} />
-                      <Route path="points" element={<ManagePointsPage />} />
-                      <Route path="users" element={<ManageUsersPage />} />
-                      <Route path="tags" element={<ManageTagsPage />} />
-                      <Route path="pricing" element={<ManagePricingPage />} />
-                      <Route path="map-settings" element={<ManageMapSettingsPage />} />
-                    </Route>
-                  </Route>
-
-                  {/* Rota de fallback */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-                <GlobalCart />
-              </Router>
-            </GoogleMapsLoaderProvider>
-            <Toaster />
-          </CartProvider>
-        </MapConfigProvider>
-      </UserProvider>
-    </AuthProvider>
-  );
+    <Router>
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Header />
+        <main className="flex-1">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignUpPage />} />
+          </Routes>
+        </main>
+        <Toaster position="top-right" />
+      </div>
+    </Router>
+  )
 }
 
-export default App;
+export default App
