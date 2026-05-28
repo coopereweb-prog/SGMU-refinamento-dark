@@ -9,57 +9,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// Tipos para os dados retornados
-interface Point {
-  id: string
-  name: string
-  latitude: number
-  longitude: number
-  created_at: string
-  pricing_tier_id?: string
-  [key: string]: any
-}
-
-interface Tag {
-  id: string
-  name: string
-}
-
-interface PricingTier {
-  id: string
-  [key: string]: any
-}
-
-// Tipo para usuário autenticado
-export interface User {
-  id: string
-  email?: string
-  name?: string
-  role?: string
-  [key: string]: any
-}
-
-// Tipos para pedidos
-interface CartItem {
-  point_id: string
-  period_years: number
-}
-
-interface CustomerData {
-  name?: string
-  email?: string
-  phone?: string
-  [key: string]: any
-}
-
-
 // Funções para gerenciar pontos
-export const getPoints = async (): Promise<Point[]> => {
+export const getPoints = async () => {
   const pageSize = 1000
   let from = 0
   let to = pageSize - 1
-  let allPoints: Point[] = []
-  
+  let allPoints = []
+
   // Busca todos os pontos com paginação para contornar o limite do Supabase
   for (;;) {
     const { data, error } = await supabase
@@ -67,26 +23,26 @@ export const getPoints = async (): Promise<Point[]> => {
       .select('*')
       .order('created_at', { ascending: true })
       .range(from, to)
-    
+
     if (error) {
       console.error('Erro ao buscar pontos:', error)
       return []
     }
-    
+
     if (!data || data.length === 0) break
     allPoints.push(...data)
-    
+
     // Se retornou menos que o pageSize, é porque acabou
     if (data.length < pageSize) break
-    
+
     from += pageSize
     to += pageSize
   }
-  
+
   if (allPoints.length === 0) return []
 
   const pointIds = allPoints.map(p => p.id).filter(Boolean)
-  let relations: Array<{ point_id: string; tag_id: string }> = []
+  let relations = []
   const chunkSize = 1000
   for (let i = 0; i < pointIds.length; i += chunkSize) {
     const idsChunk = pointIds.slice(i, i + chunkSize)
@@ -103,7 +59,7 @@ export const getPoints = async (): Promise<Point[]> => {
 
   // Fetch tag details separately
   const tagIds = [...new Set(relations.map(r => r.tag_id).filter(Boolean))]
-  let tagDetails: Tag[] = []
+  let tagDetails = []
   for (let i = 0; i < tagIds.length; i += chunkSize) {
     const idsChunk = tagIds.slice(i, i + chunkSize)
     const { data: tags, error: tagsError } = await supabase
@@ -121,7 +77,7 @@ export const getPoints = async (): Promise<Point[]> => {
   const tagMap = tagDetails.reduce((acc, tag) => {
     acc[tag.id] = tag
     return acc
-  }, {} as Record<string, Tag>)
+  }, {})
 
   const tagsByPointId = relations.reduce((acc, relation) => {
     const pid = relation.point_id
@@ -129,7 +85,7 @@ export const getPoints = async (): Promise<Point[]> => {
     const tagDetail = tagMap[relation.tag_id]
     if (tagDetail) acc[pid].push(tagDetail)
     return acc
-  }, {} as Record<string, Tag[]>)
+  }, {})
 
   const { data: pricingTiers, error: tierError } = await supabase
     .from('pricing_tiers')
@@ -137,7 +93,7 @@ export const getPoints = async (): Promise<Point[]> => {
   if (tierError) {
     console.error('Erro ao buscar pricing_tiers:', tierError)
   }
-  const tiersById = new Map((pricingTiers || []).map((t: PricingTier) => [t.id, t]))
+  const tiersById = new Map((pricingTiers || []).map(t => [t.id, t]))
 
   const formattedData = allPoints.map(point => ({
     ...point,
@@ -163,19 +119,19 @@ export const getTags = async () => {
 };
 
 // Funções para gerenciar tags
-export const createTag = async (name: string) => {
+export const createTag = async (name) => {
   const { data, error } = await supabase.from('tags').insert([{ name }]).select();
   if (error) throw error;
   return data[0];
 };
 
-export const updateTag = async (id: string, name: string) => {
+export const updateTag = async (id, name) => {
   const { data, error } = await supabase.from('tags').update({ name }).eq('id', id).select();
   if (error) throw error;
   return data[0];
 };
 
-export const deleteTag = async (id: string) => {
+export const deleteTag = async (id) => {
   // Primeiro, remove as associações na tabela point_tags
   const { error: pointTagsError } = await supabase.from('point_tags').delete().eq('tag_id', id);
   if (pointTagsError) throw pointTagsError;
@@ -185,11 +141,11 @@ export const deleteTag = async (id: string) => {
   if (tagsError) throw tagsError;
 };
 
-export const createOrder = async (customerData: CustomerData, cartItems: CartItem[]) => {
+export const createOrder = async (customerData, cartItems) => {
   // Verificar se há um usuário logado
   const { data: { session } } = await supabase.auth.getSession();
   let userId = null;
-  
+
   if (session?.user) {
     userId = session.user.id;
   }
@@ -214,7 +170,7 @@ export const createOrder = async (customerData: CustomerData, cartItems: CartIte
 
   if (error) {
     console.error('Erro ao invocar a Edge Function create-order:', error);
-    
+
     // Tenta extrair a mensagem de erro detalhada do corpo da resposta 400
     let errorMessage = error.message;
     try {
@@ -226,7 +182,7 @@ export const createOrder = async (customerData: CustomerData, cartItems: CartIte
     } catch (e) {
       // Ignora se o corpo não for JSON ou se não houver corpo
     }
-    
+
     throw new Error(errorMessage);
   }
 
@@ -234,7 +190,7 @@ export const createOrder = async (customerData: CustomerData, cartItems: CartIte
 }
 
 // Nova função para modificar um pedido
-export const modifyOrder = async (orderId: string, itemIdsToKeep: string[]) => {
+export const modifyOrder = async (orderId, itemIdsToKeep) => {
   const { error } = await supabase.rpc('modify_pending_order', {
     p_order_id: orderId,
     p_item_ids_to_keep: itemIdsToKeep,
@@ -246,7 +202,7 @@ export const modifyOrder = async (orderId: string, itemIdsToKeep: string[]) => {
 };
 
 // Nova função para atualizar o período de um item do pedido
-export const updateOrderItemPeriod = async (orderId: string, orderItemId: string, newPeriod: number) => {
+export const updateOrderItemPeriod = async (orderId, orderItemId, newPeriod) => {
   const { error } = await supabase.rpc('update_order_item_period', {
     p_order_id: orderId,
     p_order_item_id: orderItemId,
@@ -259,17 +215,17 @@ export const updateOrderItemPeriod = async (orderId: string, orderItemId: string
 };
 
 // Funções de gerenciamento de pedidos pelo Admin
-export const confirmOrder = async (orderId: string) => {
+export const confirmOrder = async (orderId) => {
   const { error } = await supabase.rpc('confirm_order_and_update_points', { p_order_id: orderId });
   if (error) throw error;
 };
 
-export const cancelOrder = async (orderId: string) => {
+export const cancelOrder = async (orderId) => {
   const { error } = await supabase.rpc('cancel_order_and_release_points', { p_order_id: orderId });
   if (error) throw error;
 };
 
-export const markOrderAsEditedByAdmin = async (orderId: string) => {
+export const markOrderAsEditedByAdmin = async (orderId) => {
   const { error } = await supabase.from('orders').update({ edited_by_admin: true }).eq('id', orderId);
   if (error) throw error;
 };
@@ -291,7 +247,7 @@ export const getUsers = async () => {
     console.error('Error fetching users via function:', authError);
     throw authError;
   }
-  
+
   const authUsers = authData.users;
   const userIds = authUsers.map(u => u.id);
 
@@ -311,10 +267,10 @@ export const getUsers = async () => {
   // 3. Mescla os dados
   return authUsers.map(user => {
     const profile = profilesMap.get(user.id);
-    
+
     // Usa o role do perfil como fonte de verdade, mas mantém o app_metadata para compatibilidade
     const role = profile?.role || user.app_metadata?.role || 'client';
-    
+
     return {
       ...user,
       // Sobrescreve app_metadata para garantir que o role esteja sempre presente
@@ -331,7 +287,7 @@ export const getUsers = async () => {
   });
 };
 
-export const inviteUser = async (email: string, name: string, role: string) => {
+export const inviteUser = async (email, name, role) => {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error("Usuário não autenticado.");
 
@@ -346,18 +302,18 @@ export const inviteUser = async (email: string, name: string, role: string) => {
   return data;
 };
 
-export const updateUserRole = async (userId: string, role: string) => {
+export const updateUserRole = async (userId, role) => {
   const { data, error } = await supabase
     .from('profiles')
     .update({ role })
     .eq('id', userId)
     .select();
-  
+
   if (error) throw error;
   return data;
 };
 
-export const deleteUser = async (userIdToDelete: string) => {
+export const deleteUser = async (userIdToDelete) => {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error("Usuário não autenticado.");
 
@@ -373,7 +329,7 @@ export const deleteUser = async (userIdToDelete: string) => {
 };
 
 // Nova função para atualizar o perfil do cliente
-export const updateClientProfile = async (userId: string, profileData: any) => {
+export const updateClientProfile = async (userId, profileData) => {
   const { error } = await supabase
     .from('profiles')
     .update(profileData)
@@ -450,13 +406,13 @@ export const getTechnicianTasks = async () => {
 };
 
 // Nova função para completar uma tarefa de instalação
-export const completeInstallationTask = async (taskId: string) => {
+export const completeInstallationTask = async (taskId) => {
   const { error } = await supabase
     .from('installation_tasks')
     .update({ status: 'completed' })
     .eq('id', taskId)
-    .select(); // Adicionado select()
-  
+    .select();
+
   if (error) {
     console.error('Error completing task:', error);
     throw error;
@@ -464,12 +420,12 @@ export const completeInstallationTask = async (taskId: string) => {
 };
 
 // Nova função para atualizar o status de uma tarefa
-export const updateInstallationTaskStatus = async (taskId: string, newStatus: string) => {
+export const updateInstallationTaskStatus = async (taskId, newStatus) => {
   const { error } = await supabase
     .from('installation_tasks')
     .update({ status: newStatus })
     .eq('id', taskId)
-    .select(); // Adicionado select()
+    .select();
 
   if (error) {
     console.error('Error updating task status:', error);
@@ -492,10 +448,10 @@ export const getFieldTechnicians = async () => {
 };
 
 // Nova função para atribuir uma tarefa e atualizar seu status
-export const assignTaskToTechnician = async (taskId: string, technicianId: string) => {
+export const assignTaskToTechnician = async (taskId, technicianId) => {
   const { data, error } = await supabase
     .from('installation_tasks')
-    .update({ 
+    .update({
       assigned_technician_id: technicianId,
       status: 'assigned'
     })
@@ -512,11 +468,11 @@ export const assignTaskToTechnician = async (taskId: string, technicianId: strin
     console.error('Error assigning task:', error);
     throw error;
   }
-  
+
   return {
     ...data,
     customer_name: data.order_items?.orders?.customer_name,
-    kit_type: data.order_items?.orders?.kit_type, // Adicionado kit_type
+    kit_type: data.order_items?.orders?.kit_type,
     point_name: data.points?.name,
     technician_name: data.technician?.name,
     installation_notes: data.points?.installation_notes,
@@ -526,13 +482,13 @@ export const assignTaskToTechnician = async (taskId: string, technicianId: strin
 
 // CORREÇÃO: O técnico agora apenas muda o status para 'on_hold'. A desatribuição (assigned_technician_id: null)
 // será feita manualmente por um administrador no Kanban, se necessário, para evitar o erro RLS.
-export const returnTaskToHold = async (taskId: string, pointId: string, notes: string) => {
+export const returnTaskToHold = async (taskId, pointId, notes) => {
   // 1. Atualiza as notas no próprio ponto
   const { error: pointUpdateError } = await supabase
     .from('points')
     .update({ installation_notes: notes })
     .eq('id', pointId)
-    .select(); // Adicionado select()
+    .select();
 
   if (pointUpdateError) {
     console.error('Error updating point notes:', pointUpdateError);
@@ -542,12 +498,11 @@ export const returnTaskToHold = async (taskId: string, pointId: string, notes: s
   // 2. Em seguida, atualiza o status da tarefa. O técnico permanece atribuído.
   const { error: taskUpdateError } = await supabase
     .from('installation_tasks')
-    .update({ 
+    .update({
       status: 'on_hold',
-      // REMOVIDO: assigned_technician_id: null 
     })
     .eq('id', taskId)
-    .select(); // Adicionado select()
+    .select();
 
   if (taskUpdateError) {
     console.error('Error returning task to hold:', taskUpdateError);
@@ -556,12 +511,12 @@ export const returnTaskToHold = async (taskId: string, pointId: string, notes: s
 };
 
 // Nova função para atualizar o kit_type do pedido
-export const updateOrderKitType = async (orderId: string, kitType: string) => {
+export const updateOrderKitType = async (orderId, kitType) => {
   const { data, error } = await supabase
     .from('orders')
     .update({ kit_type: kitType })
     .eq('id', orderId)
-    .select(); // Adicionado select() para garantir que a operação seja confirmada
+    .select();
 
   if (error) {
     console.error('Error updating order kit type:', error);
