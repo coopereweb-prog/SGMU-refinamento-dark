@@ -1,0 +1,571 @@
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Credenciais do Supabase não estão definidas no arquivo .env.local. Verifique se o arquivo existe e se o servidor foi reiniciado.')
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+// Tipos para os dados retornados
+interface Point {
+  id: string
+  name: string
+  latitude: number
+  longitude: number
+  created_at: string
+  pricing_tier_id?: string
+  [key: string]: any
+}
+
+interface Tag {
+  id: string
+  name: string
+}
+
+interface PricingTier {
+  id: string
+  [key: string]: any
+}
+
+// Tipo para usuário autenticado
+export interface User {
+  id: string
+  email?: string
+  name?: string
+  role?: string
+  [key: string]: any
+}
+
+// Tipos para pedidos
+interface CartItem {
+  point_id: string
+  period_years: number
+}
+
+interface CustomerData {
+  name?: string
+  email?: string
+  phone?: string
+  [key: string]: any
+}
+
+
+// Funções para gerenciar pontos
+export const getPoints = async (): Promise<Point[]> => {
+  const pageSize = 1000
+  let from = 0
+  let to = pageSize - 1
+  let allPoints: Point[] = []
+  
+  // Busca todos os pontos com paginação para contornar o limite do Supabase
+  for (;;) {
+    const { data, error } = await supabase
+      .from('points')
+      .select('*')
+      .order('created_at', { ascending: true })
+      .range(from, to)
+    
+    if (error) {
+      console.error('Erro ao buscar pontos:', error)
+      return []
+    }
+    
+    if (!data || data.length === 0) break
+    allPoints.push(...data)
+    
+    // Se retornou menos que o pageSize, é porque acabou
+    if (data.length < pageSize) break
+    
+    from += pageSize
+    to += pageSize
+  }
+  
+  if (allPoints.length === 0) return []
+
+  const pointIds = allPoints.map(p => p.id).filter(Boolean)
+  let relations: Array<{ point_id: string; tag_id: string }> = []
+  const chunkSize = 1000
+  for (let i = 0; i < pointIds.length; i += chunkSize) {
+    const idsChunk = pointIds.slice(i, i + chunkSize)
+    const { data: rel, error: relError } = await supabase
+      .from('point_tags')
+      .select('point_id, tag_id')
+      .in('point_id', idsChunk)
+    if (relError) {
+      console.error('Erro ao buscar relações de tags:', relError)
+      break
+    }
+    if (rel && rel.length) relations.push(...rel)
+  }
+
+  // Fetch tag details separately
+  const tagIds = [...new Set(relations.map(r => r.tag_id).filter(Boolean))]
+  let tagDetails: Tag[] = []
+  for (let i = 0; i < tagIds.length; i += chunkSize) {
+    const idsChunk = tagIds.slice(i, i + chunkSize)
+    const { data: tags, error: tagsError } = await supabase
+      .from('tags')
+      .select('id, name')
+      .in('id', idsChunk)
+    if (tagsError) {
+      console.error('Erro ao buscar detalhes das tags:', tagsError)
+      break
+    }
+    if (tags && tags.length) tagDetails.push(...tags)
+  }
+
+  // Create a map of tag details
+  const tagMap = tagDetails.reduce((acc, tag) => {
+    acc[tag.id] = tag
+    return acc
+  }, {} as Record<string, Tag>)
+
+  const tagsByPointId = relations.reduce((acc, relation) => {
+    const pid = relation.point_id
+    if (!acc[pid]) acc[pid] = []
+    const tagDetail = tagMap[relation.tag_id]
+    if (tagDetail) acc[pid].push(tagDetail)
+    return acc
+  }, {} as Record<string, Tag[]>)
+
+  const { data: pricingTiers, error: tierError } = await supabase
+    .from('pricing_tiers')
+    .select('*')
+  if (tierError) {
+    console.error('Erro ao buscar pricing_tiers:', tierError)
+  }
+  const tiersById = new Map((pricingTiers || []).map((t: PricingTier) => [t.id, t]))
+
+  const formattedData = allPoints.map(point => ({
+    ...point,
+    tags: tagsByPointId[point.id] || [],
+    pricing_tiers: tiersById.get(point.pricing_tier_id) || null,
+  }))
+
+  return formattedData
+}
+
+// Nova função para buscar todas as tags disponíveis para o painel de filtro
+export const getTags = async () => {
+  const { data, error } = await supabase
+    .from('tags')
+    .select('*')
+    .order('name');
+
+  if (error) {
+    console.error('Erro ao buscar tags:', error);
+    return [];
+  }
+  return data;
+};
+
+// Funções para gerenciar tags
+export const createTag = async (name: string) => {
+  const { data, error } = await supabase.from('tags').insert([{ name }]).select();
+  if (error) throw error;
+  return data[0];
+};
+
+export const updateTag = async (id: string, name: string) => {
+  const { data, error } = await supabase.from('tags').update({ name }).eq('id', id).select();
+  if (error) throw error;
+  return data[0];
+};
+
+export const deleteTag = async (id: string) => {
+  // Primeiro, remove as associações na tabela point_tags
+  const { error: pointTagsError } = await supabase.from('point_tags').delete().eq('tag_id', id);
+  if (pointTagsError) throw pointTagsError;
+
+  // Depois, remove a tag da tabela tags
+  const { error: tagsError } = await supabase.from('tags').delete().eq('id', id);
+  if (tagsError) throw tagsError;
+};
+
+export const createOrder = async (customerData: CustomerData, cartItems: CartItem[]) => {
+  // Verificar se há um usuário logado
+  const { data: { session } } = await supabase.auth.getSession();
+  let userId = null;
+  
+  if (session?.user) {
+    userId = session.user.id;
+  }
+
+  const itemsForFunction = cartItems.map(item => ({
+    point_id: item.point_id,
+    period_years: item.period_years,
+  }));
+
+  const headers = {};
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
+  }
+
+  const { data, error } = await supabase.functions.invoke('create-order', {
+    body: {
+      customerData,
+      items: itemsForFunction,
+    },
+    headers,
+  })
+
+  if (error) {
+    console.error('Erro ao invocar a Edge Function create-order:', error);
+    
+    // Tenta extrair a mensagem de erro detalhada do corpo da resposta 400
+    let errorMessage = error.message;
+    try {
+      // Se o erro for um FunctionsHttpError, o corpo da resposta pode estar em error.context.body
+      const errorBody = JSON.parse(error.context.body);
+      if (errorBody.error) {
+        errorMessage = errorBody.error;
+      }
+    } catch (e) {
+      // Ignora se o corpo não for JSON ou se não houver corpo
+    }
+    
+    throw new Error(errorMessage);
+  }
+
+  return data
+}
+
+// Nova função para modificar um pedido
+export const modifyOrder = async (orderId: string, itemIdsToKeep: string[]) => {
+  const { error } = await supabase.rpc('modify_pending_order', {
+    p_order_id: orderId,
+    p_item_ids_to_keep: itemIdsToKeep,
+  });
+
+  if (error) {
+    throw error;
+  }
+};
+
+// Nova função para atualizar o período de um item do pedido
+export const updateOrderItemPeriod = async (orderId: string, orderItemId: string, newPeriod: number) => {
+  const { error } = await supabase.rpc('update_order_item_period', {
+    p_order_id: orderId,
+    p_order_item_id: orderItemId,
+    p_new_period_years: newPeriod,
+  });
+
+  if (error) {
+    throw error;
+  }
+};
+
+// Funções de gerenciamento de pedidos pelo Admin
+export const confirmOrder = async (orderId: string) => {
+  const { error } = await supabase.rpc('confirm_order_and_update_points', { p_order_id: orderId });
+  if (error) throw error;
+};
+
+export const cancelOrder = async (orderId: string) => {
+  const { error } = await supabase.rpc('cancel_order_and_release_points', { p_order_id: orderId });
+  if (error) throw error;
+};
+
+export const markOrderAsEditedByAdmin = async (orderId: string) => {
+  const { error } = await supabase.from('orders').update({ edited_by_admin: true }).eq('id', orderId);
+  if (error) throw error;
+};
+
+
+// Funções para gerenciar usuários
+export const getUsers = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("Usuário não autenticado.");
+
+  // 1. Busca usuários de autenticação (via Edge Function)
+  const { data: authData, error: authError } = await supabase.functions.invoke('get-users', {
+    headers: {
+      Authorization: `Bearer ${session.access_token}`
+    }
+  });
+
+  if (authError) {
+    console.error('Error fetching users via function:', authError);
+    throw authError;
+  }
+  
+  const authUsers = authData.users;
+  const userIds = authUsers.map(u => u.id);
+
+  // 2. Busca perfis correspondentes para obter o 'role' e 'name'
+  const { data: profiles, error: profilesError } = await supabase
+    .from('profiles')
+    .select('id, role, name')
+    .in('id', userIds);
+
+  if (profilesError) {
+    console.error('Error fetching profiles:', profilesError);
+    // Continua, mas os dados de perfil podem estar incompletos
+  }
+
+  const profilesMap = new Map((profiles || []).map(p => [p.id, p]));
+
+  // 3. Mescla os dados
+  return authUsers.map(user => {
+    const profile = profilesMap.get(user.id);
+    
+    // Usa o role do perfil como fonte de verdade, mas mantém o app_metadata para compatibilidade
+    const role = profile?.role || user.app_metadata?.role || 'client';
+    
+    return {
+      ...user,
+      // Sobrescreve app_metadata para garantir que o role esteja sempre presente
+      app_metadata: {
+        ...user.app_metadata,
+        role: role,
+      },
+      // Sobrescreve user_metadata para garantir que o nome esteja presente
+      user_metadata: {
+        ...user.user_metadata,
+        full_name: profile?.name || user.user_metadata?.full_name,
+      }
+    };
+  });
+};
+
+export const inviteUser = async (email: string, name: string, role: string) => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("Usuário não autenticado.");
+
+  const { data, error } = await supabase.functions.invoke('invite-user', {
+    body: { email, name, role },
+    headers: {
+      Authorization: `Bearer ${session.access_token}`
+    }
+  });
+
+  if (error) throw error;
+  return data;
+};
+
+export const updateUserRole = async (userId: string, role: string) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ role })
+    .eq('id', userId)
+    .select();
+  
+  if (error) throw error;
+  return data;
+};
+
+export const deleteUser = async (userIdToDelete: string) => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("Usuário não autenticado.");
+
+  const { data, error } = await supabase.functions.invoke('delete-user', {
+    body: { userIdToDelete },
+    headers: {
+      Authorization: `Bearer ${session.access_token}`
+    }
+  });
+
+  if (error) throw error;
+  return data;
+};
+
+// Nova função para atualizar o perfil do cliente
+export const updateClientProfile = async (userId: string, profileData: any) => {
+  const { error } = await supabase
+    .from('profiles')
+    .update(profileData)
+    .eq('id', userId);
+
+  if (error) {
+    console.error('Erro ao atualizar perfil do cliente:', error);
+    throw error;
+  }
+};
+
+// Nova função para buscar tarefas de instalação
+export const getInstallationTasks = async () => {
+  const { data, error } = await supabase
+    .from('installation_tasks')
+    .select(`
+      *,
+      order_items (
+        orders ( id, customer_name, kit_type )
+      ),
+      points ( name, installation_notes, installation_photo_url ),
+      technician:profiles ( name )
+    `)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    // Se a tabela não for encontrada, retorna um array vazio para evitar que a aplicação quebre.
+    if (error.code === 'PGRST205') {
+      console.warn("A tabela 'installation_tasks' não foi encontrada. O pipeline de instalação estará vazio.");
+      return [];
+    }
+    console.error('Error fetching installation tasks:', error);
+    throw error;
+  }
+
+  // Formata os dados para um acesso mais fácil
+  return data.map(task => ({
+    ...task,
+    customer_name: task.order_items?.[0]?.orders?.customer_name,
+    kit_type: task.order_items?.[0]?.orders?.kit_type,
+    point_name: task.points?.name,
+    technician_name: task.technician?.name,
+    // Adiciona as notas e URL da foto do ponto diretamente na tarefa
+    installation_notes: task.points?.installation_notes,
+    installation_photo_url: task.points?.installation_photo_url,
+  }));
+};
+
+// Nova função para buscar tarefas de um técnico específico
+export const getTechnicianTasks = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from('installation_tasks')
+    .select(`
+      id,
+      points (id, name, installation_photo_url, latitude, longitude, installation_notes, street_name, intersection_name),
+      order_items ( orders ( customer_name, kit_type ) )
+    `)
+    .eq('assigned_technician_id', user.id)
+    .eq('status', 'assigned');
+
+  if (error) {
+    console.error('Error fetching technician tasks:', error);
+    throw error;
+  }
+
+  return data.map(task => ({
+    ...task,
+    customer_name: task.order_items?.[0]?.orders?.[0]?.customer_name,
+    kit_type: task.order_items?.[0]?.orders?.[0]?.kit_type,
+  }));
+};
+
+// Nova função para completar uma tarefa de instalação
+export const completeInstallationTask = async (taskId: string) => {
+  const { error } = await supabase
+    .from('installation_tasks')
+    .update({ status: 'completed' })
+    .eq('id', taskId)
+    .select(); // Adicionado select()
+  
+  if (error) {
+    console.error('Error completing task:', error);
+    throw error;
+  }
+};
+
+// Nova função para atualizar o status de uma tarefa
+export const updateInstallationTaskStatus = async (taskId: string, newStatus: string) => {
+  const { error } = await supabase
+    .from('installation_tasks')
+    .update({ status: newStatus })
+    .eq('id', taskId)
+    .select(); // Adicionado select()
+
+  if (error) {
+    console.error('Error updating task status:', error);
+    throw error;
+  }
+};
+
+// Nova função para buscar técnicos de campo
+export const getFieldTechnicians = async () => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, name')
+    .eq('role', 'field_technician');
+
+  if (error) {
+    console.error('Error fetching field technicians:', error);
+    throw error;
+  }
+  return data;
+};
+
+// Nova função para atribuir uma tarefa e atualizar seu status
+export const assignTaskToTechnician = async (taskId: string, technicianId: string) => {
+  const { data, error } = await supabase
+    .from('installation_tasks')
+    .update({ 
+      assigned_technician_id: technicianId,
+      status: 'assigned'
+    })
+    .eq('id', taskId)
+    .select(`
+      *,
+      order_items ( orders ( id, customer_name, kit_type ) ),
+      points ( name, installation_notes, installation_photo_url ),
+      technician:profiles ( name )
+    `)
+    .single();
+
+  if (error) {
+    console.error('Error assigning task:', error);
+    throw error;
+  }
+  
+  return {
+    ...data,
+    customer_name: data.order_items?.orders?.customer_name,
+    kit_type: data.order_items?.orders?.kit_type, // Adicionado kit_type
+    point_name: data.points?.name,
+    technician_name: data.technician?.name,
+    installation_notes: data.points?.installation_notes,
+    installation_photo_url: data.points?.installation_photo_url,
+  };
+};
+
+// CORREÇÃO: O técnico agora apenas muda o status para 'on_hold'. A desatribuição (assigned_technician_id: null)
+// será feita manualmente por um administrador no Kanban, se necessário, para evitar o erro RLS.
+export const returnTaskToHold = async (taskId: string, pointId: string, notes: string) => {
+  // 1. Atualiza as notas no próprio ponto
+  const { error: pointUpdateError } = await supabase
+    .from('points')
+    .update({ installation_notes: notes })
+    .eq('id', pointId)
+    .select(); // Adicionado select()
+
+  if (pointUpdateError) {
+    console.error('Error updating point notes:', pointUpdateError);
+    throw pointUpdateError;
+  }
+
+  // 2. Em seguida, atualiza o status da tarefa. O técnico permanece atribuído.
+  const { error: taskUpdateError } = await supabase
+    .from('installation_tasks')
+    .update({ 
+      status: 'on_hold',
+      // REMOVIDO: assigned_technician_id: null 
+    })
+    .eq('id', taskId)
+    .select(); // Adicionado select()
+
+  if (taskUpdateError) {
+    console.error('Error returning task to hold:', taskUpdateError);
+    throw taskUpdateError;
+  }
+};
+
+// Nova função para atualizar o kit_type do pedido
+export const updateOrderKitType = async (orderId: string, kitType: string) => {
+  const { data, error } = await supabase
+    .from('orders')
+    .update({ kit_type: kitType })
+    .eq('id', orderId)
+    .select(); // Adicionado select() para garantir que a operação seja confirmada
+
+  if (error) {
+    console.error('Error updating order kit type:', error);
+    throw error;
+  }
+  return data;
+};

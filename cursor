@@ -1,0 +1,90 @@
+# Project Rules and Guidelines
+
+> Auto-generated from .context/docs on 2026-01-14T22:35:22.267Z
+
+## README
+
+# SGMU Nova Odessa Documentation
+
+Welcome to the technical documentation for the **SGMU-Nova-Odessa** repository. This system is designed for managing urban maintenance services, specifically focusing on lighting points, installations, and field operations management.
+
+## 🚀 Getting Started
+
+This repository contains a modern web application built with **React**, **Vite**, and **Supabase**. It follows a modular architecture designed for scalability and real-time updates.
+
+### Core Documentation Guides
+- [**Project Overview**](./project-overview.md) — High-level goals, roadmap, and stakeholder context.
+- [**Architecture Notes**](./architecture.md) — Deep dive into the system design, service boundaries, and dependencies.
+- [**Development Workflow**](./development-workflow.md) — How to set up, branch, and contribute to the codebase.
+- [**Data Flow & Integrations**](./data-flow.md) — Understanding Supabase interactions, Edge Functions, and state management.
+- [**Testing Strategy**](./testing-strategy.md) — Overview of the CI gates and testing patterns.
+- [**Security & Compliance**](./security.md) — Authentication models (RBAC), secrets management, and data protection.
+- [**Glossary & Domain Concepts**](./glossary.md) — Definition of business terms like "Points", "Installation Pipeline", and "Kanban Board".
+
+---
+
+## 🏗 System Architecture
+
+The application is structured around a central dashboard system with role-based access control (RBAC):
+
+- **Admin/Manager**: Accessible via `AdminLayout`, managing users (`ManageUsersPage`) and global settings (`SettingsManager`).
+- **Field Technician**: Specialized views for on-site operations (`FieldTechnicianPage`) and route optimization.
+- **Client**: Interaction through the `ClientDashboardPage` for monitoring services and contracted points.
+
+### Core Technologies
+- **Frontend**: React 18, Tailwind CSS, Shadcn UI.
+- **Backend/Database**: Supabase (PostgreSQL, Real-time, Auth, Storage).
+- **Maps Integration**: Google Maps API for geolocation and route optimization.
+- **Edge Functions**: TypeScript-based functions for processing orders (`create-order`).
+
+---
+
+## 🛠 Key Modules & Components
+
+### 1. State & Context Management
+The application uses a provider-based pattern for global state:
+- `AuthProvider`: Handles user sessions and permissions.
+- `CartProvider`: Manages the "shopping cart" for service requests and point selections.
+- `GoogleMapsLoaderProvider`: Centralizes the initialization of the Google Maps API.
+- `UserProvider`: Synchronizes extended user profile data from the database.
+
+### 2. Utilities & Helpers
+- **`maps-utils.js`**: Contains logic for `haversineDistance` and `sortPointsByProximity` (Nearest Neighbor algorithm) for route optimization.
+- **`image-utils.js`**: Provides `compressImage` for optimizing field uploads before storage.
+- **`utils.js`**: Common formatting tools like `formatCurrencyBRL` and `getOrderStatusProps`.
+
+### 3. Business Logic Components
+- **`InstallationPipelinePage`**: A Kanban-style interface for managing the lifecycle of service orders.
+- **`RouteGenerator`**: Orchestrates the creation of optimized paths for field technicians.
+- **`FilterSheet` & `MobileFilterButton`**: Responsive filtering system for large datasets of maintenance points.
+
+---
+
+## 📁 Repository Structure
+
+```text
+├── src/
+│   ├── components/       # UI Components (Admin, UI, Layouts)
+│   ├── contexts/         # React Context Providers (Auth, Cart, Maps)
+│   ├── hooks/            # Custom React hooks (useNotifications, etc.)
+│   ├── lib/              # Core utilities and library configurations
+│   ├── pages/            # Main application views and route entries
+│   └── main.jsx          # Application entry point
+├── supabase/
+│   ├── functions/        # Deno Edge Functions (e.g., create-order)
+│   └── migrations/       # Database schema and RLS policies
+├── public/               # Static assets
+└── vite.config.js        # Build and dev server configuration
+```
+
+---
+
+## 🔧 Developer Productivity
+
+To maintain code quality and consistency, please refer to the [Tooling Guide](./tooling.md) for details on:
+- CLI scripts for database migrations.
+- IDE configurations for Prettier/ESLint.
+- Automation workflows for Vercel deployments.
+
+For specific business rules and logic definitions, consult the [AI_RULES.md](../AI_RULES.md) file in the root directory.
+
